@@ -1,0 +1,108 @@
+// Domain types for Fitness Assessment
+
+export type Sex = 'M' | 'F';
+
+export type Classification =
+  | 'excellent'
+  | 'good'
+  | 'average'
+  | 'below'
+  | 'poor';
+
+export interface ClassifiedResult {
+  value: number;
+  label: string;
+  classification: Classification;
+  note?: string;
+}
+
+export interface ClientInput {
+  id?: string;
+  name: string;
+  sex: Sex;
+  dob?: string;
+  age?: number;
+  height?: number; // cm
+  weight?: number; // kg
+  occupation?: string;
+  smoking?: 'no' | 'ex' | 'yes';
+  experience?: 'none' | 'beginner' | 'intermediate' | 'advanced';
+  goal?: 'health' | 'weight' | 'strength' | 'performance' | 'rehab';
+  medical?: string;
+}
+
+export interface AssessmentInput {
+  clientId: string;
+  date?: string;
+  assessor?: string;
+
+  parq?: boolean[];
+
+  rhr?: number;
+  sbp?: number;
+  dbp?: number;
+
+  bmi?: number;
+  waist?: number;
+  hip?: number;
+  biaBf?: number;
+  biaSmm?: number;
+  biaFm?: number;
+  biaFfm?: number;
+  biaBmr?: number;
+  biaTbw?: number;
+
+  rockportTime?: number;
+  rockportHr?: number;
+  run15Time?: number;
+  cooperDist?: number;
+  stepHr?: number;
+  vo2max?: number;
+
+  bp1rm?: number;
+  sq1rm?: number;
+  dl1rm?: number;
+  ohp1rm?: number;
+  pc1rm?: number;
+  lp1rm?: number;
+  gripR?: number;
+  gripL?: number;
+  est1rmW?: number;
+  est1rmReps?: number;
+
+  pushupReps?: number;
+  ymcaBpReps?: number;
+  curlupReps?: number;
+  plankFront?: number;
+  plankR?: number;
+  plankL?: number;
+  sorensen?: number;
+
+  postureFlags?: string[];
+
+  fms?: Record<string, number>;
+  clearSh?: 'neg' | 'pos';
+  clearExt?: 'neg' | 'pos';
+  clearFlex?: 'neg' | 'pos';
+
+  ohsaFlags?: string[];
+  rom?: Record<string, number>;
+  fmsComments?: Record<string, string>;
+  notes?: string;
+}
+
+export interface FmsTest {
+  id: string;
+  name: string;
+  description: string;
+  criteria: string;
+  bilateral: boolean;
+}
+
+export interface PostureSyndrome {
+  id: 'pds' | 'lcs' | 'ucs';
+  name: string;
+  keys: string[];
+  overactive: string;
+  underactive: string;
+}

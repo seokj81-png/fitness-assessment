@@ -1,0 +1,116 @@
+// Prisma schema for Fitness Assessment System
+// Guidelines: ACSM · NSCA · NASM · FMS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  sex         String   // "M" | "F"
+  dob         DateTime?
+  height      Float?   // cm
+  weight      Float?   // kg (현재 체중)
+  occupation  String?
+  smoking     String?  // "no" | "ex" | "yes"
+  experience  String?  // "none" | "beginner" | "intermediate" | "advanced"
+  goal        String?  // "health" | "weight" | "strength" | "performance" | "rehab"
+  medical     String?  // 의료 이력, 복용 약물, 통증 부위 등
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assessments Assessment[]
+}
+
+model Assessment {
+  id         String   @id @default(cuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  date       DateTime @default(now())
+  assessor   String?
+
+  // PAR-Q+ (JSON array of 7 boolean answers)
+  parq       String?  // JSON: boolean[]
+
+  // Vitals
+  rhr        Int?
+  sbp        Int?
+  dbp        Int?
+
+  // Body composition
+  bmi        Float?
+  waist      Float?
+  hip        Float?
+  sf1        Float?   // mm
+  sf2        Float?
+  sf3        Float?
+  bodyFatSf  Float?   // % (skinfold)
+  biaBf      Float?   // BIA 체지방률
+  biaSmm     Float?   // 골격근량
+  biaFm      Float?   // 체지방량
+  biaFfm     Float?   // 제지방량
+  biaBmr     Float?   // 기초대사량
+  biaTbw     Float?   // 체수분
+
+  // Cardiorespiratory
+  rockportTime Float?  // minutes
+  rockportHr   Int?
+  run15Time    Float?
+  cooperDist   Int?    // meters
+  stepHr       Int?
+  vo2max       Float?
+
+  // Strength – 1RM (kg)
+  bp1rm      Float?
+  sq1rm      Float?
+  dl1rm      Float?
+  ohp1rm     Float?
+  pc1rm      Float?
+  lp1rm      Float?
+  gripR      Float?
+  gripL      Float?
+  est1rmW    Float?
+  est1rmReps Int?
+
+  // Endurance
+  pushupReps   Int?
+  ymcaBpReps   Int?
+  curlupReps   Int?
+  plankFront   Int?   // seconds
+  plankR       Int?
+  plankL       Int?
+  sorensen     Int?
+
+  // Posture flags (JSON array of string keys)
+  postureFlags String? // JSON: string[]
+
+  // FMS scores (JSON: Record<string,number>)
+  fms          String? // JSON: {dsq, hs_r, hs_l, lu_r, lu_l, sm_r, sm_l, aslr_r, aslr_l, tsp, rs_r, rs_l}
+  clearSh      String? // "neg" | "pos"
+  clearExt     String? // "neg" | "pos"
+  clearFlex    String? // "neg" | "pos"
+
+  // NASM OHSA / extra movement screens (JSON array of string keys)
+  ohsaFlags    String? // JSON: string[]
+
+  // ROM (JSON: Record<string,number>)
+  rom          String? // JSON
+
+  // FMS per-test comments (JSON: Record<string,string>)
+  fmsComments  String?
+
+  // Notes
+  notes        String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([date])
+}
