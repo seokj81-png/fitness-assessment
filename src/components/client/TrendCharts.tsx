@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  Customized,
 } from 'recharts';
 
 interface AssessmentRow {
@@ -184,20 +185,55 @@ function SingleChart({
             />
           ))}
 
-          {/* Dynamic horizontal crosshair + Y value on axis */}
+          {/* Dynamic horizontal crosshair line */}
           {activeY != null && (
             <ReferenceLine
               y={activeY}
               stroke={color}
               strokeDasharray="3 3"
               strokeWidth={1}
-              strokeOpacity={0.7}
-              label={{
-                value: activeY.toFixed(1),
-                position: 'left',
-                fontSize: 11,
-                fill: color,
-                fontWeight: 700,
+              strokeOpacity={0.6}
+            />
+          )}
+
+          {/* Y-axis value badge rendered directly on the axis */}
+          {activeY != null && (
+            <Customized
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              component={(props: any) => {
+                const yAxisMap = props.yAxisMap || {};
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const yAxis: any = yAxisMap[0] ?? Object.values(yAxisMap)[0];
+                if (!yAxis?.scale) return null;
+                const yPx = yAxis.scale(activeY);
+                const ax = yAxis.x ?? 0;
+                const aw = yAxis.width ?? 42;
+                const label = Number.isInteger(activeY)
+                  ? String(activeY)
+                  : activeY.toFixed(1);
+                return (
+                  <g>
+                    <rect
+                      x={ax + 1}
+                      y={yPx - 9}
+                      width={aw - 2}
+                      height={18}
+                      fill={color}
+                      opacity={0.18}
+                      rx={3}
+                    />
+                    <text
+                      x={ax + aw - 3}
+                      y={yPx + 4}
+                      textAnchor="end"
+                      fontSize={11}
+                      fill={color}
+                      fontWeight={700}
+                    >
+                      {label}
+                    </text>
+                  </g>
+                );
               }}
             />
           )}
