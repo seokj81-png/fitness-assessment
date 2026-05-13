@@ -58,6 +58,10 @@ interface ClientInfo {
 interface Props {
   client: ClientInfo;
   existing?: (AssessmentInput & { id?: string; date?: string | Date }) | null;
+  pageTitle?: string;
+  pageSubtitle?: string;
+  backHref?: string;
+  backLabel?: string;
 }
 
 type Tab =
@@ -88,7 +92,7 @@ type FormState = Partial<AssessmentInput> & {
   fmsComments?: Record<string, string>;
 };
 
-export default function AssessmentForm({ client, existing }: Props) {
+export default function AssessmentForm({ client, existing, pageTitle, pageSubtitle, backHref, backLabel }: Props) {
   const router = useRouter();
   const sex = client.sex as Sex;
   const age = useMemo(
@@ -143,11 +147,22 @@ export default function AssessmentForm({ client, existing }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    const payload: Record<string, unknown> = {
-      clientId: client.id,
-      ...state,
-      fmsComments: JSON.stringify(state.fmsComments ?? {}),
-    };
+    // Strip non-schema fields (age, id, createdAt, updatedAt, client, etc.)
+    const ALLOWED = new Set([
+      'clientId','date','assessor','parq','rhr','sbp','dbp',
+      'bmi','waist','hip','sf1','sf2','sf3','bodyFatSf',
+      'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
+      'rockportTime','rockportHr','run15Time','cooperDist','stepHr','vo2max',
+      'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
+      'pushupReps','ymcaBpReps','curlupReps','plankFront','plankR','plankL','sorensen',
+      'postureFlags','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
+      'notes',
+    ]);
+    const payload: Record<string, unknown> = { clientId: client.id };
+    for (const [k, v] of Object.entries(state)) {
+      if (ALLOWED.has(k)) payload[k] = v;
+    }
+    payload.fmsComments = JSON.stringify(state.fmsComments ?? {});
     // Attach computed vo2max for quick display
     if (computed.vo2max) payload.vo2max = computed.vo2max.value;
     if (computed.bmiClass) payload.bmi = computed.bmiClass.value;
@@ -164,7 +179,8 @@ export default function AssessmentForm({ client, existing }: Props) {
       router.push(`/clients/${client.id}/assessment/${saved.id || existing?.id}`);
       router.refresh();
     } else {
-      alert('저장 실패');
+      const errBody = await res.json().catch(() => ({}));
+      alert(`저장 실패 (${res.status}): ${errBody?.error || res.statusText}`);
       setSaving(false);
     }
   }
@@ -270,21 +286,46 @@ export default function AssessmentForm({ client, existing }: Props) {
 
   return (
     <div>
-      <nav className="flex gap-1 overflow-x-auto bg-white border border-slate-200 rounded-lg p-1 mb-5 no-print">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`whitespace-nowrap px-3 py-2 rounded-md text-sm font-medium transition ${
-              tab === t.id
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-700 hover:bg-slate-100'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      {/* ── 글래스 헤더 (제목 + 탭) ── */}
+      <div
+        className="sticky top-[73px] z-30 mb-5 no-print rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, rgba(30,41,59,0.72) 0%, rgba(15,23,42,0.80) 100%)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          border: '1px solid rgba(148,163,184,0.12)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* 제목 영역 */}
+        {pageTitle && (
+          <div className="px-5 pt-4 pb-3 border-b border-white/[0.06]">
+            {backHref && (
+              <a href={backHref} className="text-xs text-blue-400 hover:text-blue-300 mb-1 inline-block">
+                ← {backLabel}
+              </a>
+            )}
+            <h2 className="text-xl font-bold text-white leading-tight">{pageTitle}</h2>
+            {pageSubtitle && <p className="text-xs text-slate-400 mt-0.5">{pageSubtitle}</p>}
+          </div>
+        )}
+        {/* 탭 네비게이션 */}
+        <nav className="flex gap-1 overflow-x-auto p-2">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`whitespace-nowrap px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                tab === t.id
+                  ? 'bg-blue-600/90 text-white shadow-md shadow-blue-900/40'
+                  : 'text-slate-400 hover:bg-white/10 hover:text-slate-200'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {tab === 'client' && (
         <ClientTab state={state} update={update} parqResult={computed.parq} computed={computed} />
@@ -387,7 +428,7 @@ function ClientTab({
           {PARQ_QUESTIONS.map((q, i) => (
             <div
               key={i}
-              className="flex items-center justify-between border border-slate-200 rounded p-3 gap-3 flex-wrap"
+              className="flex items-center justify-between border border-slate-700 rounded p-3 gap-3 flex-wrap"
             >
               <span className="text-sm flex-1">
                 Q{i + 1}. {q}
@@ -409,7 +450,7 @@ function ClientTab({
                           ? v
                             ? 'bg-red-600 text-white border-red-600'
                             : 'bg-green-600 text-white border-green-600'
-                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                          : 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700'
                       }`}
                     >
                       {v ? '예' : '아니오'}
@@ -494,23 +535,6 @@ function CompositionTab({
 
       <div className="card">
         <h3 className="font-bold mb-2">
-          허리둘레 · WHR <span className="guideline-tag tag-acsm">ACSM</span>
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4 mb-3">
-          <Num label="허리 Waist (cm)" value={state.waist} onChange={(v) => update('waist', v)} step="0.1" />
-          <Num label="엉덩이 Hip (cm)" value={state.hip} onChange={(v) => update('hip', v)} step="0.1" />
-        </div>
-        <ResultBox result={computed.whrClass}>
-          {state.waist && (
-            <div className="text-xs text-slate-600 mt-2">
-              허리둘레 {state.waist} cm — {waistRisk(state.waist, (state as any).sex || 'M')} 위험
-            </div>
-          )}
-        </ResultBox>
-      </div>
-
-      <div className="card">
-        <h3 className="font-bold mb-2">
           BIA / InBody 직접입력 <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
         <p className="text-xs text-slate-500 mb-3">
@@ -527,7 +551,7 @@ function CompositionTab({
               { label: '기초대사량 BMR', value: state.biaBmr, unit: 'kcal' },
               { label: '체수분량 TBW', value: state.biaTbw, unit: 'L' },
             ].map(({ label, value, unit }) => (
-              <div key={label} className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+              <div key={label} className="bg-slate-800 border border-slate-700 rounded-lg p-3 text-center">
                 <div className="text-xs text-slate-500 mb-1">{label}</div>
                 <div className="text-lg font-bold text-slate-800">
                   {value != null ? value.toFixed(1) : '—'}
@@ -544,21 +568,6 @@ function CompositionTab({
         )}
       </div>
 
-      {state.rhr && computed.rhrClass && (
-        <div className="card">
-          <h3 className="font-bold mb-2">Vitals Summary</h3>
-          <div className="grid md:grid-cols-2 gap-3">
-            <ResultBox result={computed.rhrClass} unit="bpm">
-              <div className="text-xs text-slate-600 mt-1">안정시 심박수</div>
-            </ResultBox>
-            {computed.bpClass && (
-              <ResultBox result={computed.bpClass}>
-                <div className="text-xs text-slate-600 mt-1">혈압 {state.sbp}/{state.dbp} mmHg</div>
-              </ResultBox>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -965,7 +974,7 @@ function PostureTab({
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {sec.groups.map((g) => (
-              <div key={g.head} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+              <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
                 <h4 className="text-sm font-bold mb-2">{g.head}</h4>
                 <div className="space-y-1">
                   {g.items.map(([key, label]) => (
@@ -998,16 +1007,16 @@ function PostureTab({
         ) : (
           <div className="space-y-3">
             {computed.syndromes.map((m: any) => (
-              <div key={m.id} className="border border-slate-200 rounded-lg p-3 bg-white">
+              <div key={m.id} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <strong className="text-slate-900">{m.name}</strong>
+                  <strong className="text-slate-100">{m.name}</strong>
                   <span className="pill-below">일치 편차 {m.hits}개</span>
                 </div>
                 <div className="text-sm mt-2">
-                  <strong>과활성(Short/Tight):</strong> <span className="text-slate-700">{m.overactive}</span>
+                  <strong>과활성(Short/Tight):</strong> <span className="text-slate-300">{m.overactive}</span>
                 </div>
                 <div className="text-sm mt-1">
-                  <strong>저활성(Weak):</strong> <span className="text-slate-700">{m.underactive}</span>
+                  <strong>저활성(Weak):</strong> <span className="text-slate-300">{m.underactive}</span>
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
                   → SMR + 정적 스트레칭 (과활성) + 활성화 + 통합 운동 (저활성)
@@ -1060,7 +1069,7 @@ function MovementTab({
 
         <div className="space-y-3">
           {FMS_TESTS.map((t) => (
-            <div key={t.id} className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <div key={t.id} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
               <h4 className="font-bold text-sm mb-1">{t.name}</h4>
               <p className="text-xs text-slate-600 mb-1">{t.description}</p>
               <p className="text-[11px] text-slate-500 mb-2">
@@ -1090,7 +1099,7 @@ function MovementTab({
                 placeholder="코멘트 (선택사항)"
                 value={(state.fmsComments || {})[t.id] || ''}
                 onChange={(e) => setFmsComment(t.id, e.target.value)}
-                className="mt-2 w-full text-sm border border-slate-200 rounded-lg p-2 resize-none text-slate-700 placeholder-slate-400 bg-white"
+                className="mt-2 w-full text-sm border border-slate-700 rounded-lg p-2 resize-none text-slate-200 placeholder-slate-500 bg-slate-900"
                 rows={2}
               />
             </div>
@@ -1152,7 +1161,7 @@ function MovementTab({
             ['oh_heel_rise', '뒤꿈치 들림'],
             ['oh_asym_shift', '좌우 비대칭 이동'],
           ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 text-sm border border-slate-200 rounded p-2 bg-slate-50">
+            <label key={key} className="flex items-center gap-2 text-sm border border-slate-700 rounded p-2 bg-slate-800">
               <input type="checkbox" checked={ohsaHas(key)} onChange={() => ohsaToggle(key)} />
               <span>{label}</span>
             </label>
@@ -1182,7 +1191,7 @@ function MovementTab({
               ['pl_head_fwd', '머리 전방'],
             ] },
           ].map((g) => (
-            <div key={g.group} className="border border-slate-200 rounded p-3 bg-slate-50">
+            <div key={g.group} className="border border-slate-700 rounded p-3 bg-slate-800">
               <h4 className="text-sm font-bold mb-2">{g.group}</h4>
               <div className="space-y-1">
                 {g.items.map(([key, label]) => (
@@ -1351,7 +1360,7 @@ function ScoreSelector({
             className={`flex-1 py-1.5 text-sm border rounded ${
               value === n
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-slate-600'
             }`}
           >
             {n}
