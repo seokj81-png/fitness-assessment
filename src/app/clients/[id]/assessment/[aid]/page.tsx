@@ -15,6 +15,11 @@ import {
   classifyVO2max,
   classifyStepHR,
   classifyBPRatio,
+  classifySQRatio,
+  classifyDLRatio,
+  classifyOHPRatio,
+  classifyPCRatio,
+  classifyLPRatio,
   classifyGrip,
   classifyPushup,
   classifyYMCABP,
@@ -86,8 +91,28 @@ export default async function AssessmentViewPage({
 
   // ===== Strength =====
   const bpRatioClass =
-    a.bp1rm && client.weight
+    a.bp1rm != null && client.weight
       ? classifyBPRatio(a.bp1rm, client.weight, age, sex)
+      : null;
+  const sqRatioClass =
+    a.sq1rm != null && client.weight
+      ? classifySQRatio(a.sq1rm, client.weight, age, sex)
+      : null;
+  const dlRatioClass =
+    a.dl1rm != null && client.weight
+      ? classifyDLRatio(a.dl1rm, client.weight, age, sex)
+      : null;
+  const ohpRatioClass =
+    a.ohp1rm != null && client.weight
+      ? classifyOHPRatio(a.ohp1rm, client.weight, age, sex)
+      : null;
+  const pcRatioClass =
+    a.pc1rm != null && client.weight
+      ? classifyPCRatio(a.pc1rm, client.weight, age, sex)
+      : null;
+  const lpRatioClass =
+    a.lp1rm != null && client.weight
+      ? classifyLPRatio(a.lp1rm, client.weight, age, sex)
       : null;
   const sumGrip = (a.gripR || 0) + (a.gripL || 0);
   const gripClass =
@@ -298,44 +323,54 @@ export default async function AssessmentViewPage({
       )}
 
       {/* Strength */}
-      {(bpRatioClass ||
-        gripClass ||
-        a.bp1rm ||
-        a.sq1rm ||
-        a.dl1rm ||
-        a.ohp1rm ||
-        est1rm) && (
+      {(gripClass ||
+        a.bp1rm != null ||
+        a.sq1rm != null ||
+        a.dl1rm != null ||
+        a.ohp1rm != null ||
+        a.pc1rm != null ||
+        a.lp1rm != null ||
+        est1rm != null) && (
         <div className="card">
           <h3 className="font-bold mb-3">
             근력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
-            {a.bp1rm !== undefined && (
-              <Fact label="벤치프레스 1RM" value={`${a.bp1rm} kg`} />
+            {a.bp1rm != null && (
+              bpRatioClass
+                ? <ResultRow label="벤치프레스 1RM" result={bpRatioClass} displayValue={`${a.bp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.bp1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="벤치프레스 1RM" value={`${a.bp1rm} kg`} />
             )}
-            {a.sq1rm !== undefined && (
-              <Fact label="스쿼트 1RM" value={`${a.sq1rm} kg`} />
+            {a.sq1rm != null && (
+              sqRatioClass
+                ? <ResultRow label="스쿼트 1RM" result={sqRatioClass} displayValue={`${a.sq1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.sq1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="스쿼트 1RM" value={`${a.sq1rm} kg`} />
             )}
-            {a.dl1rm !== undefined && (
-              <Fact label="데드리프트 1RM" value={`${a.dl1rm} kg`} />
+            {a.dl1rm != null && (
+              dlRatioClass
+                ? <ResultRow label="데드리프트 1RM" result={dlRatioClass} displayValue={`${a.dl1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.dl1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="데드리프트 1RM" value={`${a.dl1rm} kg`} />
             )}
-            {a.ohp1rm !== undefined && (
-              <Fact label="오버헤드프레스 1RM" value={`${a.ohp1rm} kg`} />
+            {a.ohp1rm != null && (
+              ohpRatioClass
+                ? <ResultRow label="오버헤드프레스 1RM" result={ohpRatioClass} displayValue={`${a.ohp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.ohp1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="오버헤드프레스 1RM" value={`${a.ohp1rm} kg`} />
             )}
-            {a.pc1rm !== undefined && (
-              <Fact label="파워클린 1RM" value={`${a.pc1rm} kg`} />
+            {a.pc1rm != null && (
+              pcRatioClass
+                ? <ResultRow label="파워클린 1RM" result={pcRatioClass} displayValue={`${a.pc1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.pc1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="파워클린 1RM" value={`${a.pc1rm} kg`} />
             )}
-            {a.lp1rm !== undefined && (
-              <Fact label="레그프레스 1RM" value={`${a.lp1rm} kg`} />
+            {a.lp1rm != null && (
+              lpRatioClass
+                ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} displayValue={`${a.lp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.lp1rm / client.weight).toFixed(2)}` : undefined} />
+                : <Fact label="레그프레스 1RM" value={`${a.lp1rm} kg`} />
             )}
             {est1rm !== null && (
               <Fact
                 label={`추정 1RM (${a.est1rmW}kg × ${a.est1rmReps}회)`}
                 value={`${est1rm.toFixed(1)} kg (Epley·Brzycki·Lombardi 평균)`}
               />
-            )}
-            {bpRatioClass && (
-              <ResultRow label="벤치 1RM / 체중" result={bpRatioClass} />
             )}
             {gripClass && (
               <ResultRow
@@ -558,11 +593,13 @@ function ResultRow({
   result,
   unit,
   displayValue,
+  subLabel,
 }: {
   label: string;
   result: { value: number; label: string; classification: 'excellent' | 'good' | 'average' | 'below' | 'poor'; note?: string } | null;
   unit?: string;
   displayValue?: string;
+  subLabel?: string;
 }) {
   if (!result)
     return (
@@ -578,7 +615,10 @@ function ResultRow({
           (typeof result.value === 'number' ? result.value.toFixed(1) : result.value)}{' '}
         {!displayValue && unit}
       </div>
-      <span className={pillClass(result.classification)}>{result.label}</span>
+      <div className="flex items-center gap-2 flex-wrap mt-1">
+        <span className={pillClass(result.classification)}>{result.label}</span>
+        {subLabel && <span className="text-xs text-slate-500">{subLabel}</span>}
+      </div>
       {result.note && (
         <div className="text-xs text-slate-400 mt-1">{result.note}</div>
       )}
