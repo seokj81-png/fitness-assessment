@@ -16,9 +16,15 @@ function serialize(data: Record<string, unknown>) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const created = await prisma.assessment.create({ data: serialize(body) as never });
-  return NextResponse.json(created, { status: 201 });
+  try {
+    const body = await req.json();
+    const created = await prisma.assessment.create({ data: serialize(body) as never });
+    return NextResponse.json(created, { status: 201 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[POST /api/assessments]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function GET(req: Request) {

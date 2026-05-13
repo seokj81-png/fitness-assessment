@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import AssessmentForm from '@/components/assessment/AssessmentForm';
@@ -17,21 +16,6 @@ export default async function NewAssessmentPage({
 
   return (
     <div>
-      <div className="mb-5">
-        <Link
-          href={`/clients/${client.id}`}
-          className="text-xs text-blue-600 hover:underline"
-        >
-          ← {client.name} 상세
-        </Link>
-        <h2 className="text-2xl font-bold text-slate-900 mt-1">
-          새 체력평가 · {client.name}
-        </h2>
-        <p className="text-sm text-slate-600 mt-1">
-          ACSM · NSCA · NASM · FMS 가이드라인 기반 종합 평가
-        </p>
-      </div>
-
       <AssessmentForm
         client={{
           id: client.id,
@@ -42,6 +26,10 @@ export default async function NewAssessmentPage({
           weight: client.weight,
           goal: client.goal,
         }}
+        pageTitle={`새 체력평가 · ${client.name}`}
+        pageSubtitle="ACSM · NSCA · NASM · FMS 가이드라인 기반 종합 평가"
+        backHref={`/clients/${client.id}`}
+        backLabel={`${client.name} 상세`}
       />
     </div>
   );

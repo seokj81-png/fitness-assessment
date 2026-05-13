@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import DeleteClientButton from './DeleteClientButton';
+import TrendCharts from '@/components/client/TrendCharts';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,15 +15,36 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   const age = client.dob ? new Date().getFullYear() - new Date(client.dob).getFullYear() : null;
 
+  // Serialize for client components
+  const assessmentRows = client.assessments.map((a) => ({
+    id: a.id,
+    date: a.date.toISOString(),
+    bmi: a.bmi,
+    vo2max: a.vo2max,
+    fms: a.fms,
+    biaBf: a.biaBf,
+    bodyFatSf: a.bodyFatSf,
+    rhr: a.rhr,
+    sbp: a.sbp,
+    dbp: a.dbp,
+    gripR: a.gripR,
+    gripL: a.gripL,
+    bp1rm: a.bp1rm,
+    sq1rm: a.sq1rm,
+    pushupReps: a.pushupReps,
+    plankFront: a.plankFront,
+  }));
+
   return (
     <div>
+      {/* Header */}
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
-          <Link href="/" className="text-xs text-blue-600 hover:underline">
+          <Link href="/" className="text-xs text-blue-400 hover:text-blue-300 hover:underline">
             ← 회원님 목록
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900 mt-1">{client.name}</h2>
-          <div className="text-sm text-slate-600 mt-1">
+          <h2 className="text-2xl font-bold text-slate-100 mt-1">{client.name}</h2>
+          <div className="text-sm text-slate-400 mt-1">
             {client.sex === 'M' ? '남성' : '여성'}
             {age && ` · ${age}세`}
             {client.height && ` · ${client.height} cm`}
@@ -40,9 +62,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         </div>
       </div>
 
+      {/* Info + Assessment list */}
       <div className="grid md:grid-cols-3 gap-5">
+        {/* Basic Info */}
         <div className="card md:col-span-1">
-          <h3 className="font-bold text-slate-900 mb-3">기본 정보</h3>
+          <h3 className="font-bold text-slate-100 mb-3">기본 정보</h3>
           <dl className="text-sm space-y-2">
             <Row label="운동경력">{expLabel(client.experience)}</Row>
             <Row label="운동 목적">{goalLabel(client.goal)}</Row>
@@ -55,51 +79,58 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           {client.medical && (
             <div className="mt-4 text-sm">
               <div className="label mb-1">의료 이력</div>
-              <p className="text-slate-700 whitespace-pre-wrap text-xs bg-slate-50 p-2 rounded border border-slate-200">
+              <p className="text-slate-300 whitespace-pre-wrap text-xs bg-slate-800 p-2 rounded border border-slate-700">
                 {client.medical}
               </p>
             </div>
           )}
         </div>
 
+        {/* Assessment history list */}
         <div className="md:col-span-2">
           <div className="card">
-            <h3 className="font-bold text-slate-900 mb-3">평가 이력 ({client.assessments.length}회)</h3>
+            <h3 className="font-bold text-slate-100 mb-3">
+              평가 이력 ({client.assessments.length}회)
+            </h3>
             {client.assessments.length === 0 ? (
               <p className="text-sm text-slate-500 py-8 text-center">
                 아직 체력평가 기록이 없습니다. 상단의 &lsquo;+ 새 체력평가&rsquo; 버튼으로 시작하세요.
               </p>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-700">
                 {client.assessments.map((a) => (
                   <Link
                     key={a.id}
                     href={`/clients/${client.id}/assessment/${a.id}`}
-                    className="block py-3 hover:bg-slate-50 -mx-4 px-4 rounded"
+                    className="block py-3 hover:bg-slate-700/30 -mx-4 px-4 rounded transition-colors"
                   >
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div>
-                        <div className="font-semibold text-slate-900">
+                        <div className="font-semibold text-slate-100">
                           {new Date(a.date).toLocaleDateString('ko-KR', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',
                           })}
                         </div>
-                        <div className="text-xs text-slate-600 mt-0.5">
-                          {a.assessor && `측정자: ${a.assessor}`}
-                        </div>
+                        {a.assessor && (
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            측정자: {a.assessor}
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2 text-xs flex-wrap">
-                        {a.bmi && <span className="bg-slate-100 px-2 py-1 rounded">BMI {a.bmi.toFixed(1)}</span>}
+                        {a.bmi && (
+                          <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded">
+                            BMI {a.bmi.toFixed(1)}
+                          </span>
+                        )}
                         {a.vo2max && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          <span className="bg-blue-900/60 text-blue-300 px-2 py-1 rounded">
                             VO₂ {a.vo2max.toFixed(1)}
                           </span>
                         )}
-                        {a.fms && (
-                          <FmsBadge raw={a.fms} />
-                        )}
+                        {a.fms && <FmsBadge raw={a.fms} />}
                       </div>
                     </div>
                   </Link>
@@ -109,6 +140,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           </div>
         </div>
       </div>
+
+      {/* Trend Charts – shown when there are ≥ 1 assessments with data */}
+      {client.assessments.length >= 1 && (
+        <TrendCharts assessments={assessmentRows} />
+      )}
     </div>
   );
 }
@@ -116,17 +152,20 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 function FmsBadge({ raw }: { raw: string }) {
   try {
     const fms = JSON.parse(raw) as Record<string, number>;
-    const total = Object.entries(fms)
-      .filter(([k]) => !k.endsWith('_r') && !k.endsWith('_l'))
-      .reduce((s, [, v]) => s + v, 0) +
-      ['hs', 'lu', 'sm', 'aslr', 'rs']
-        .map((id) => {
-          const r = fms[`${id}_r`];
-          const l = fms[`${id}_l`];
-          return r !== undefined && l !== undefined ? Math.min(r, l) : 0;
-        })
-        .reduce((s, v) => s + v, 0);
-    return <span className="bg-violet-100 text-violet-800 px-2 py-1 rounded">FMS {total}/21</span>;
+    const bilateral = ['hs', 'lu', 'sm', 'aslr', 'rs'];
+    const total =
+      (fms['dsq'] ?? 0) +
+      (fms['tsp'] ?? 0) +
+      bilateral.reduce((s, id) => {
+        const r = fms[`${id}_r`];
+        const l = fms[`${id}_l`];
+        return s + (r != null && l != null ? Math.min(r, l) : 0);
+      }, 0);
+    return (
+      <span className="bg-violet-900/60 text-violet-300 px-2 py-1 rounded">
+        FMS {total}/21
+      </span>
+    );
   } catch {
     return null;
   }
@@ -134,21 +173,16 @@ function FmsBadge({ raw }: { raw: string }) {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 py-1">
+    <div className="flex justify-between border-b border-slate-700 py-1">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-800">{children}</dd>
+      <dd className="font-medium text-slate-300">{children}</dd>
     </div>
   );
 }
 
 function expLabel(v: string | null) {
   return (
-    {
-      none: '없음',
-      beginner: '초급',
-      intermediate: '중급',
-      advanced: '고급',
-    }[v || ''] || '-'
+    { none: '없음', beginner: '초급', intermediate: '중급', advanced: '고급' }[v || ''] || '-'
   );
 }
 

@@ -67,8 +67,8 @@ export default async function AssessmentViewPage({
 
   // ===== Vitals =====
   const bpClass =
-    a.sbp !== undefined && a.dbp !== undefined ? classifyBP(a.sbp, a.dbp) : null;
-  const rhrClass = a.rhr !== undefined ? classifyRHR(a.rhr) : null;
+    a.sbp != null && a.dbp != null ? classifyBP(a.sbp, a.dbp) : null;
+  const rhrClass = a.rhr != null ? classifyRHR(a.rhr) : null;
 
   // ===== Cardio =====
   let vo2 = a.vo2max;
@@ -146,7 +146,7 @@ export default async function AssessmentViewPage({
           >
             ← {client.name} 상세
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900 mt-1">
+          <h2 className="text-2xl font-bold text-slate-100 mt-1">
             체력평가 보고서 · {client.name}
           </h2>
           <p className="text-sm text-slate-600 mt-1">
@@ -215,8 +215,8 @@ export default async function AssessmentViewPage({
         <div
           className={`p-3 rounded ${
             parq.passed
-              ? 'bg-green-50 border border-green-200 text-green-900'
-              : 'bg-red-50 border border-red-200 text-red-900'
+              ? 'bg-green-950/40 border border-green-800/50 text-green-300'
+              : 'bg-red-950/40 border border-red-800/50 text-red-300'
           }`}
         >
           <div className="font-semibold">
@@ -419,7 +419,7 @@ export default async function AssessmentViewPage({
                     key={s.name}
                     className="border-l-4 border-emerald-500 pl-3 py-1"
                   >
-                    <div className="font-semibold text-slate-900">
+                    <div className="font-semibold text-slate-100">
                       의심: {s.name}{' '}
                       <span className="text-xs text-slate-500">
                         (일치 {s.hits}건)
@@ -546,9 +546,9 @@ function HeroItem({ label, value }: { label: string; value: string }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-3 bg-slate-50 border border-slate-200 rounded">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className="text-base font-semibold text-slate-900">{value}</div>
+    <div className="p-3 bg-slate-800 border border-slate-700 rounded">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-base font-semibold text-slate-100">{value}</div>
     </div>
   );
 }
@@ -566,21 +566,21 @@ function ResultRow({
 }) {
   if (!result)
     return (
-      <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-500">
+      <div className="p-3 bg-slate-800 border border-slate-700 rounded text-sm text-slate-400">
         {label}: 미측정
       </div>
     );
   return (
-    <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-      <div className="text-xs text-slate-600">{label}</div>
-      <div className="text-xl font-bold text-slate-900">
+    <div className="p-3 bg-blue-950/40 border border-blue-800/50 rounded">
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-xl font-bold text-slate-100">
         {displayValue ||
           (typeof result.value === 'number' ? result.value.toFixed(1) : result.value)}{' '}
         {!displayValue && unit}
       </div>
       <span className={pillClass(result.classification)}>{result.label}</span>
       {result.note && (
-        <div className="text-xs text-slate-600 mt-1">{result.note}</div>
+        <div className="text-xs text-slate-400 mt-1">{result.note}</div>
       )}
     </div>
   );
@@ -598,12 +598,12 @@ function MetricBig({
   return (
     <div
       className={`rounded p-3 ${
-        warn ? 'bg-red-50 border border-red-200' : 'bg-slate-50 border border-slate-200'
+        warn ? 'bg-red-950/40 border border-red-800/50' : 'bg-slate-800 border border-slate-700'
       }`}
     >
-      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-xs text-slate-400">{label}</div>
       <div
-        className={`text-xl font-bold ${warn ? 'text-red-700' : 'text-slate-900'}`}
+        className={`text-xl font-bold ${warn ? 'text-red-400' : 'text-slate-100'}`}
       >
         {value}
       </div>

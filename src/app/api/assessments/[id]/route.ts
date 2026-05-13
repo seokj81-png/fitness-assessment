@@ -25,12 +25,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const body = await req.json();
-  const updated = await prisma.assessment.update({
-    where: { id: params.id },
-    data: serialize(body) as never,
-  });
-  return NextResponse.json(updated);
+  try {
+    const body = await req.json();
+    const updated = await prisma.assessment.update({
+      where: { id: params.id },
+      data: serialize(body) as never,
+    });
+    return NextResponse.json(updated);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[PATCH /api/assessments]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
