@@ -431,10 +431,14 @@ export function calcFMS(
   let zeros = 0;
   let asymmetries = 0;
 
+  // Clamp a raw score to the valid FMS range [0, 3]
+  const clamp = (v: number | undefined): number | undefined =>
+    v !== undefined ? Math.max(0, Math.min(3, Math.round(v))) : undefined;
+
   const pair = (id: string): number | undefined => {
-    if (scores[id] !== undefined) return scores[id];
-    const r = scores[`${id}_r`];
-    const l = scores[`${id}_l`];
+    if (scores[id] !== undefined) return clamp(scores[id]);
+    const r = clamp(scores[`${id}_r`]);
+    const l = clamp(scores[`${id}_l`]);
     if (r === undefined || l === undefined) return undefined;
     if (r !== l) asymmetries++;
     return Math.min(r, l);

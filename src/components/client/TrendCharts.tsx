@@ -38,15 +38,20 @@ function calcFmsTotal(raw: string | null): number | null {
   if (!raw) return null;
   try {
     const fms = JSON.parse(raw) as Record<string, number>;
+    const clamp = (v: number | undefined) =>
+      v !== undefined ? Math.max(0, Math.min(3, Math.round(v))) : undefined;
     const nonBilateral = ['dsq', 'tsp'];
     const bilateral = ['hs', 'lu', 'sm', 'aslr', 'rs'];
-    const nb = nonBilateral.reduce((s, k) => s + (fms[k] ?? 0), 0);
+    const nb = nonBilateral.reduce((s, k) => {
+      const v = clamp(fms[k]);
+      return s + (v ?? 0);
+    }, 0);
     const b = bilateral.reduce((s, id) => {
-      const r = fms[`${id}_r`];
-      const l = fms[`${id}_l`];
+      const r = clamp(fms[`${id}_r`]);
+      const l = clamp(fms[`${id}_l`]);
       return s + (r != null && l != null ? Math.min(r, l) : 0);
     }, 0);
-    return nb + b;
+    return Math.min(nb + b, 21);
   } catch {
     return null;
   }

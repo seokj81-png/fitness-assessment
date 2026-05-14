@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '종합 체력평가 시스템 | Comprehensive Fitness Assessment',
+  title: '파프짐 체력 평가 시스템 | Comprehensive Fitness Assessment',
   description:
     '운동 프로그램 설계를 위한 사전 평가 — ACSM · NSCA · NASM · FMS 가이드라인 기반',
 };
@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="bg-gradient-to-r from-slate-900 to-blue-800 text-white py-5 px-5 shadow-md sticky top-0 z-40">
           <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
             <Link href="/" className="block">
-              <h1 className="text-xl font-bold leading-tight">종합 체력평가 시스템</h1>
+              <h1 className="text-xl font-bold leading-tight">파프짐 체력 평가 시스템</h1>
               <p className="text-xs opacity-80">Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
             </Link>
             <nav className="flex gap-2 text-sm no-print">

@@ -63,7 +63,7 @@ export default async function HomePage() {
                 )}
               </div>
               {c.goal && (
-                <div className="mt-2 text-[11px] text-blue-700 bg-blue-50 inline-block px-2 py-0.5 rounded">
+                <div className={`mt-2 text-[11px] inline-block px-2 py-0.5 rounded font-medium ${goalColor(c.goal)}`}>
                   {goalLabel(c.goal)}
                 </div>
               )}
@@ -84,5 +84,17 @@ function goalLabel(g: string) {
       performance: '경기력',
       rehab: '재활',
     }[g] || g
+  );
+}
+
+function goalColor(g: string) {
+  return (
+    {
+      health: 'bg-emerald-900/60 text-emerald-300',
+      weight: 'bg-cyan-900/60 text-cyan-300',
+      strength: 'bg-orange-900/60 text-orange-300',
+      performance: 'bg-violet-900/60 text-violet-300',
+      rehab: 'bg-yellow-900/60 text-yellow-300',
+    }[g] || 'bg-slate-700 text-slate-300'
   );
 }
