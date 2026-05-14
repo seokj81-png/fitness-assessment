@@ -734,20 +734,6 @@ function CardioTab({
         <Num label="달린 거리 (m)" value={state.cooperDist} onChange={(v) => update('cooperDist', v)} />
       </div>
 
-      <div className="card">
-        <h3 className="font-bold mb-2">
-          YMCA 3-Min Step Test <span className="guideline-tag tag-acsm">ACSM</span>
-        </h3>
-        <p className="text-xs text-slate-500 mb-3">
-          30.5cm 스텝·분당 24회 스텝·3분 후 1분간 회복기 심박수
-        </p>
-        <Num label="회복기 HR (bpm)" value={state.stepHr} onChange={(v) => update('stepHr', v)} />
-        {computed.stepClass && (
-          <div className="mt-3">
-            <ResultBox result={computed.stepClass} unit="bpm" />
-          </div>
-        )}
-      </div>
 
       {computed.vo2max && (
         <div className="card">
