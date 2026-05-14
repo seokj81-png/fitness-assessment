@@ -297,6 +297,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
   // ---------------- renders ----------------
 
   return (
+    <>
     <div>
       {/* ── 글래스 헤더 (제목 + 탭) ── */}
       <div
@@ -364,37 +365,65 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         <SummaryTab client={client} age={age} state={state} computed={computed} update={update} />
       )}
 
-      <div className="mt-6 flex items-center justify-between no-print">
+      {/* ── 하단 여백 (sticky 바 높이만큼) ── */}
+      <div className="h-20 no-print" />
+    </div>
+
+    {/* ── Sticky 액션 바 — 모든 탭에서 항상 하단 고정 ── */}
+    <div
+      className="no-print"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        background: 'rgba(15,23,42,0.97)',
+        borderTop: '1px solid rgba(51,65,85,0.8)',
+        backdropFilter: 'blur(8px)',
+        padding: '12px 20px',
+      }}
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* 저장 완료 토스트 */}
-        <div className="text-sm text-emerald-400 transition-opacity duration-500"
-          style={{ opacity: savedAt ? 1 : 0 }}>
-          {savedAt && `✓ 저장됨 (${savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`}
+        <div
+          className="text-sm font-medium text-emerald-400 flex items-center gap-1.5 transition-all duration-300"
+          style={{ opacity: savedAt ? 1 : 0, transform: savedAt ? 'translateY(0)' : 'translateY(4px)' }}
+        >
+          {savedAt && (
+            <>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+              저장됨 — {savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {!savedId && null}
+            </>
+          )}
         </div>
 
         <div className="flex gap-2 ml-auto">
-          <button onClick={() => router.back()} className="btn-secondary">
+          <button onClick={() => router.back()} className="btn-secondary text-sm px-4 py-2">
             취소
           </button>
-          {/* 저장 — 현재 페이지 유지 */}
+          {/* 💾 저장 — 현재 페이지 유지 */}
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="btn-secondary"
+            className="btn-secondary text-sm px-4 py-2"
             style={{ borderColor: '#22c55e', color: '#22c55e' }}
           >
             {saving ? '저장 중...' : '💾 저장'}
           </button>
-          {/* 저장 후 종료 — 결과 페이지로 이동 */}
+          {/* ✅ 저장 후 종료 — 결과 페이지로 이동 */}
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="btn-primary"
+            className="btn-primary text-sm px-5 py-2"
           >
             {saving ? '저장 중...' : '✅ 저장 후 종료'}
           </button>
         </div>
       </div>
     </div>
+    </>
   );
 }
 
