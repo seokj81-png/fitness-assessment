@@ -107,6 +107,8 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
 
   const [tab, setTab] = useState<Tab>('client');
   const [saving, setSaving] = useState(false);
+  const [savedId, setSavedId] = useState<string | undefined>(existing?.id);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [state, setState] = useState<FormState>(() => ({
     ...(existing || {}),
     date:
@@ -145,7 +147,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     });
   };
 
-  async function handleSave() {
+  async function handleSave(exitAfter = false) {
     setSaving(true);
     // Strip non-schema fields (age, id, createdAt, updatedAt, client, etc.)
     const ALLOWED = new Set([
@@ -167,8 +169,10 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     if (computed.vo2max) payload.vo2max = computed.vo2max.value;
     if (computed.bmiClass) payload.bmi = computed.bmiClass.value;
 
-    const url = existing?.id ? `/api/assessments/${existing.id}` : '/api/assessments';
-    const method = existing?.id ? 'PATCH' : 'POST';
+    // 첫 저장은 POST, 이후(savedId 있을 때)는 PATCH
+    const currentId = savedId;
+    const url = currentId ? `/api/assessments/${currentId}` : '/api/assessments';
+    const method = currentId ? 'PATCH' : 'POST';
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
@@ -176,8 +180,16 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     });
     if (res.ok) {
       const saved = await res.json();
-      router.push(`/clients/${client.id}/assessment/${saved.id || existing?.id}`);
-      router.refresh();
+      const id = saved.id || currentId;
+      setSavedId(id);
+      if (exitAfter) {
+        router.push(`/clients/${client.id}/assessment/${id}`);
+        router.refresh();
+      } else {
+        setSavedAt(new Date());
+        setSaving(false);
+        router.refresh(); // 목록 카운터 등 갱신
+      }
     } else {
       const errBody = await res.json().catch(() => ({}));
       alert(`저장 실패 (${res.status}): ${errBody?.error || res.statusText}`);
@@ -352,13 +364,35 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         <SummaryTab client={client} age={age} state={state} computed={computed} update={update} />
       )}
 
-      <div className="mt-6 flex gap-2 justify-end no-print">
-        <button onClick={() => router.back()} className="btn-secondary">
-          취소
-        </button>
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
-          {saving ? '저장 중...' : existing?.id ? '수정 저장' : '평가 저장'}
-        </button>
+      <div className="mt-6 flex items-center justify-between no-print">
+        {/* 저장 완료 토스트 */}
+        <div className="text-sm text-emerald-400 transition-opacity duration-500"
+          style={{ opacity: savedAt ? 1 : 0 }}>
+          {savedAt && `✓ 저장됨 (${savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`}
+        </div>
+
+        <div className="flex gap-2 ml-auto">
+          <button onClick={() => router.back()} className="btn-secondary">
+            취소
+          </button>
+          {/* 저장 — 현재 페이지 유지 */}
+          <button
+            onClick={() => handleSave(false)}
+            disabled={saving}
+            className="btn-secondary"
+            style={{ borderColor: '#22c55e', color: '#22c55e' }}
+          >
+            {saving ? '저장 중...' : '💾 저장'}
+          </button>
+          {/* 저장 후 종료 — 결과 페이지로 이동 */}
+          <button
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            className="btn-primary"
+          >
+            {saving ? '저장 중...' : '✅ 저장 후 종료'}
+          </button>
+        </div>
       </div>
     </div>
   );
