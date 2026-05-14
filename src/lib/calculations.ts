@@ -432,16 +432,24 @@ export function calcFMS(
   let asymmetries = 0;
 
   // Clamp a raw score to the valid FMS range [0, 3]
-  const clamp = (v: number | undefined): number | undefined =>
-    v !== undefined ? Math.max(0, Math.min(3, Math.round(v))) : undefined;
+  const clamp = (v: number | undefined | null): number | undefined =>
+    v != null ? Math.max(0, Math.min(3, Math.round(v))) : undefined;
+
+  // Bilateral tests always use _r / _l keys; non-bilateral use the direct key.
+  const BILATERAL = new Set(['hs', 'lu', 'sm', 'aslr', 'rs']);
 
   const pair = (id: string): number | undefined => {
-    if (scores[id] !== undefined) return clamp(scores[id]);
-    const r = clamp(scores[`${id}_r`]);
-    const l = clamp(scores[`${id}_l`]);
-    if (r === undefined || l === undefined) return undefined;
-    if (r !== l) asymmetries++;
-    return Math.min(r, l);
+    if (BILATERAL.has(id)) {
+      // Always prefer _r / _l for bilateral tests to avoid stale direct-key data
+      const r = clamp(scores[`${id}_r`] as number | undefined);
+      const l = clamp(scores[`${id}_l`] as number | undefined);
+      if (r === undefined || l === undefined) return undefined;
+      if (r !== l) asymmetries++;
+      return Math.min(r, l);
+    }
+    // Non-bilateral: direct key only
+    const v = clamp(scores[id] as number | undefined);
+    return v;
   };
 
   ['dsq', 'hs', 'lu', 'sm', 'aslr', 'tsp', 'rs'].forEach((id) => {
