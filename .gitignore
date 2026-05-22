@@ -12,3 +12,6 @@ prisma/dev.db-journal
 next-env.d.ts
 .vercel
 .env*.local
+.env.production
+.claude/
+tsconfig.tsbuildinfo
