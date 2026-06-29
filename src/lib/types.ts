@@ -55,6 +55,7 @@ export interface AssessmentInput {
   rockportTime?: number;
   rockportHr?: number;
   run15Time?: number;
+  run5minDist?: number; // 5-min run test distance (m) → Riegel 2.4km prediction
   cooperDist?: number;
   stepHr?: number;
   vo2max?: number;

@@ -227,6 +227,173 @@ export function classifyVO2max(v: number, age: number, sex: Sex): ClassifiedResu
   return classifyAscending(v, VO2MAX_NORMS, age, sex);
 }
 
+// 5-Min Run Test → predicted 2.4km (1.5-mile) time via Riegel endurance model
+//   T2 = T1 × (D2/D1)^1.06   (T1 = 5 min, D2 = 2400 m)
+export function riegel2400FromRun5min(dist5minM: number): number | null {
+  if (!dist5minM || dist5minM <= 0) return null;
+  return 5 * Math.pow(2400 / dist5minM, 1.06);
+}
+
+// VO2max from a predicted/measured 2.4km time — reuses the 1.5-mile run formula
+export function vo2maxFrom2400(timeMin: number): number {
+  return run15MileVO2max(timeMin);
+}
+
+// Invert run15MileVO2max (VO2 = 483/t + 3.5) → 2.4km finish time (min) for a given VO2max
+export function time2400FromVO2max(vo2: number): number | null {
+  if (vo2 <= 3.5) return null;
+  return 483 / (vo2 - 3.5);
+}
+
+// Average running speed (km/h) for the 2.4km test given finish time in minutes
+export function speed2400(timeMin: number): number | null {
+  if (!timeMin || timeMin <= 0) return null;
+  return 2.4 / (timeMin / 60);
+}
+
+// Velocity at VO2max (km/h) — ACSM running eq. on level ground: VO2 = 0.2·S(m/min) + 3.5
+export function vVO2max(vo2: number): number {
+  return Math.max(0, (vo2 - 3.5) * 0.3);
+}
+
+// Format minutes (decimal) → "m분 s초"
+export function fmtMinSec(timeMin: number): string {
+  const total = Math.round(timeMin * 60);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}분 ${s.toString().padStart(2, '0')}초`;
+}
+
+// ---- Cardio norm comparison: VO2max norm table → 2.4km grade-level speed & time ----
+
+export interface CardioGradeRow {
+  classification: Classification;
+  label: string;
+  vo2: number; // lower-bound VO2max of this grade band
+  timeMin: number; // predicted 2.4km finish time at that VO2
+  speedKmh: number;
+}
+
+export interface CardioComparison {
+  userVo2: number;
+  userTimeMin: number;
+  userSpeedKmh: number;
+  userClass: Classification;
+  avgVo2: number; // "동일 성별·나이 평균" = midpoint of the Average band
+  avgTimeMin: number;
+  avgSpeedKmh: number;
+  grades: CardioGradeRow[]; // descending: excellent → poor
+}
+
+export function cardioComparison(
+  userVo2: number,
+  age: number,
+  sex: Sex
+): CardioComparison | null {
+  if (!userVo2 || !age || !sex) return null;
+  const row = VO2MAX_NORMS[sex][ageGroup(age)];
+  if (!row) return null;
+  // row = [vPoor, poor, average, good] ascending upper-bounds
+  const bands: Array<{ classification: Classification; vo2: number }> = [
+    { classification: 'excellent', vo2: row[3] },
+    { classification: 'good', vo2: row[2] },
+    { classification: 'average', vo2: row[1] },
+    { classification: 'below', vo2: row[0] },
+    { classification: 'poor', vo2: Math.round(row[0] * 0.85 * 10) / 10 },
+  ];
+  const grades: CardioGradeRow[] = bands.map((b) => {
+    const t = time2400FromVO2max(b.vo2) ?? 0;
+    return {
+      classification: b.classification,
+      label: LABEL[b.classification],
+      vo2: b.vo2,
+      timeMin: t,
+      speedKmh: speed2400(t) ?? 0,
+    };
+  });
+  const avgVo2 = (row[1] + row[2]) / 2; // midpoint of the Average band
+  const avgTimeMin = time2400FromVO2max(avgVo2) ?? 0;
+  const userClass = classifyVO2max(userVo2, age, sex)?.classification ?? 'average';
+  const userTimeMin = time2400FromVO2max(userVo2) ?? 0;
+  return {
+    userVo2,
+    userTimeMin,
+    userSpeedKmh: speed2400(userTimeMin) ?? 0,
+    userClass,
+    avgVo2,
+    avgTimeMin,
+    avgSpeedKmh: speed2400(avgTimeMin) ?? 0,
+    grades,
+  };
+}
+
+// ---- Training prescription zones based on vVO2max (% of max velocity) ----
+
+export interface TrainingZone {
+  key: 'recovery' | 'fitness' | 'high';
+  name: string;
+  pctLabel: string;
+  speedLowKmh: number;
+  speedHighKmh: number | null; // null = open-ended
+  paceLow: string; // min/km at the slow edge
+  paceHigh: string | null;
+  durationLabel: string;
+  detail: string;
+}
+
+function paceMinKm(speedKmh: number): string {
+  if (!speedKmh || speedKmh <= 0) return '-';
+  const minPerKm = 60 / speedKmh;
+  const m = Math.floor(minPerKm);
+  const s = Math.round((minPerKm - m) * 60);
+  return `${m}:${s.toString().padStart(2, '0')}/km`;
+}
+
+export function trainingZones(vvo2Kmh: number): TrainingZone[] {
+  const z = (low: number, high: number | null) => ({
+    speedLowKmh: Math.round(vvo2Kmh * low * 10) / 10,
+    speedHighKmh: high == null ? null : Math.round(vvo2Kmh * high * 10) / 10,
+  });
+  const rec = z(0, 0.6);
+  const fit = z(0.6, 0.8);
+  const hi = z(0.8, null);
+  return [
+    {
+      key: 'recovery',
+      name: '회복 훈련 (Recovery)',
+      pctLabel: '< 60% vVO₂max',
+      speedLowKmh: rec.speedLowKmh,
+      speedHighKmh: rec.speedHighKmh,
+      paceLow: rec.speedHighKmh ? paceMinKm(rec.speedHighKmh) : '-',
+      paceHigh: null,
+      durationLabel: '30–40분 지속 (LISS)',
+      detail: 'Zone 1–2 저강도 유산소 — 회복 촉진·기초 유산소 토대',
+    },
+    {
+      key: 'fitness',
+      name: '체력 강화 (Aerobic Build)',
+      pctLabel: '61–80% vVO₂max',
+      speedLowKmh: fit.speedLowKmh,
+      speedHighKmh: fit.speedHighKmh,
+      paceLow: paceMinKm(fit.speedLowKmh),
+      paceHigh: fit.speedHighKmh ? paceMinKm(fit.speedHighKmh) : null,
+      durationLabel: '25–40분 (템포·지속주)',
+      detail: 'Zone 3 유산소 역치 — 심폐 효율·지구력 향상',
+    },
+    {
+      key: 'high',
+      name: '고강도 훈련 (HIIT)',
+      pctLabel: '≥ 81% vVO₂max',
+      speedLowKmh: hi.speedLowKmh,
+      speedHighKmh: null,
+      paceLow: paceMinKm(hi.speedLowKmh),
+      paceHigh: null,
+      durationLabel: '인터벌 3–5분 × 4–5세트 (총 15–25분)',
+      detail: 'Zone 4–5 — VO₂max·무산소 역치 자극, 세트 간 1:1 회복',
+    },
+  ];
+}
+
 // YMCA Step Test – simplified norms approximation (ages 20-29)
 export function classifyStepHR(hr: number, sex: Sex): ClassifiedResult {
   let c: Classification, label: string;

@@ -32,6 +32,12 @@ import {
   rockportVO2max,
   run15MileVO2max,
   cooperVO2max,
+  riegel2400FromRun5min,
+  vo2maxFrom2400,
+  cardioComparison,
+  trainingZones,
+  vVO2max,
+  fmtMinSec,
   estimate1RM_avg,
 } from '@/lib/calculations';
 import type { Sex } from '@/lib/types';
@@ -82,11 +88,16 @@ export default async function AssessmentViewPage({
       vo2 = rockportVO2max(a.rockportTime, a.rockportHr, client.weight, age, sex);
     } else if (a.run15Time) {
       vo2 = run15MileVO2max(a.run15Time);
+    } else if (a.run5minDist) {
+      const t = riegel2400FromRun5min(a.run5minDist);
+      if (t) vo2 = vo2maxFrom2400(t);
     } else if (a.cooperDist) {
       vo2 = cooperVO2max(a.cooperDist);
     }
   }
   const vo2Class = vo2 ? classifyVO2max(vo2, age, sex) : null;
+  const cardioCmp = vo2 ? cardioComparison(vo2, age, sex) : null;
+  const zones = vo2 ? trainingZones(vVO2max(vo2)) : null;
   const stepClass = a.stepHr ? classifyStepHR(a.stepHr, sex) : null;
 
   // ===== Strength =====
@@ -319,6 +330,85 @@ export default async function AssessmentViewPage({
               />
             )}
           </div>
+
+          {cardioCmp && (
+            <div className="mt-4">
+              <h4 className="font-semibold text-sm mb-2">
+                2.4km 등급별 속도·완주시간 비교 <span className="text-xs text-slate-400 font-normal">(동일 성별·나이 규준)</span>
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="text-left text-slate-400 border-b border-slate-700">
+                      <th className="py-1.5 pr-3">등급</th>
+                      <th className="py-1.5 pr-3">VO₂max</th>
+                      <th className="py-1.5 pr-3">2.4km 완주시간</th>
+                      <th className="py-1.5">평균속도</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cardioCmp.grades.map((g) => (
+                      <tr
+                        key={g.classification}
+                        className={`border-b border-slate-800 ${g.classification === cardioCmp.userClass ? 'bg-emerald-500/10' : ''}`}
+                      >
+                        <td className="py-1.5 pr-3">
+                          <span className={`pill ${pillClass(g.classification)}`}>{g.label}</span>
+                        </td>
+                        <td className="py-1.5 pr-3 tabular-nums">{g.vo2.toFixed(1)}</td>
+                        <td className="py-1.5 pr-3 tabular-nums">{fmtMinSec(g.timeMin)}</td>
+                        <td className="py-1.5 tabular-nums">{g.speedKmh.toFixed(1)} km/h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">각 등급 행은 해당 등급 <b>진입 기준</b>의 환산값입니다. 아래 ‘평균’은 동일 성별·나이의 중간 수준(≈50백분위)입니다.</p>
+              <div className="mt-3 grid sm:grid-cols-2 gap-3">
+                <div className="bg-slate-800 border border-slate-700 rounded p-3 text-sm">
+                  <div className="text-slate-400 text-xs mb-1">내 기록 (예측 2.4km)</div>
+                  <div className="font-bold tabular-nums">{fmtMinSec(cardioCmp.userTimeMin)} · {cardioCmp.userSpeedKmh.toFixed(1)} km/h</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded p-3 text-sm">
+                  <div className="text-slate-400 text-xs mb-1">동일 성별·나이 평균 (Average)</div>
+                  <div className="font-bold tabular-nums">{fmtMinSec(cardioCmp.avgTimeMin)} · {cardioCmp.avgSpeedKmh.toFixed(1)} km/h</div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                내 평균속도 {cardioCmp.userSpeedKmh.toFixed(1)} km/h는 평균 {cardioCmp.avgSpeedKmh.toFixed(1)} km/h 대비{' '}
+                {cardioCmp.userSpeedKmh >= cardioCmp.avgSpeedKmh ? (
+                  <span className="text-emerald-400">{(cardioCmp.userSpeedKmh - cardioCmp.avgSpeedKmh).toFixed(1)} km/h 빠름</span>
+                ) : (
+                  <span className="text-amber-400">{(cardioCmp.avgSpeedKmh - cardioCmp.userSpeedKmh).toFixed(1)} km/h 느림</span>
+                )}.
+              </p>
+            </div>
+          )}
+
+          {zones && (
+            <div className="mt-5">
+              <h4 className="font-semibold text-sm mb-1">
+                훈련강도 프로그램 추천 <span className="text-xs text-slate-400 font-normal">(vVO₂max {vVO2max(vo2!).toFixed(1)} km/h 기준)</span>
+              </h4>
+              <p className="text-xs text-slate-500 mb-2">최대유산소속도(vVO₂max)의 % 구간으로 목표 속도·운동시간을 제시합니다.</p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {zones.map((z) => (
+                  <div key={z.key} className="bg-slate-800 border border-slate-700 rounded p-3">
+                    <div className="font-bold text-sm">{z.name}</div>
+                    <div className="text-xs text-slate-400 mb-2">{z.pctLabel}</div>
+                    <div className="text-sm tabular-nums">
+                      {z.speedHighKmh != null
+                        ? `${z.speedLowKmh.toFixed(1)}–${z.speedHighKmh.toFixed(1)} km/h`
+                        : `${z.speedLowKmh.toFixed(1)} km/h 이상`}
+                    </div>
+                    <div className="text-xs text-slate-400 tabular-nums mb-2">페이스 {z.paceHigh ? `${z.paceLow}–${z.paceHigh}` : z.paceLow}</div>
+                    <div className="text-xs text-emerald-300">⏱ {z.durationLabel}</div>
+                    <div className="text-xs text-slate-500 mt-1">{z.detail}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

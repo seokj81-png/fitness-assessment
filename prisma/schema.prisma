@@ -62,6 +62,7 @@ model Assessment {
   rockportTime Float?  // minutes
   rockportHr   Int?
   run15Time    Float?
+  run5minDist  Int?    // 5-min run test distance (m) → Riegel 2.4km prediction
   cooperDist   Int?    // meters
   stepHr       Int?
   vo2max       Float?

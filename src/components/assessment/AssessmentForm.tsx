@@ -16,6 +16,9 @@ import {
   cooperVO2max,
   classifyVO2max,
   classifyStepHR,
+  riegel2400FromRun5min,
+  vo2maxFrom2400,
+  fmtMinSec,
   estimate1RM_avg,
   estimate1RM_epley,
   estimate1RM_brzycki,
@@ -154,7 +157,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'clientId','date','assessor','parq','rhr','sbp','dbp',
       'bmi','waist','hip','sf1','sf2','sf3','bodyFatSf',
       'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
-      'rockportTime','rockportHr','run15Time','cooperDist','stepHr','vo2max',
+      'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','plankFront','plankR','plankL','sorensen',
       'postureFlags','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
@@ -218,6 +221,9 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       vo2max = classifyVO2max(v, age, sex);
     } else if (state.run15Time) {
       vo2max = classifyVO2max(run15MileVO2max(state.run15Time), age, sex);
+    } else if (state.run5minDist) {
+      const t = riegel2400FromRun5min(state.run5minDist);
+      if (t) vo2max = classifyVO2max(vo2maxFrom2400(t), age, sex);
     } else if (state.cooperDist) {
       vo2max = classifyVO2max(cooperVO2max(state.cooperDist), age, sex);
     }
@@ -729,6 +735,25 @@ function CardioTab({
 
       <div className="card">
         <h3 className="font-bold mb-2">
+          5-Min Run Test (2.4km 예측) <span className="guideline-tag tag-acsm">Riegel</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-3">
+          준비운동 후 <b>5분간 최대 노력으로 달린 거리(m)</b>를 입력 — Riegel 지구력 모델로 2.4km 완주시간을 예측하고 VO₂max로 환산합니다. 트랙·트레드밀 모두 가능.
+        </p>
+        <Num label="5분간 달린 거리 (m)" value={state.run5minDist} onChange={(v) => update('run5minDist', v)} />
+        {state.run5minDist ? (() => {
+          const t = riegel2400FromRun5min(state.run5minDist);
+          return t ? (
+            <div className="mt-3 text-sm bg-slate-800 border border-slate-700 rounded p-3">
+              예측 2.4km 완주시간: <b>{fmtMinSec(t)}</b>
+              <span className="text-slate-400"> · VO₂max ≈ {vo2maxFrom2400(t).toFixed(1)} ml/kg/min</span>
+            </div>
+          ) : null;
+        })() : null}
+      </div>
+
+      <div className="card">
+        <h3 className="font-bold mb-2">
           12-Min Cooper Run <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
         <Num label="달린 거리 (m)" value={state.cooperDist} onChange={(v) => update('cooperDist', v)} />
@@ -903,6 +928,13 @@ function EnduranceTab({
         <h3 className="font-bold mb-2">
           Plank Battery (McGill) <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
+        <div className="text-xs text-slate-400 mb-3 space-y-1 bg-slate-800/60 border border-slate-700 rounded p-3">
+          <p><b className="text-slate-200">Sorensen (Biering-Sørensen) 검사 — 요부 신전근 지구력</b></p>
+          <p>① 엎드린 자세로 <b>상전장골극(ASIS)을 테이블 끝에 맞추고</b> 상체(골반 위)를 테이블 밖으로 내민다. 검사자가 골반·다리를 고정(벨트 또는 보조).</p>
+          <p>② 양팔을 가슴에 교차하고 <b>상체를 수평으로 들어 유지</b> — 등이 처지거나 올라가지 않는 중립 자세.</p>
+          <p>③ 수평을 유지하지 못하는 순간까지의 <b>버틴 시간(초)</b>을 기록. 정상 기준 ≈ 남 ~146초·여 ~189초, 임상 절단점 <b>&lt;120초</b>는 요통 위험.</p>
+          <p className="text-slate-500">※ 전방 플랭크 대비 Sorensen/전방 비율 &lt; 1.5면 요부 신전근 상대 약화로 판정.</p>
+        </div>
         <div className="grid md:grid-cols-4 gap-3">
           <Num label="전방 Front (s)" value={state.plankFront} onChange={(v) => update('plankFront', v)} />
           <Num label="우측 Right (s)" value={state.plankR} onChange={(v) => update('plankR', v)} />
@@ -937,8 +969,8 @@ const POSTURE_SECTIONS = [
         ['ant_foot_pron', '회내'],
       ] },
       { head: '무릎', items: [
-        ['ant_knee_valgus', '내반 (X다리)'],
-        ['ant_knee_varus', '외반 (O다리)'],
+        ['ant_knee_varus', '내반 (O다리)'],
+        ['ant_knee_valgus', '외반 (X다리)'],
       ] },
       { head: 'LPHC', items: [
         ['ant_lphc_asis', 'ASIS 비대칭'],
@@ -1202,8 +1234,8 @@ function MovementTab({
         <div className="grid md:grid-cols-2 gap-4">
           {[
             ['oh_foot_flat', '발 편평·외회전'],
-            ['oh_knee_valg', '무릎 내반 (Valgus)'],
-            ['oh_knee_var', '무릎 외반 (Varus)'],
+            ['oh_knee_var', '무릎 내반 (Varus)'],
+            ['oh_knee_valg', '무릎 외반 (Valgus)'],
             ['oh_low_back', '요추 과도 아치'],
             ['oh_torso_lean', '상체 과도 전경'],
             ['oh_arms_fall', '팔 전방 낙하'],
