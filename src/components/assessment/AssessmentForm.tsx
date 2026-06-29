@@ -1257,7 +1257,7 @@ function MovementTab({
         <div className="grid md:grid-cols-3 gap-4">
           {[
             { group: 'Single-Leg Squat', items: [
-              ['sl_knee_valg', '지지 무릎 내반'],
+              ['sl_knee_valg', '지지 무릎 외반 (Valgus)'],
               ['sl_hip_drop', 'Trendelenburg'],
               ['sl_torso_lat', '상체 측방 기울임'],
             ] },
