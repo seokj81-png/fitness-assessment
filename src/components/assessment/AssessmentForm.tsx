@@ -105,15 +105,15 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         : 0,
     [client.dob]
   );
-  const weight = client.weight ?? 0;
-  const height = client.height ?? 0;
-
   const [tab, setTab] = useState<Tab>('client');
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | undefined>(existing?.id);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [state, setState] = useState<FormState>(() => ({
     ...(existing || {}),
+    // 측정 시점 신장·체중: 기존 평가값 > 회원 프로필값 순으로 초기화 (신체조성 탭에서 수정 가능)
+    weight: existing?.weight ?? client.weight ?? undefined,
+    height: existing?.height ?? client.height ?? undefined,
     date:
       (existing?.date &&
         new Date(existing.date as string).toISOString().slice(0, 10)) ||
@@ -125,6 +125,10 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     ohsaFlags: existing?.ohsaFlags ?? [],
     rom: existing?.rom ?? {},
   }));
+
+  // 계산에 쓰는 신장·체중은 폼 입력값 우선(없으면 회원 프로필)
+  const weight = state.weight ?? client.weight ?? 0;
+  const height = state.height ?? client.height ?? 0;
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setState((s) => {
@@ -155,7 +159,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     // Strip non-schema fields (age, id, createdAt, updatedAt, client, etc.)
     const ALLOWED = new Set([
       'clientId','date','assessor','parq','rhr','sbp','dbp',
-      'bmi','waist','hip','sf1','sf2','sf3','bodyFatSf',
+      'height','weight','bmi','waist','hip','sf1','sf2','sf3','bodyFatSf',
       'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
@@ -594,9 +598,17 @@ function CompositionTab({
           BMI 체질량지수 <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
         <p className="text-xs text-slate-500 mb-3">
-          회원님 정보의 신장 {height} cm · 체중 {weight} kg 기준 자동 계산
+          측정 시점 신장·체중을 입력하면 BMI가 자동 계산됩니다. (회원 프로필 값이 기본 입력되며, 여기서 수정하면 이 평가에만 반영)
         </p>
-        <ResultBox result={computed.bmiClass} unit="kg/m²" />
+        <div className="grid grid-cols-2 gap-3 mb-3 max-w-xs">
+          <Num label="신장 (cm)" value={state.height} onChange={(v) => update('height', v)} step="0.1" />
+          <Num label="체중 (kg)" value={state.weight} onChange={(v) => update('weight', v)} step="0.1" />
+        </div>
+        {computed.bmiClass ? (
+          <ResultBox result={computed.bmiClass} unit="kg/m²" />
+        ) : (
+          <p className="text-sm text-slate-500">신장·체중을 모두 입력하면 BMI가 표시됩니다.</p>
+        )}
         <p className="text-[11px] text-slate-500 mt-2">
           아시아-태평양 기준: 정상 18.5-22.9 · 과체중 23-24.9 · 비만 I 25-29.9 · 비만 II ≥30
         </p>

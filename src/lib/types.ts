@@ -42,6 +42,8 @@ export interface AssessmentInput {
   sbp?: number;
   dbp?: number;
 
+  height?: number; // cm (측정 시점, 없으면 회원 프로필 값 사용)
+  weight?: number; // kg (측정 시점, 없으면 회원 프로필 값 사용)
   bmi?: number;
   waist?: number;
   hip?: number;

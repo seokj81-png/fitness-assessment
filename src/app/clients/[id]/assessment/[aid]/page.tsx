@@ -65,10 +65,14 @@ export default async function AssessmentViewPage({
       new Date(client.dob).getFullYear()
     : 30;
 
+  // 측정 시점 신장·체중 우선(없으면 회원 프로필)
+  const w = a.weight ?? client.weight ?? undefined;
+  const h = a.height ?? client.height ?? undefined;
+
   // ===== Body composition =====
   const bmiVal =
     a.bmi ??
-    (client.height && client.weight ? calcBmi(client.height, client.weight) : undefined);
+    (h && w ? calcBmi(h, w) : undefined);
   const bmiClass = bmiVal ? classifyBMI_AsiaPacific(bmiVal) : null;
   const whrVal = a.waist && a.hip ? calcWhr(a.waist, a.hip) : undefined;
   const whrClass = whrVal ? classifyWHR(whrVal, age, sex) : null;
@@ -84,8 +88,8 @@ export default async function AssessmentViewPage({
   // ===== Cardio =====
   let vo2 = a.vo2max;
   if (!vo2) {
-    if (a.rockportTime && a.rockportHr && client.weight) {
-      vo2 = rockportVO2max(a.rockportTime, a.rockportHr, client.weight, age, sex);
+    if (a.rockportTime && a.rockportHr && w) {
+      vo2 = rockportVO2max(a.rockportTime, a.rockportHr, w, age, sex);
     } else if (a.run15Time) {
       vo2 = run15MileVO2max(a.run15Time);
     } else if (a.run5minDist) {
@@ -102,28 +106,28 @@ export default async function AssessmentViewPage({
 
   // ===== Strength =====
   const bpRatioClass =
-    a.bp1rm != null && client.weight
-      ? classifyBPRatio(a.bp1rm, client.weight, age, sex)
+    a.bp1rm != null && w
+      ? classifyBPRatio(a.bp1rm, w, age, sex)
       : null;
   const sqRatioClass =
-    a.sq1rm != null && client.weight
-      ? classifySQRatio(a.sq1rm, client.weight, age, sex)
+    a.sq1rm != null && w
+      ? classifySQRatio(a.sq1rm, w, age, sex)
       : null;
   const dlRatioClass =
-    a.dl1rm != null && client.weight
-      ? classifyDLRatio(a.dl1rm, client.weight, age, sex)
+    a.dl1rm != null && w
+      ? classifyDLRatio(a.dl1rm, w, age, sex)
       : null;
   const ohpRatioClass =
-    a.ohp1rm != null && client.weight
-      ? classifyOHPRatio(a.ohp1rm, client.weight, age, sex)
+    a.ohp1rm != null && w
+      ? classifyOHPRatio(a.ohp1rm, w, age, sex)
       : null;
   const pcRatioClass =
-    a.pc1rm != null && client.weight
-      ? classifyPCRatio(a.pc1rm, client.weight, age, sex)
+    a.pc1rm != null && w
+      ? classifyPCRatio(a.pc1rm, w, age, sex)
       : null;
   const lpRatioClass =
-    a.lp1rm != null && client.weight
-      ? classifyLPRatio(a.lp1rm, client.weight, age, sex)
+    a.lp1rm != null && w
+      ? classifyLPRatio(a.lp1rm, w, age, sex)
       : null;
   const sumGrip = (a.gripR || 0) + (a.gripL || 0);
   const gripClass =
@@ -428,32 +432,32 @@ export default async function AssessmentViewPage({
           <div className="grid md:grid-cols-2 gap-3">
             {a.bp1rm != null && (
               bpRatioClass
-                ? <ResultRow label="벤치프레스 1RM" result={bpRatioClass} displayValue={`${a.bp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.bp1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="벤치프레스 1RM" result={bpRatioClass} displayValue={`${a.bp1rm} kg`} subLabel={w ? `× 체중비 ${(a.bp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="벤치프레스 1RM" value={`${a.bp1rm} kg`} />
             )}
             {a.sq1rm != null && (
               sqRatioClass
-                ? <ResultRow label="스쿼트 1RM" result={sqRatioClass} displayValue={`${a.sq1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.sq1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="스쿼트 1RM" result={sqRatioClass} displayValue={`${a.sq1rm} kg`} subLabel={w ? `× 체중비 ${(a.sq1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="스쿼트 1RM" value={`${a.sq1rm} kg`} />
             )}
             {a.dl1rm != null && (
               dlRatioClass
-                ? <ResultRow label="데드리프트 1RM" result={dlRatioClass} displayValue={`${a.dl1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.dl1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="데드리프트 1RM" result={dlRatioClass} displayValue={`${a.dl1rm} kg`} subLabel={w ? `× 체중비 ${(a.dl1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="데드리프트 1RM" value={`${a.dl1rm} kg`} />
             )}
             {a.ohp1rm != null && (
               ohpRatioClass
-                ? <ResultRow label="오버헤드프레스 1RM" result={ohpRatioClass} displayValue={`${a.ohp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.ohp1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="오버헤드프레스 1RM" result={ohpRatioClass} displayValue={`${a.ohp1rm} kg`} subLabel={w ? `× 체중비 ${(a.ohp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="오버헤드프레스 1RM" value={`${a.ohp1rm} kg`} />
             )}
             {a.pc1rm != null && (
               pcRatioClass
-                ? <ResultRow label="파워클린 1RM" result={pcRatioClass} displayValue={`${a.pc1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.pc1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="파워클린 1RM" result={pcRatioClass} displayValue={`${a.pc1rm} kg`} subLabel={w ? `× 체중비 ${(a.pc1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="파워클린 1RM" value={`${a.pc1rm} kg`} />
             )}
             {a.lp1rm != null && (
               lpRatioClass
-                ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} displayValue={`${a.lp1rm} kg`} subLabel={client.weight ? `× 체중비 ${(a.lp1rm / client.weight).toFixed(2)}` : undefined} />
+                ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} displayValue={`${a.lp1rm} kg`} subLabel={w ? `× 체중비 ${(a.lp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="레그프레스 1RM" value={`${a.lp1rm} kg`} />
             )}
             {est1rm !== null && (

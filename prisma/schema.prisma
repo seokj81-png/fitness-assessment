@@ -44,6 +44,8 @@ model Assessment {
   dbp        Int?
 
   // Body composition
+  height     Float?   // cm (측정 시점, 없으면 회원 프로필 값 사용)
+  weight     Float?   // kg (측정 시점, 없으면 회원 프로필 값 사용)
   bmi        Float?
   waist      Float?
   hip        Float?
