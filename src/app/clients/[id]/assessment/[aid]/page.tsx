@@ -24,6 +24,7 @@ import {
   classifyPushup,
   classifyYMCABP,
   classifyCurlup,
+  classifySquatEndurance,
   analyzePlank,
   parqResult,
   matchPostureSyndromes,
@@ -146,6 +147,8 @@ export default async function AssessmentViewPage({
     a.ymcaBpReps !== undefined ? classifyYMCABP(a.ymcaBpReps, age, sex) : null;
   const curlupClass =
     a.curlupReps !== undefined ? classifyCurlup(a.curlupReps, age, sex) : null;
+  const squatEndClass =
+    a.squatReps != null ? classifySquatEndurance(a.squatReps, age, sex) : null;
   const plank =
     a.plankFront !== undefined
       ? analyzePlank(a.plankFront, a.plankR, a.plankL, a.sorensen, sex)
@@ -481,6 +484,7 @@ export default async function AssessmentViewPage({
       {(pushupClass ||
         ymcaBpClass ||
         curlupClass ||
+        squatEndClass ||
         plank ||
         a.sorensen !== undefined) && (
         <div className="card">
@@ -500,6 +504,9 @@ export default async function AssessmentViewPage({
             )}
             {curlupClass && (
               <ResultRow label="컬업 (1분)" result={curlupClass} unit="회" />
+            )}
+            {squatEndClass && (
+              <ResultRow label="스쿼트 지구력 (하지)" result={squatEndClass} unit="회" />
             )}
             {plank && (
               <>

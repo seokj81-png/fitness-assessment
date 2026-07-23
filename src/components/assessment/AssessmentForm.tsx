@@ -33,6 +33,7 @@ import {
   classifyPushup,
   classifyYMCABP,
   classifyCurlup,
+  classifySquatEndurance,
   analyzePlank,
   PARQ_QUESTIONS,
   parqResult,
@@ -163,7 +164,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
-      'pushupReps','ymcaBpReps','curlupReps','plankFront','plankR','plankL','sorensen',
+      'pushupReps','ymcaBpReps','curlupReps','squatReps','plankFront','plankR','plankL','sorensen',
       'postureFlags','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
@@ -250,6 +251,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     const pushup = state.pushupReps ? classifyPushup(state.pushupReps, age, sex) : null;
     const ymcaBp = state.ymcaBpReps ? classifyYMCABP(state.ymcaBpReps, age, sex) : null;
     const curlup = state.curlupReps ? classifyCurlup(state.curlupReps, age, sex) : null;
+    const squatEnd = state.squatReps ? classifySquatEndurance(state.squatReps, age, sex) : null;
     const plank =
       state.plankFront
         ? analyzePlank(
@@ -296,6 +298,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       pushup,
       ymcaBp,
       curlup,
+      squatEnd,
       plank,
       syndromes,
       fmsResult,
@@ -932,6 +935,23 @@ function EnduranceTab({
         {computed.curlup && (
           <div className="mt-3">
             <ResultBox result={computed.curlup} unit="회" />
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h3 className="font-bold mb-2">
+          Squat Endurance Test 하지 근지구력 <span className="guideline-tag tag-acsm">Field</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-3">
+          양발 어깨너비 · <b>대퇴가 수평이 될 때까지</b> 자중 스쿼트 · 일정한 템포로 쉬지 않고,
+          자세가 무너지거나(수평 미달·상체 과도 전경·뒤꿈치 들림) 멈출 때까지 <b>최대 반복 횟수</b> 기록.
+          무릎 통증 시 즉시 중단.
+        </p>
+        <Num label="반복수 Reps" value={state.squatReps} onChange={(v) => update('squatReps', v)} />
+        {computed.squatEnd && (
+          <div className="mt-3">
+            <ResultBox result={computed.squatEnd} unit="회" />
           </div>
         )}
       </div>

@@ -97,6 +97,25 @@ export const YMCA_BP_NORMS: NormTable = {
   },
 };
 
+// Bodyweight Squat Endurance Test (reps to failure) – field test norms
+// 대퇴 수평까지, 일정 템포, 자세 무너질 때까지 최대 반복
+export const SQUAT_END_NORMS: NormTable = {
+  M: {
+    20: [24, 30, 38, 49],
+    30: [21, 28, 34, 45],
+    40: [19, 24, 29, 41],
+    50: [14, 19, 25, 35],
+    60: [9, 14, 20, 31],
+  },
+  F: {
+    20: [17, 24, 32, 43],
+    30: [12, 20, 28, 39],
+    40: [6, 14, 22, 33],
+    50: [4, 9, 17, 27],
+    60: [2, 8, 12, 23],
+  },
+};
+
 // Partial Curl-up (reps) – NSCA
 export const CURLUP_NORMS: NormTable = {
   M: {

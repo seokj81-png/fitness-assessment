@@ -13,6 +13,7 @@ import {
   PUSHUP_NORMS,
   YMCA_BP_NORMS,
   CURLUP_NORMS,
+  SQUAT_END_NORMS,
   WHR_NORMS,
   POSTURE_SYNDROMES,
   type NormTable,
@@ -475,6 +476,9 @@ export function classifyYMCABP(reps: number, age: number, sex: Sex) {
 }
 export function classifyCurlup(reps: number, age: number, sex: Sex) {
   return classifyAscending(reps, CURLUP_NORMS, age, sex);
+}
+export function classifySquatEndurance(reps: number, age: number, sex: Sex) {
+  return classifyAscending(reps, SQUAT_END_NORMS, age, sex);
 }
 
 export interface PlankAnalysis {
