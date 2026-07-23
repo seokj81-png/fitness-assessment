@@ -97,6 +97,25 @@ export const YMCA_BP_NORMS: NormTable = {
   },
 };
 
+// Pull-up Test (strict, reps to failure) – field test norms
+// 데드행에서 턱이 바 위로, 반동 없이 최대 반복
+export const PULLUP_NORMS: NormTable = {
+  M: {
+    20: [4, 7, 10, 14],
+    30: [2, 5, 8, 12],
+    40: [1, 4, 6, 10],
+    50: [0, 2, 5, 8],
+    60: [0, 1, 3, 6],
+  },
+  F: {
+    20: [0, 1, 3, 5],
+    30: [0, 1, 2, 4],
+    40: [0, 0, 1, 3],
+    50: [0, 0, 1, 2],
+    60: [0, 0, 0, 1],
+  },
+};
+
 // Bodyweight Squat Endurance Test (reps to failure) – field test norms
 // 대퇴 수평까지, 일정 템포, 자세 무너질 때까지 최대 반복
 export const SQUAT_END_NORMS: NormTable = {

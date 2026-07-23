@@ -34,6 +34,7 @@ import {
   classifyYMCABP,
   classifyCurlup,
   classifySquatEndurance,
+  classifyPullup,
   analyzePlank,
   PARQ_QUESTIONS,
   parqResult,
@@ -164,7 +165,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
-      'pushupReps','ymcaBpReps','curlupReps','squatReps','plankFront','plankR','plankL','sorensen',
+      'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
       'postureFlags','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
@@ -252,6 +253,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     const ymcaBp = state.ymcaBpReps ? classifyYMCABP(state.ymcaBpReps, age, sex) : null;
     const curlup = state.curlupReps ? classifyCurlup(state.curlupReps, age, sex) : null;
     const squatEnd = state.squatReps ? classifySquatEndurance(state.squatReps, age, sex) : null;
+    const pullup = state.pullupReps != null ? classifyPullup(state.pullupReps, age, sex) : null;
     const plank =
       state.plankFront
         ? analyzePlank(
@@ -299,6 +301,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       ymcaBp,
       curlup,
       squatEnd,
+      pullup,
       plank,
       syndromes,
       fmsResult,
@@ -920,6 +923,23 @@ function EnduranceTab({
         {computed.ymcaBp && (
           <div className="mt-3">
             <ResultBox result={computed.ymcaBp} unit="회" />
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h3 className="font-bold mb-2">
+          Pull-up Test 상체 당기기 <span className="guideline-tag tag-acsm">Field</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-3">
+          <b>데드행(팔 완전 신전)</b>에서 시작 · 턱이 바 위로 올라올 때까지 당기기 ·
+          <b> 반동(키핑) 없이</b> 최대 반복 횟수 기록. 오버핸드 그립 기준.
+          0회도 유효한 기록 — 여성·초보자는 밴드 보조 시 별도 메모 권장.
+        </p>
+        <Num label="반복수 Reps" value={state.pullupReps} onChange={(v) => update('pullupReps', v)} />
+        {computed.pullup && (
+          <div className="mt-3">
+            <ResultBox result={computed.pullup} unit="회" />
           </div>
         )}
       </div>

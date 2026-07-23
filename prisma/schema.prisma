@@ -86,6 +86,7 @@ model Assessment {
   ymcaBpReps   Int?
   curlupReps   Int?
   squatReps    Int?   // 스쿼트 지구력 테스트 (하지 근지구력)
+  pullupReps   Int?   // 풀업 테스트 (상체 당기기 근지구력)
   plankFront   Int?   // seconds
   plankR       Int?
   plankL       Int?

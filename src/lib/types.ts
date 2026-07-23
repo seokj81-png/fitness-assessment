@@ -77,6 +77,7 @@ export interface AssessmentInput {
   ymcaBpReps?: number;
   curlupReps?: number;
   squatReps?: number; // 스쿼트 지구력 테스트 (하지 근지구력, 자세 무너질 때까지 반복)
+  pullupReps?: number; // 풀업 테스트 (상체 당기기 근지구력, 반동 없이 최대 반복)
   plankFront?: number;
   plankR?: number;
   plankL?: number;
