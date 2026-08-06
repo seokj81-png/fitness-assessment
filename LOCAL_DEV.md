@@ -14,6 +14,12 @@ npm install
 
 ## 2. 로컬 DB 설정 (중요 ⚠️)
 
+> **원클릭 자동화**: 아래 과정 전체를 한 번에 실행하려면
+> ```bash
+> npm run setup:local
+> ```
+> 이거면 끝. 아래는 수동으로 할 때의 상세 절차.
+
 **운영은 PostgreSQL(Vercel), 로컬 개발은 SQLite**를 씁니다.
 저장소의 `prisma/schema.prisma`는 `provider = "postgresql"`로 고정돼 있고,
 로컬에서만 sqlite로 바꿔 쓰되 **git이 그 변경을 무시하도록** 설정합니다.
