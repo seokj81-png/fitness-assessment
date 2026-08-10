@@ -315,40 +315,39 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
   return (
     <>
     <div>
-      {/* ── 글래스 헤더 (제목 + 탭) ── */}
+      {/* ── 상단 고정 헤더 (제목 + 탭) ── */}
       <div
-        className="sticky top-[73px] z-30 mb-5 no-print rounded-2xl overflow-hidden"
+        className="sticky top-[65px] md:top-[73px] z-30 mb-5 no-print rounded-2xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, rgba(30,41,59,0.72) 0%, rgba(15,23,42,0.80) 100%)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          border: '1px solid rgba(148,163,184,0.12)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: '1px solid #e3e3e3',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
         {/* 제목 영역 */}
         {pageTitle && (
-          <div className="px-5 pt-4 pb-3 border-b border-white/[0.06]">
+          <div className="px-4 md:px-5 pt-4 pb-3" style={{ borderBottom: '1px solid #ececec' }}>
             {backHref && (
-              <a href={backHref} className="text-xs text-blue-400 hover:text-blue-300 mb-1 inline-block">
+              <a href={backHref} className="text-xs mb-1 inline-block underline underline-offset-2" style={{ color: '#666' }}>
                 ← {backLabel}
               </a>
             )}
-            <h2 className="text-xl font-bold text-white leading-tight">{pageTitle}</h2>
-            {pageSubtitle && <p className="text-xs text-slate-400 mt-0.5">{pageSubtitle}</p>}
+            <h2 className="text-xl font-bold leading-tight" style={{ color: '#111' }}>{pageTitle}</h2>
+            {pageSubtitle && <p className="text-xs mt-0.5" style={{ color: '#8a8a8a' }}>{pageSubtitle}</p>}
           </div>
         )}
-        {/* 탭 네비게이션 */}
-        <nav className="flex gap-1 overflow-x-auto p-2">
+        {/* 탭 네비게이션 — 가로 스크롤, 터치 타겟 확대 */}
+        <nav className="flex gap-1 overflow-x-auto p-2" style={{ WebkitOverflowScrolling: 'touch' }}>
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.id
-                  ? 'bg-blue-600/90 text-white shadow-md shadow-blue-900/40'
-                  : 'text-slate-400 hover:bg-white/10 hover:text-slate-200'
+              className={`whitespace-nowrap px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                tab === t.id ? 'text-white' : 'hover:bg-black/5'
               }`}
+              style={tab === t.id ? { background: '#111' } : { color: '#777' }}
             >
               {t.label}
             </button>
@@ -394,21 +393,44 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         left: 0,
         right: 0,
         zIndex: 50,
-        background: 'rgba(15,23,42,0.97)',
-        borderTop: '1px solid rgba(51,65,85,0.8)',
+        background: 'rgba(255,255,255,0.96)',
+        borderTop: '1px solid #e3e3e3',
         backdropFilter: 'blur(8px)',
-        padding: '12px 20px',
+        padding: '10px 16px calc(10px + env(safe-area-inset-bottom))',
       }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-        {/* 저장 완료 토스트 */}
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        {/* 탭 이동 (플로어 한손 입력용) */}
+        {(() => {
+          const idx = TABS.findIndex((t) => t.id === tab);
+          return (
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => { setTab(TABS[idx - 1].id); window.scrollTo({ top: 0 }); }}
+                disabled={idx <= 0}
+                className="btn-secondary text-sm px-3 py-2 disabled:opacity-35"
+              >
+                ←
+              </button>
+              <button
+                onClick={() => { setTab(TABS[idx + 1].id); window.scrollTo({ top: 0 }); }}
+                disabled={idx >= TABS.length - 1}
+                className="btn-secondary text-sm px-3 py-2 disabled:opacity-35"
+              >
+                다음 →
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* 저장 완료 토스트 (모바일에서는 숨김) */}
         <div
-          className="text-sm font-medium text-emerald-400 flex items-center gap-1.5 transition-all duration-300"
-          style={{ opacity: savedAt ? 1 : 0, transform: savedAt ? 'translateY(0)' : 'translateY(4px)' }}
+          className="hidden md:flex text-sm font-semibold items-center gap-1.5 transition-all duration-300"
+          style={{ color: '#111', opacity: savedAt ? 1 : 0, transform: savedAt ? 'translateY(0)' : 'translateY(4px)' }}
         >
           {savedAt && (
             <>
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#111' }} />
               저장됨 — {savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               {!savedId && null}
             </>
@@ -416,25 +438,24 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         </div>
 
         <div className="flex gap-2 ml-auto">
-          <button onClick={() => router.back()} className="btn-secondary text-sm px-4 py-2">
+          <button onClick={() => router.back()} className="btn-secondary text-sm px-3 md:px-4 py-2 hidden sm:block">
             취소
           </button>
-          {/* 💾 저장 — 현재 페이지 유지 */}
+          {/* 저장 — 현재 페이지 유지 */}
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="btn-secondary text-sm px-4 py-2"
-            style={{ borderColor: '#22c55e', color: '#22c55e' }}
+            className="btn-secondary text-sm px-3.5 md:px-4 py-2"
           >
             {saving ? '저장 중...' : '💾 저장'}
           </button>
-          {/* ✅ 저장 후 종료 — 결과 페이지로 이동 */}
+          {/* 저장 후 종료 — 결과 페이지로 이동 */}
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="btn-primary text-sm px-5 py-2"
+            className="btn-primary text-sm px-4 md:px-5 py-2"
           >
-            {saving ? '저장 중...' : '✅ 저장 후 종료'}
+            {saving ? '저장 중...' : '저장 후 종료'}
           </button>
         </div>
       </div>
@@ -1463,6 +1484,7 @@ function Num({
       <label className="label">{label}</label>
       <input
         type="number"
+        inputMode="decimal"
         step={step || '1'}
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}

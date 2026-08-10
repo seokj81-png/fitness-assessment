@@ -41,7 +41,7 @@ export default async function HomePage() {
             <Link
               key={c.id}
               href={`/clients/${c.id}`}
-              className="card hover:shadow-md hover:border-blue-300 transition block"
+              className="card hover:shadow-md hover:border-slate-400 transition block"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -90,11 +90,11 @@ function goalLabel(g: string) {
 function goalColor(g: string) {
   return (
     {
-      health: 'bg-emerald-900/60 text-emerald-300',
-      weight: 'bg-cyan-900/60 text-cyan-300',
-      strength: 'bg-orange-900/60 text-orange-300',
-      performance: 'bg-violet-900/60 text-violet-300',
-      rehab: 'bg-yellow-900/60 text-yellow-300',
+      health: 'bg-slate-100 text-slate-700',
+      weight: 'bg-slate-100 text-slate-700',
+      strength: 'bg-slate-100 text-slate-700',
+      performance: 'bg-slate-100 text-slate-700',
+      rehab: 'bg-slate-100 text-slate-700',
     }[g] || 'bg-slate-700 text-slate-300'
   );
 }

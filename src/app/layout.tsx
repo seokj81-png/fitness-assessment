@@ -12,26 +12,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <header className="bg-gradient-to-r from-slate-900 to-blue-800 text-white py-5 px-5 shadow-md sticky top-0 z-40">
+        <header style={{ background: '#101010' }} className="text-white py-4 md:py-5 px-4 md:px-5 sticky top-0 z-40 border-b border-black">
           <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
             <Link href="/" className="block">
-              <h1 className="text-xl font-bold leading-tight">파프짐 체력 평가 시스템</h1>
-              <p className="text-xs opacity-80">Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
+              <h1 className="text-lg md:text-xl font-bold leading-tight tracking-tight">파프짐 체력 평가 시스템</h1>
+              <p className="text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
             </Link>
             <nav className="flex gap-2 text-sm no-print">
-              <Link href="/" className="px-3 py-1.5 rounded bg-white/10 hover:bg-white/20">
+              <Link href="/" className="px-3.5 py-2 rounded-md border border-white/30 hover:border-white text-white">
                 회원님 목록
               </Link>
               <Link
                 href="/clients/new"
-                className="px-3 py-1.5 rounded bg-white text-blue-800 font-semibold hover:bg-blue-50"
+                className="px-3.5 py-2 rounded-md bg-white font-semibold hover:opacity-85"
+                style={{ color: '#111' }}
               >
                 + 새 회원님
               </Link>
             </nav>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto p-5">{children}</main>
+        <main className="max-w-7xl mx-auto p-4 md:p-5">{children}</main>
       </body>
     </html>
   );

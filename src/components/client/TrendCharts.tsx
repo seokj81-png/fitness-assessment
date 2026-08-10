@@ -77,19 +77,19 @@ function ChartTooltip({
   return (
     <div
       style={{
-        background: '#0f172a',
-        border: `1px solid ${color}55`,
+        background: '#fff',
+        border: '1px solid #d6d6d6',
         borderRadius: 8,
         padding: '8px 12px',
         fontSize: 12,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
       }}
     >
-      <p style={{ color: '#94a3b8', marginBottom: 3 }}>{label}</p>
+      <p style={{ color: '#6e6e6e', marginBottom: 3 }}>{label}</p>
       <p style={{ color, fontWeight: 700, fontSize: 14 }}>
         {payload[0].value.toFixed(1)}
         {unit && <span style={{ fontSize: 11, marginLeft: 2 }}>{unit}</span>}
-        <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
+        <span style={{ color: '#555', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
           {metricLabel}
         </span>
       </p>
@@ -132,8 +132,8 @@ function SingleChart({
     <div
       className="rounded-xl p-4"
       style={{
-        background: 'rgba(30,41,59,0.6)',
-        border: '1px solid rgba(71,85,105,0.4)',
+        background: '#fff',
+        border: '1px solid #e3e3e3',
       }}
     >
       <div
@@ -149,16 +149,16 @@ function SingleChart({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(51,65,85,0.5)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e9e9e9" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: '#555' }}
             tickLine={false}
-            axisLine={{ stroke: '#334155' }}
+            axisLine={{ stroke: '#8a8a8a' }}
           />
           <YAxis
             domain={domain}
-            tick={{ fontSize: 11, fill: '#cbd5e1' }}
+            tick={{ fontSize: 11, fill: '#555' }}
             tickLine={false}
             axisLine={false}
             width={42}
@@ -170,7 +170,7 @@ function SingleChart({
             content={
               <ChartTooltip unit={unit} metricLabel={label} color={color} />
             }
-            cursor={{ stroke: 'rgba(148,163,184,0.25)', strokeWidth: 1 }}
+            cursor={{ stroke: '#d6d6d6', strokeWidth: 1 }}
           />
 
           {/* Static reference lines */}
@@ -249,7 +249,7 @@ function SingleChart({
             stroke={color}
             strokeWidth={2.5}
             dot={{ fill: color, r: 4, strokeWidth: 0 }}
-            activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: '#0f172a' }}
+            activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: '#fff' }}
             connectNulls
           />
         </LineChart>
@@ -293,77 +293,77 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
     data.some((d) => d.bmi != null) && {
       key: 'bmi',
       label: 'BMI',
-      color: '#f59e0b',
+      color: '#111',
       unit: '',
       domain: [14, 38] as [number, number],
       refLine: [
-        { value: 18.5, label: '저체중', color: '#64748b' },
-        { value: 23, label: '정상', color: '#22c55e' },
-        { value: 25, label: '과체중', color: '#f59e0b' },
-        { value: 30, label: '비만', color: '#ef4444' },
+        { value: 18.5, label: '저체중', color: '#9a9a9a' },
+        { value: 23, label: '정상', color: '#9a9a9a' },
+        { value: 25, label: '과체중', color: '#9a9a9a' },
+        { value: 30, label: '비만', color: '#9a9a9a' },
       ],
     },
     data.some((d) => d.bodyFat != null) && {
       key: 'bodyFat',
       label: '체지방률 (%)',
-      color: '#f97316',
+      color: '#111',
       unit: '%',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.vo2max != null) && {
       key: 'vo2max',
       label: 'VO₂max (mL/kg/min)',
-      color: '#3b82f6',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.fms != null) && {
       key: 'fms',
       label: 'FMS 총점 (/21)',
-      color: '#8b5cf6',
+      color: '#111',
       unit: '',
       domain: [0, 21] as [number, number],
-      refLine: [{ value: 14, label: '부상위험', color: '#ef4444' }],
+      refLine: [{ value: 14, label: '부상위험', color: '#9a9a9a' }],
     },
     data.some((d) => d.rhr != null) && {
       key: 'rhr',
       label: '안정시 심박수 (bpm)',
-      color: '#10b981',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.grip != null) && {
       key: 'grip',
       label: '악력 평균 (kg)',
-      color: '#ec4899',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.bench != null) && {
       key: 'bench',
       label: '벤치프레스 1RM (kg)',
-      color: '#06b6d4',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.squat != null) && {
       key: 'squat',
       label: '스쿼트 1RM (kg)',
-      color: '#84cc16',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.pushup != null) && {
       key: 'pushup',
       label: '푸시업 (회)',
-      color: '#a78bfa',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
     data.some((d) => d.plank != null) && {
       key: 'plank',
       label: '플랭크 (초)',
-      color: '#fb923c',
+      color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
     },
@@ -382,12 +382,12 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
     <div
       className="mt-5 rounded-2xl p-5"
       style={{
-        background: 'rgba(15,23,42,0.85)',
-        border: '1px solid rgba(51,65,85,0.6)',
+        background: '#fff',
+        border: '1px solid #e3e3e3',
       }}
     >
       <h3 className="font-bold text-slate-100 mb-4 flex items-center gap-2">
-        <span className="text-blue-400">📈</span> 측정 항목별 변화 추이
+        <span style={{ color: '#555' }}>📈</span> 측정 항목별 변화 추이
         <span className="text-xs font-normal text-slate-500 ml-1">
           ({assessments.length}회 측정)
         </span>

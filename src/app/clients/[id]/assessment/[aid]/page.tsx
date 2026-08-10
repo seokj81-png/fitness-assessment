@@ -188,7 +188,7 @@ export default async function AssessmentViewPage({
         <div>
           <Link
             href={`/clients/${client.id}`}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-slate-600 hover:underline"
           >
             ← {client.name} 상세
           </Link>
@@ -221,7 +221,7 @@ export default async function AssessmentViewPage({
       </div>
 
       {/* Hero summary */}
-      <div className="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-5 rounded-xl mb-5 print:rounded-none">
+      <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }}>
         <h3 className="font-bold mb-3">회원님 요약</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <HeroItem label="이름" value={client.name} />
@@ -259,11 +259,12 @@ export default async function AssessmentViewPage({
           PAR-Q+ <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
         <div
-          className={`p-3 rounded ${
+          className="p-3 rounded"
+          style={
             parq.passed
-              ? 'bg-green-950/40 border border-green-800/50 text-green-300'
-              : 'bg-red-950/40 border border-red-800/50 text-red-300'
-          }`}
+              ? { background: '#111', color: '#fff' }
+              : { background: '#fff', border: '1.5px solid #111', color: '#111' }
+          }
         >
           <div className="font-semibold">
             {parq.passed ? '✔ 운동 참여 안전' : '⚠ 주의 필요'}
@@ -360,7 +361,7 @@ export default async function AssessmentViewPage({
                     {cardioCmp.grades.map((g) => (
                       <tr
                         key={g.classification}
-                        className={`border-b border-slate-800 ${g.classification === cardioCmp.userClass ? 'bg-emerald-500/10' : ''}`}
+                        className={`border-b border-slate-800 ${g.classification === cardioCmp.userClass ? 'bg-slate-200' : ''}`}
                       >
                         <td className="py-1.5 pr-3">
                           <span className={`pill ${pillClass(g.classification)}`}>{g.label}</span>
@@ -387,9 +388,9 @@ export default async function AssessmentViewPage({
               <p className="text-xs text-slate-500 mt-2">
                 내 평균속도 {cardioCmp.userSpeedKmh.toFixed(1)} km/h는 평균 {cardioCmp.avgSpeedKmh.toFixed(1)} km/h 대비{' '}
                 {cardioCmp.userSpeedKmh >= cardioCmp.avgSpeedKmh ? (
-                  <span className="text-emerald-400">{(cardioCmp.userSpeedKmh - cardioCmp.avgSpeedKmh).toFixed(1)} km/h 빠름</span>
+                  <span className="text-slate-900 font-semibold">{(cardioCmp.userSpeedKmh - cardioCmp.avgSpeedKmh).toFixed(1)} km/h 빠름</span>
                 ) : (
-                  <span className="text-amber-400">{(cardioCmp.avgSpeedKmh - cardioCmp.userSpeedKmh).toFixed(1)} km/h 느림</span>
+                  <span className="text-slate-900 font-semibold">{(cardioCmp.avgSpeedKmh - cardioCmp.userSpeedKmh).toFixed(1)} km/h 느림</span>
                 )}.
               </p>
             </div>
@@ -412,7 +413,7 @@ export default async function AssessmentViewPage({
                         : `${z.speedLowKmh.toFixed(1)} km/h 이상`}
                     </div>
                     <div className="text-xs text-slate-400 tabular-nums mb-2">페이스 {z.paceHigh ? `${z.paceLow}–${z.paceHigh}` : z.paceLow}</div>
-                    <div className="text-xs text-emerald-300">⏱ {z.durationLabel}</div>
+                    <div className="text-xs text-slate-700 font-medium">⏱ {z.durationLabel}</div>
                     <div className="text-xs text-slate-500 mt-1">{z.detail}</div>
                   </div>
                 ))}
@@ -523,7 +524,7 @@ export default async function AssessmentViewPage({
                   unit="초"
                 />
                 {plank.warnings.length > 0 && (
-                  <div className="md:col-span-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 p-2 rounded space-y-1">
+                  <div className="md:col-span-2 text-sm p-2 rounded space-y-1" style={{ background: '#fff', border: '1.5px solid #111', color: '#111' }}>
                     {plank.warnings.map((w) => (
                       <div key={w}>• {w}</div>
                     ))}
@@ -560,7 +561,8 @@ export default async function AssessmentViewPage({
                 {syndromes.map((s) => (
                   <div
                     key={s.name}
-                    className="border-l-4 border-emerald-500 pl-3 py-1"
+                    className="border-l-4 pl-3 py-1"
+                    style={{ borderLeftColor: '#111' }}
                   >
                     <div className="font-semibold text-slate-100">
                       의심: {s.name}{' '}
@@ -630,32 +632,35 @@ export default async function AssessmentViewPage({
         ) : (
           <ol className="space-y-3">
             {recs.map((r, i) => (
-              <li key={i} className="border-l-4 border-blue-500 pl-3 py-1">
+              <li key={i} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <strong>{r.title}</strong>
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                    className="text-[10px] px-2 py-0.5 rounded font-bold"
+                    style={
                       r.priority === 'critical'
-                        ? 'bg-red-600 text-white'
+                        ? { background: '#111', color: '#fff' }
                         : r.priority === 'high'
-                        ? 'bg-orange-500 text-white'
+                        ? { background: '#555', color: '#fff' }
                         : r.priority === 'medium'
-                        ? 'bg-yellow-400 text-slate-900'
-                        : 'bg-slate-300 text-slate-700'
-                    }`}
+                        ? { background: '#9a9a9a', color: '#fff' }
+                        : { background: '#e2e2e2', color: '#444' }
+                    }
                   >
                     {r.priority.toUpperCase()}
                   </span>
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold text-white ${
-                      r.source === 'ACSM'
-                        ? 'bg-blue-600'
-                        : r.source === 'NSCA'
-                        ? 'bg-orange-600'
-                        : r.source === 'NASM'
-                        ? 'bg-emerald-600'
-                        : 'bg-violet-600'
-                    }`}
+                    className="text-[10px] px-2 py-0.5 rounded font-bold text-white"
+                    style={{
+                      background:
+                        r.source === 'ACSM'
+                          ? '#111'
+                          : r.source === 'NSCA'
+                          ? '#333'
+                          : r.source === 'NASM'
+                          ? '#555'
+                          : '#6e6e6e',
+                    }}
                   >
                     {r.source}
                   </span>
@@ -716,7 +721,7 @@ function ResultRow({
       </div>
     );
   return (
-    <div className="p-3 bg-blue-950/40 border border-blue-800/50 rounded">
+    <div className="p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #111' }}>
       <div className="text-xs text-slate-400">{label}</div>
       <div className="text-xl font-bold text-slate-100">
         {displayValue ||
@@ -745,13 +750,16 @@ function MetricBig({
 }) {
   return (
     <div
-      className={`rounded p-3 ${
-        warn ? 'bg-red-950/40 border border-red-800/50' : 'bg-slate-800 border border-slate-700'
-      }`}
+      className="rounded p-3"
+      style={
+        warn
+          ? { background: '#fff', border: '1.5px solid #111' }
+          : { background: '#f5f5f5', border: '1px solid #e3e3e3' }
+      }
     >
       <div className="text-xs text-slate-400">{label}</div>
       <div
-        className={`text-xl font-bold ${warn ? 'text-red-400' : 'text-slate-100'}`}
+        className={`text-xl font-bold ${warn ? 'text-slate-900' : 'text-slate-100'}`}
       >
         {value}
       </div>

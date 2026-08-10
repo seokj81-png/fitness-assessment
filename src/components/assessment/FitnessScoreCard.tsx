@@ -18,13 +18,13 @@ function clsScore(cls?: string): number {
 
 function clsColor(cls?: string): string {
   const m: Record<string, string> = {
-    excellent: '#4ade80',
-    good: '#60a5fa',
-    average: '#fbbf24',
-    below: '#fb923c',
-    poor: '#f87171',
+    excellent: '#111111',
+    good: '#555555',
+    average: '#8a8a8a',
+    below: '#9a9a9a',
+    poor: '#c4c4c4',
   };
-  return m[cls ?? ''] ?? '#475569';
+  return m[cls ?? ''] ?? '#c4c4c4';
 }
 
 function avgScore(classes: (string | undefined | null)[]): number {
@@ -52,10 +52,10 @@ function StatBubble({ label, value, cls }: Stat) {
       <div
         className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base"
         style={{
-          background: cls ? `${color}1a` : '#1e293b',
+          background: cls ? `${color}1a` : '#f0f0f0',
           border: `2.5px solid ${color}`,
-          color: color,
-          boxShadow: cls ? `0 0 8px ${color}44` : 'none',
+          color: cls ? '#111111' : '#8a8a8a',
+          boxShadow: 'none',
         }}
       >
         {score ?? '–'}
@@ -84,7 +84,7 @@ function StatGroup({ title, stats }: { title: string; stats: Stat[] }) {
 }
 
 function OverallCircle({ score }: { score: number }) {
-  const color = score >= 80 ? '#4ade80' : score >= 65 ? '#60a5fa' : score >= 50 ? '#fbbf24' : score >= 35 ? '#fb923c' : '#f87171';
+  const color = score >= 80 ? '#111111' : score >= 65 ? '#333333' : score >= 50 ? '#555555' : score >= 35 ? '#8a8a8a' : '#9a9a9a';
   const label = score >= 80 ? 'Excellent' : score >= 65 ? 'Good' : score >= 50 ? 'Average' : score >= 35 ? 'Below Avg' : 'Poor';
   const r = 44;
   const circ = 2 * Math.PI * r;
@@ -94,7 +94,7 @@ function OverallCircle({ score }: { score: number }) {
     <div className="flex flex-col items-center">
       <div className="relative w-28 h-28">
         <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r={r} fill="none" stroke="#1e293b" strokeWidth="8" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke="#e9e9e9" strokeWidth="8" />
           <circle
             cx="50" cy="50" r={r}
             fill="none"
@@ -102,7 +102,6 @@ function OverallCircle({ score }: { score: number }) {
             strokeWidth="8"
             strokeDasharray={`${dash} ${circ}`}
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${color})` }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -259,8 +258,8 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
-        boxShadow: '0 0 40px rgba(99,102,241,0.15)',
+        background: '#ffffff',
+        boxShadow: '0 0 0 1px #e3e3e3',
       }}
     >
       {/* Header */}
@@ -283,22 +282,22 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
           <div className="mt-4 w-full">
             <ResponsiveContainer width="100%" height={220}>
               <RadarChart data={radarData} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
-                <PolarGrid stroke="#334155" />
+                <PolarGrid stroke="#e9e9e9" />
                 <PolarAngleAxis
                   dataKey="subject"
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  tick={{ fontSize: 10, fill: '#555555' }}
                 />
                 <PolarRadiusAxis
                   angle={90}
                   domain={[0, 100]}
                   tickCount={3}
-                  tick={{ fontSize: 9, fill: '#475569' }}
+                  tick={{ fontSize: 9, fill: '#8a8a8a' }}
                 />
                 <Radar
                   dataKey="score"
-                  stroke="#818cf8"
-                  fill="#818cf8"
-                  fillOpacity={0.3}
+                  stroke="#111111"
+                  fill="#111111"
+                  fillOpacity={0.15}
                   strokeWidth={2}
                 />
               </RadarChart>

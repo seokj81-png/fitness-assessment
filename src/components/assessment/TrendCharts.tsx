@@ -79,62 +79,63 @@ const FMS_RADAR_TESTS = [
   { id: 'rs',   label: 'Rotary Stability', bilateral: true },
 ];
 
-const RADAR_COLORS = ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#f43f5e'];
+const RADAR_COLORS = ['#111', '#555', '#999', '#333', '#6e6e6e'];
+const RADAR_DASHES: (string | undefined)[] = [undefined, '6 3', '2 3', '8 3 2 3', '12 3'];
 
-type LineConfig = { key: string; label: string; color: string };
+type LineConfig = { key: string; label: string; color: string; dash?: string };
 type ChartConfig = { title: string; lines: LineConfig[] };
 
 const LINE_CHARTS: ChartConfig[] = [
   {
     title: '체성분',
     lines: [
-      { key: 'bmi',  label: 'BMI',         color: '#3b82f6' },
-      { key: 'bf',   label: '체지방률 (%)', color: '#f97316' },
+      { key: 'bmi',  label: 'BMI',         color: '#111' },
+      { key: 'bf',   label: '체지방률 (%)', color: '#555', dash: '6 3' },
     ],
   },
   {
     title: '심폐 지구력',
     lines: [
-      { key: 'vo2max', label: 'VO₂max (ml/kg/min)', color: '#10b981' },
-      { key: 'rhr',    label: '안정 심박수 (bpm)',   color: '#f43f5e' },
+      { key: 'vo2max', label: 'VO₂max (ml/kg/min)', color: '#111' },
+      { key: 'rhr',    label: '안정 심박수 (bpm)',   color: '#555', dash: '6 3' },
     ],
   },
   {
     title: '혈압 (mmHg)',
     lines: [
-      { key: 'sbp', label: '수축기 (SBP)', color: '#dc2626' },
-      { key: 'dbp', label: '이완기 (DBP)', color: '#7c3aed' },
+      { key: 'sbp', label: '수축기 (SBP)', color: '#111' },
+      { key: 'dbp', label: '이완기 (DBP)', color: '#555', dash: '6 3' },
     ],
   },
   {
     title: '근력 – 1RM (kg)',
     lines: [
-      { key: 'bp1rm', label: '벤치프레스', color: '#2563eb' },
-      { key: 'sq1rm', label: '스쿼트',     color: '#16a34a' },
-      { key: 'dl1rm', label: '데드리프트', color: '#d97706' },
-      { key: 'ohp1rm', label: 'OHP',       color: '#7c3aed' },
-      { key: 'lp1rm', label: '레그프레스', color: '#0891b2' },
+      { key: 'bp1rm', label: '벤치프레스', color: '#111' },
+      { key: 'sq1rm', label: '스쿼트',     color: '#555', dash: '6 3' },
+      { key: 'dl1rm', label: '데드리프트', color: '#999', dash: '2 3' },
+      { key: 'ohp1rm', label: 'OHP',       color: '#333', dash: '8 3 2 3' },
+      { key: 'lp1rm', label: '레그프레스', color: '#6e6e6e', dash: '12 3' },
     ],
   },
   {
     title: '악력 (kg)',
     lines: [
-      { key: 'gripR', label: '우측', color: '#0891b2' },
-      { key: 'gripL', label: '좌측', color: '#7c3aed' },
+      { key: 'gripR', label: '우측', color: '#111' },
+      { key: 'gripL', label: '좌측', color: '#555', dash: '6 3' },
     ],
   },
   {
     title: '근지구력',
     lines: [
-      { key: 'pushupReps',  label: '푸시업 (회)',  color: '#0284c7' },
-      { key: 'curlupReps',  label: '컬업 (회)',    color: '#16a34a' },
-      { key: 'plankFront',  label: '플랭크 (초)',  color: '#ea580c' },
+      { key: 'pushupReps',  label: '푸시업 (회)',  color: '#111' },
+      { key: 'curlupReps',  label: '컬업 (회)',    color: '#555', dash: '6 3' },
+      { key: 'plankFront',  label: '플랭크 (초)',  color: '#999', dash: '2 3' },
     ],
   },
   {
     title: 'FMS 총점',
     lines: [
-      { key: 'fmsTotal', label: 'FMS 총점 (/21)', color: '#8b5cf6' },
+      { key: 'fmsTotal', label: 'FMS 총점 (/21)', color: '#111' },
     ],
   },
 ];
@@ -147,11 +148,11 @@ function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoi
       <h4 className="text-sm font-bold text-slate-700 mb-3">{config.title}</h4>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
-          {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+          <CartesianGrid strokeDasharray="3 3" stroke="#e9e9e9" />
+          <XAxis dataKey="date" stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#555' }} />
+          <YAxis stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#555' }} />
+          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
+          {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
           {config.lines.map((l) => (
             <Line
               key={l.key}
@@ -160,8 +161,9 @@ function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoi
               name={l.label}
               stroke={l.color}
               strokeWidth={2}
+              strokeDasharray={l.dash}
               dot={{ r: 4, fill: l.color }}
-              activeDot={{ r: 6 }}
+              activeDot={{ r: 6, fill: l.color }}
               connectNulls
             />
           ))}
@@ -196,22 +198,23 @@ function FmsRadarChart({ assessments }: { assessments: AssessmentRow[] }) {
       <div className="flex justify-center">
         <ResponsiveContainer width="100%" height={320}>
           <RadarChart data={radarData} margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
-            <PolarGrid />
-            <PolarAngleAxis dataKey="test" tick={{ fontSize: 11 }} />
-            <PolarRadiusAxis angle={90} domain={[0, 3]} tickCount={4} tick={{ fontSize: 10 }} />
+            <PolarGrid stroke="#e9e9e9" />
+            <PolarAngleAxis dataKey="test" tick={{ fontSize: 11, fill: '#555' }} />
+            <PolarRadiusAxis angle={90} domain={[0, 3]} tickCount={4} tick={{ fontSize: 10, fill: '#8a8a8a' }} stroke="#8a8a8a" />
             {recent.map((a, i) => (
               <Radar
                 key={a.id}
                 name={fmt(a.date)}
                 dataKey={`assessment_${i}`}
                 stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                strokeDasharray={RADAR_DASHES[i % RADAR_DASHES.length]}
                 fill={RADAR_COLORS[i % RADAR_COLORS.length]}
                 fillOpacity={i === recent.length - 1 ? 0.25 : 0.08}
                 strokeWidth={2}
               />
             ))}
-            {recent.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
-            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            {recent.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
           </RadarChart>
         </ResponsiveContainer>
       </div>

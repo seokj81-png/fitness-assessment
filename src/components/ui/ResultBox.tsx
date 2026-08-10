@@ -16,7 +16,7 @@ export default function ResultBox({ result, unit, children }: Props) {
     );
   }
   return (
-    <div className="p-3 bg-blue-950/40 border border-blue-800/50 rounded-md">
+    <div className="p-3 rounded-md" style={{ background: '#f2f2f2', border: '1px solid #111' }}>
       <div className="text-2xl font-bold text-slate-100">
         {typeof result.value === 'number' ? result.value.toFixed(1) : result.value} {unit}
       </div>

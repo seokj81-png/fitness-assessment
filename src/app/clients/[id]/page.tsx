@@ -40,7 +40,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       {/* Header */}
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
         <div>
-          <Link href="/" className="text-xs text-blue-400 hover:text-blue-300 hover:underline">
+          <Link href="/" className="text-xs text-slate-600 hover:text-slate-900 hover:underline">
             ← 회원님 목록
           </Link>
           <h2 className="text-2xl font-bold text-slate-100 mt-1">{client.name}</h2>
@@ -126,7 +126,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                           </span>
                         )}
                         {a.vo2max && (
-                          <span className="bg-blue-900/60 text-blue-300 px-2 py-1 rounded">
+                          <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded">
                             VO₂ {a.vo2max.toFixed(1)}
                           </span>
                         )}
@@ -162,7 +162,7 @@ function FmsBadge({ raw }: { raw: string }) {
         return s + (r != null && l != null ? Math.min(r, l) : 0);
       }, 0);
     return (
-      <span className="bg-violet-900/60 text-violet-300 px-2 py-1 rounded">
+      <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded">
         FMS {total}/21
       </span>
     );

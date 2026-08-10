@@ -16,9 +16,9 @@ export default function BodyPostureViewer() {
       <div className="overflow-hidden rounded-xl border border-slate-200">
         <div className="grid grid-cols-3">
           {[
-            { label: '전면 Anterior', bg: '#1d4ed8' },
-            { label: '측면 Lateral',  bg: '#0f766e' },
-            { label: '후면 Posterior', bg: '#6d28d9' },
+            { label: '전면 Anterior', bg: '#111111' },
+            { label: '측면 Lateral',  bg: '#555555' },
+            { label: '후면 Posterior', bg: '#9a9a9a' },
           ].map(({ label, bg }) => (
             <div key={label} className="text-center py-2 text-white text-sm font-semibold" style={{ background: bg }}>
               {label}

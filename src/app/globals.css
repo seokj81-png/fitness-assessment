@@ -2,105 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════
+   PAFGYM 체력평가 — 블랙 & 화이트 모노크롬 테마 (라이트)
+   구조: 토큰(:root) + 컴포넌트 클래스 + 유틸리티 리매핑
+   컴포넌트에 남아 있는 다크/컬러 클래스는 아래 리매핑이
+   !important로 모노크롬 라이트 값으로 강제한다.
+   ══════════════════════════════════════════════════════ */
+
 :root {
-  --bg:       #0f172a;
-  --bg2:      #1e293b;
-  --card:     #1e293b;
-  --border:   #334155;
-  --text:     #f1f5f9;
-  --text-2:   #94a3b8;
-  --text-3:   #64748b;
-  --input-bg: #0f172a;
+  --bg:       #f6f6f6; /* 페이지 배경 */
+  --bg2:      #efefef; /* 서브 배경 */
+  --card:     #ffffff; /* 카드 */
+  --border:   #e3e3e3;
+  --ink:      #111111; /* 주 텍스트·주 액션 */
+  --text:     #111111;
+  --text-2:   #555555;
+  --text-3:   #8a8a8a;
+  --input-bg: #ffffff;
+  --input-bd: #d6d6d6;
 }
 
 html, body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer components {
   .card {
     background: var(--card);
     border: 1px solid var(--border);
-    @apply rounded-xl p-6 mb-5 shadow-sm;
+    @apply rounded-xl p-5 md:p-6 mb-5;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-semibold transition;
+    background: var(--ink);
+    @apply text-white px-4 py-2.5 rounded-md text-sm font-semibold transition;
   }
+  .btn-primary:hover { background: #000; }
+  .btn-primary:disabled { background: #9a9a9a; }
   .btn-secondary {
-    background: #334155;
-    color: #f1f5f9;
-    @apply hover:bg-slate-600 px-4 py-2 rounded-md text-sm font-semibold transition;
+    background: #ffffff;
+    color: var(--ink);
+    border: 1px solid #cfcfcf;
+    @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
   }
+  .btn-secondary:hover { background: #f0f0f0; border-color: #9a9a9a; }
   .btn-danger {
-    @apply bg-red-900/40 hover:bg-red-900/60 text-red-300 px-4 py-2 rounded-md text-sm font-semibold transition;
+    background: #ffffff;
+    color: var(--ink);
+    border: 1px solid #cfcfcf;
+    @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
   }
+  .btn-danger:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
   .input {
     background: var(--input-bg);
-    border: 1px solid var(--border);
+    border: 1px solid var(--input-bd);
     color: var(--text);
-    @apply w-full px-3 py-2 rounded-md text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;
+    /* 16px = iOS 자동 줌 방지 + 플로어 가독성 */
+    @apply w-full px-3 py-2.5 rounded-md text-base focus:outline-none;
+    min-height: 44px; /* 터치 타겟 */
+  }
+  .input:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
   }
   .label {
     color: var(--text-2);
     @apply block text-xs font-semibold uppercase tracking-wide mb-1;
   }
-  .pill-excellent { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold bg-green-900/60 text-green-300; }
-  .pill-good      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-900/60 text-blue-300; }
-  .pill-average   { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold bg-yellow-900/60 text-yellow-300; }
-  .pill-below     { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold bg-orange-900/60 text-orange-300; }
-  .pill-poor      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold bg-red-900/60 text-red-300; }
+
+  /* 등급 필: 잉크 농도 스케일 — 진할수록 좋음 */
+  .pill-excellent { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #111; color: #fff; }
+  .pill-good      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #4a4a4a; color: #fff; }
+  .pill-average   { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #9a9a9a; color: #fff; }
+  .pill-below     { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #e2e2e2; color: #444; }
+  .pill-poor      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #fff; color: #111; border: 1.5px solid #111; }
+
+  /* 가이드라인 태그 (ACSM/NSCA/NASM/FMS): 모노크롬 아웃라인 */
   .guideline-tag {
-    @apply inline-block text-[10px] font-bold text-white px-2 py-0.5 rounded-full ml-2;
+    @apply inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ml-2;
+    background: transparent !important;
+    color: var(--text-2) !important;
+    border: 1px solid #c4c4c4;
   }
-  .tag-acsm { @apply bg-blue-600; }
-  .tag-nsca { @apply bg-orange-600; }
-  .tag-nasm { @apply bg-emerald-600; }
-  .tag-fms  { @apply bg-violet-600; }
+  .tag-acsm, .tag-nsca, .tag-nasm, .tag-fms { background: transparent !important; }
 }
 
-/* ── 다크 모드 공통 오버라이드 ── */
+/* ── 모노크롬 라이트 리매핑 ──
+   컴포넌트 안의 다크 테마·컬러 클래스를 라이트 회색조로 강제 */
 
-/* 배경 */
-.bg-white          { background: var(--card) !important; }
-.bg-slate-50,
-.bg-gray-50        { background: var(--bg2) !important; }
+/* 배경: 다크 패널 → 밝은 회색 패널 */
+.bg-slate-900        { background: #f0f0f0 !important; }
+.bg-slate-800        { background: #f5f5f5 !important; }
+.bg-slate-800\/60    { background: #f5f5f5 !important; }
+.bg-slate-700        { background: #ececec !important; }
+.bg-slate-300        { background: #e0e0e0 !important; }
+.bg-slate-200        { background: #e8e8e8 !important; }
 .bg-slate-100,
-.bg-gray-100       { background: #1e293b !important; }
-.bg-slate-200      { background: #334155 !important; }
+.bg-gray-100         { background: #f0f0f0 !important; }
+.bg-slate-50,
+.bg-gray-50          { background: #f7f7f7 !important; }
 
-/* 텍스트 */
-.text-slate-900,
-.text-gray-900     { color: #f1f5f9 !important; }
-.text-slate-800,
-.text-gray-800     { color: #e2e8f0 !important; }
-.text-slate-700,
-.text-gray-700     { color: #cbd5e1 !important; }
-.text-slate-600,
-.text-gray-600     { color: #94a3b8 !important; }
+/* 컬러 틴트 박스 → 중립 회색 박스 */
+.bg-blue-50, .bg-green-50, .bg-yellow-50, .bg-orange-50, .bg-red-50, .bg-amber-50,
+.bg-blue-950\/40, .bg-red-950\/40, .bg-violet-900\/60, .bg-emerald-500\/10 {
+  background: #f2f2f2 !important;
+}
+
+/* 솔리드 컬러 → 블랙 */
+.bg-blue-600, .bg-blue-500, .bg-emerald-600, .bg-violet-600,
+.bg-orange-600, .bg-orange-500, .bg-red-600, .bg-emerald-400,
+.bg-green-600 {
+  background: var(--ink) !important;
+}
+.border-green-600, .border-blue-600 { border-color: var(--ink) !important; }
+.border-green-200 { border-color: #d6d6d6 !important; }
+.bg-yellow-400       { background: #d9d9d9 !important; }
+
+/* 그라데이션(헤더·점수카드) → 블랙 */
+.bg-gradient-to-r, .bg-gradient-to-br, .bg-gradient-to-b {
+  background-image: none !important;
+  background-color: #101010 !important;
+}
+
+/* 텍스트: 라이트 텍스트(다크용) → 잉크 */
+.text-slate-100, .text-slate-200 { color: #111 !important; }
+.text-slate-300  { color: #333 !important; }
+.text-slate-400  { color: #6e6e6e !important; }
 .text-slate-500,
-.text-gray-500     { color: #64748b !important; }
+.text-gray-500   { color: #6e6e6e !important; }
+.text-slate-600,
+.text-gray-600   { color: #555 !important; }
+.text-slate-700,
+.text-gray-700   { color: #333 !important; }
+.text-slate-800,
+.text-gray-800   { color: #222 !important; }
+.text-slate-900,
+.text-gray-900   { color: #111 !important; }
 
-/* 밝은 배경용 진한 텍스트 → 다크 테마에서 밝게 */
-.text-green-900    { color: #86efac !important; }
-.text-red-900      { color: #fca5a5 !important; }
-.text-blue-900     { color: #93c5fd !important; }
+/* 컬러 텍스트 → 회색조 (의미는 배지·라벨 텍스트가 전달) */
+.text-blue-300, .text-blue-400, .text-blue-600, .text-blue-800,
+.text-cyan-300, .text-violet-300 { color: #444 !important; }
+.text-emerald-300, .text-emerald-400, .text-green-300, .text-green-900 { color: #111 !important; }
+.text-amber-400, .text-amber-800, .text-orange-300, .text-orange-700,
+.text-yellow-300 { color: #444 !important; }
+.text-red-300, .text-red-400, .text-red-900 { color: #111 !important; }
 
 /* 보더 */
-.border-slate-200,
-.border-gray-200   { border-color: var(--border) !important; }
-.border-slate-300  { border-color: #475569 !important; }
+.border-slate-600, .border-slate-700, .border-slate-800,
+.border-slate-700\/50, .border-slate-700\/40,
+.border-slate-200, .border-gray-200 { border-color: var(--border) !important; }
+.border-slate-300    { border-color: #d6d6d6 !important; }
+.border-blue-200, .border-red-200   { border-color: #d6d6d6 !important; }
+.border-blue-500, .border-blue-800\/50,
+.border-red-600, .border-red-800\/50 { border-color: var(--ink) !important; }
+.border-amber-400    { border-color: #8a8a8a !important; }
 
-/* 카드 내부 서브 배경 — filter(brightness)는 내부 글자까지 어둡게 만들어
-   안 보이는 문제가 있어, 배경색만 어둡게 틴트 처리한다 */
-.bg-blue-50        { background: rgba(59,130,246,0.14) !important; }
-.bg-green-50       { background: rgba(34,197,94,0.14) !important; }
-.bg-yellow-50      { background: rgba(234,179,8,0.14) !important; }
-.bg-orange-50      { background: rgba(249,115,22,0.14) !important; }
-.bg-red-50         { background: rgba(239,68,68,0.14) !important; }
+/* 다크 글래스 잔재 (hover:bg-white/10 등) → 라이트 호버 */
+.hover\:bg-white\/10:hover { background: #ececec !important; }
+.hover\:bg-white\/20:hover { background: #e0e0e0 !important; }
 
-/* 입력 필드 */
+/* 입력 필드 — 라이트 강제 */
 input[type="number"],
 input[type="text"],
 input[type="date"],
@@ -108,21 +172,24 @@ select,
 textarea {
   background: var(--input-bg) !important;
   color: var(--text) !important;
-  border-color: var(--border) !important;
+  border-color: var(--input-bd) !important;
+  font-size: 16px; /* iOS 자동 줌 방지 */
 }
 input[type="number"]:focus,
 input[type="text"]:focus,
 input[type="date"]:focus,
 select:focus,
 textarea:focus {
-  border-color: #3b82f6 !important;
+  border-color: var(--ink) !important;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
+/* 체크박스도 모노크롬 */
+input[type="checkbox"], input[type="radio"] { accent-color: #111; width: 18px; height: 18px; }
 
 /* 탭 버튼 */
 button.tab-active {
-  background: #3b82f6 !important;
+  background: var(--ink) !important;
   color: white !important;
 }
 
@@ -131,21 +198,21 @@ hr, .divide-slate-200 > * + * {
   border-color: var(--border) !important;
 }
 
-/* ResultBox 스타일 (평가 결과 박스) */
+/* ResultBox (평가 결과 박스) */
 .result-box {
-  background: #1e293b !important;
+  background: #fafafa !important;
   border: 1px solid var(--border) !important;
   color: var(--text) !important;
 }
 
-/* 스크롤바 다크 */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+/* 스크롤바 라이트 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cfcfcf; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 
 @media print {
   html, body { background: white !important; color: black !important; }
-  .card { background: white !important; border-color: #e2e8f0 !important; box-shadow: none; page-break-inside: avoid; }
+  .card { background: white !important; border-color: #d6d6d6 !important; box-shadow: none; page-break-inside: avoid; }
   nav, .no-print, .action-bar { display: none !important; }
 }
