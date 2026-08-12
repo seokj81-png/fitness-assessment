@@ -259,6 +259,7 @@ export default async function AssessmentViewPage({
       {/* Hero summary */}
       <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
         <h3 className="font-bold mb-3">회원님 요약</h3>
+        {/* 측정 흐름 순서: 기본정보 → ①생체지표 → ②신체조성 → ③자세 → ④움직임 → ⑤심폐 → ⑥근력 → ⑦근지구력 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <HeroItem label="이름" value={client.name} />
           <HeroItem
@@ -268,6 +269,12 @@ export default async function AssessmentViewPage({
           <HeroItem
             label="측정일"
             value={new Date(a.date).toLocaleDateString('ko-KR')}
+          />
+          <HeroItem label="목적" value={goalLabel(client.goal)} />
+          <HeroItem
+            label="안정시 심박"
+            value={a.rhr != null ? `${a.rhr} bpm` : '-'}
+            href="#sec-vitals"
           />
           <HeroItem
             label="BMI"
@@ -280,14 +287,19 @@ export default async function AssessmentViewPage({
             href="#sec-body"
           />
           <HeroItem
-            label="VO₂max"
-            value={vo2 ? vo2.toFixed(1) : '-'}
-            href="#sec-cardio"
+            label="자세"
+            value={postureCount > 0 ? `이상 ${postureCount}건` : '양호'}
+            href="#sec-posture"
           />
           <HeroItem
-            label="FMS"
+            label="FMS (움직임)"
             value={`${fmsResult.total}/21`}
             href="#sec-fms"
+          />
+          <HeroItem
+            label="VO₂max (심폐)"
+            value={vo2 ? vo2.toFixed(1) : '-'}
+            href="#sec-cardio"
           />
           <HeroItem
             label="근력"
@@ -299,17 +311,6 @@ export default async function AssessmentViewPage({
             value={enWorst ? KO_LEVEL[enWorst] : '-'}
             href="#sec-endurance"
           />
-          <HeroItem
-            label="자세"
-            value={postureCount > 0 ? `이상 ${postureCount}건` : '양호'}
-            href="#sec-posture"
-          />
-          <HeroItem
-            label="안정시 심박"
-            value={a.rhr != null ? `${a.rhr} bpm` : '-'}
-            href="#sec-vitals"
-          />
-          <HeroItem label="목적" value={goalLabel(client.goal)} />
         </div>
       </div>
 
