@@ -41,10 +41,16 @@ import {
   vVO2max,
   fmtMinSec,
   estimate1RM_avg,
+  worstClassification,
+  strengthGuide,
+  enduranceGuide,
+  bodyCompGuide,
 } from '@/lib/calculations';
+import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
+import ShareButton from './ShareButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,7 +139,7 @@ export default async function AssessmentViewPage({
       : null;
   const sumGrip = (a.gripR || 0) + (a.gripL || 0);
   const gripClass =
-    a.gripR !== undefined && a.gripL !== undefined
+    a.gripR != null && a.gripL != null
       ? classifyGrip(sumGrip, age, sex)
       : null;
   const est1rm =
@@ -143,18 +149,18 @@ export default async function AssessmentViewPage({
 
   // ===== Endurance =====
   const pushupClass =
-    a.pushupReps !== undefined ? classifyPushup(a.pushupReps, age, sex) : null;
+    a.pushupReps != null ? classifyPushup(a.pushupReps, age, sex) : null;
   const ymcaBpClass =
-    a.ymcaBpReps !== undefined ? classifyYMCABP(a.ymcaBpReps, age, sex) : null;
+    a.ymcaBpReps != null ? classifyYMCABP(a.ymcaBpReps, age, sex) : null;
   const curlupClass =
-    a.curlupReps !== undefined ? classifyCurlup(a.curlupReps, age, sex) : null;
+    a.curlupReps != null ? classifyCurlup(a.curlupReps, age, sex) : null;
   const squatEndClass =
     a.squatReps != null ? classifySquatEndurance(a.squatReps, age, sex) : null;
   const pullupClass =
     a.pullupReps != null ? classifyPullup(a.pullupReps, age, sex) : null;
   const plank =
-    a.plankFront !== undefined
-      ? analyzePlank(a.plankFront, a.plankR, a.plankL, a.sorensen, sex)
+    a.plankFront != null
+      ? analyzePlank(a.plankFront, a.plankR ?? undefined, a.plankL ?? undefined, a.sorensen ?? undefined, sex)
       : null;
 
   // ===== PAR-Q =====
@@ -181,6 +187,23 @@ export default async function AssessmentViewPage({
     sex,
     goal: client.goal || undefined,
   });
+
+  // ===== 결과 기반 영역별 운동 가이드 (약한 고리 기준) =====
+  const bcWorst = worstClassification([
+    bmiClass?.classification, bfClass?.classification, whrClass?.classification,
+  ]);
+  const bcGuide = bcWorst ? bodyCompGuide(bcWorst) : null;
+  const stWorst = worstClassification([
+    bpRatioClass?.classification, sqRatioClass?.classification, dlRatioClass?.classification,
+    ohpRatioClass?.classification, pcRatioClass?.classification, lpRatioClass?.classification,
+    gripClass?.classification,
+  ]);
+  const stGuide = stWorst ? strengthGuide(stWorst) : null;
+  const enWorst = worstClassification([
+    pushupClass?.classification, ymcaBpClass?.classification, curlupClass?.classification,
+    squatEndClass?.classification, pullupClass?.classification, plank?.frontClass.classification,
+  ]);
+  const enGuide = enWorst ? enduranceGuide(enWorst) : null;
 
   return (
     <div>
@@ -213,6 +236,7 @@ export default async function AssessmentViewPage({
             수정
           </Link>
           <PrintButton />
+          <ShareButton title={`체력평가 보고서 · ${client.name}`} />
           <DeleteAssessmentButton
             clientId={client.id}
             assessmentId={a.id}
@@ -220,8 +244,10 @@ export default async function AssessmentViewPage({
         </div>
       </div>
 
+      <PrintSectionPicker />
+
       {/* Hero summary */}
-      <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }}>
+      <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
         <h3 className="font-bold mb-3">회원님 요약</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
           <HeroItem label="이름" value={client.name} />
@@ -236,25 +262,29 @@ export default async function AssessmentViewPage({
           <HeroItem
             label="BMI"
             value={bmiVal ? bmiVal.toFixed(1) : '-'}
+            href="#sec-body"
           />
           <HeroItem
             label="체지방률"
             value={bfVal !== undefined ? `${bfVal.toFixed(1)}%` : '-'}
+            href="#sec-body"
           />
           <HeroItem
             label="VO₂max"
             value={vo2 ? vo2.toFixed(1) : '-'}
+            href="#sec-cardio"
           />
           <HeroItem
             label="FMS"
             value={`${fmsResult.total}/21`}
+            href="#sec-fms"
           />
           <HeroItem label="목적" value={goalLabel(client.goal)} />
         </div>
       </div>
 
       {/* PAR-Q */}
-      <div className="card">
+      <div className="card" data-print-section="PAR-Q+">
         <h3 className="font-bold mb-3">
           PAR-Q+ <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
@@ -274,37 +304,42 @@ export default async function AssessmentViewPage({
       </div>
 
       {/* Body composition */}
-      <div className="card">
+      <div className="card" data-print-section="신체조성" id="sec-body">
         <h3 className="font-bold mb-3">
           신체조성 <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
         <div className="grid md:grid-cols-2 gap-3">
           <ResultRow label="BMI (Asia-Pacific)" result={bmiClass} unit="kg/m²" />
-          <ResultRow label="WHR" result={whrClass} />
-          {a.waist !== undefined && (
+          {a.waist != null && (
             <div className="text-sm text-slate-600 md:col-span-2">
               허리둘레 {a.waist} cm · 복부비만 위험도: {waistNote}
             </div>
           )}
           <ResultRow label="체지방률" result={bfClass} unit="%" />
-          {a.biaSmm !== undefined && (
-            <Fact label="골격근량 (BIA)" value={`${a.biaSmm} kg`} />
-          )}
-          {a.biaFm !== undefined && (
+          {a.biaFm != null && (
             <Fact label="체지방량 (BIA)" value={`${a.biaFm} kg`} />
           )}
-          {a.biaFfm !== undefined && (
+          {a.biaFfm != null && (
             <Fact label="제지방량 (BIA)" value={`${a.biaFfm} kg`} />
           )}
-          {a.biaBmr !== undefined && (
+          {a.biaBmr != null && (
             <Fact label="기초대사량 (BIA)" value={`${a.biaBmr} kcal`} />
           )}
         </div>
+        {bcGuide && (
+          <div className="guide-box">
+            <div className="guide-title">
+              💡 결과 기반 가이드 — {bcGuide.headline}{' '}
+              <span style={{ color: '#8a8a8a', fontWeight: 500 }}>(기준 등급: {bcGuide.levelLabel})</span>
+            </div>
+            <ul>{bcGuide.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
+          </div>
+        )}
       </div>
 
       {/* Vitals */}
       {(bpClass || rhrClass) && (
-        <div className="card">
+        <div className="card" data-print-section="생체지표">
           <h3 className="font-bold mb-3">
             안정시 활력징후 <span className="guideline-tag tag-acsm">ACSM</span>
           </h3>
@@ -325,7 +360,7 @@ export default async function AssessmentViewPage({
 
       {/* Cardio */}
       {(vo2Class || stepClass) && (
-        <div className="card">
+        <div className="card" data-print-section="심폐지구력" id="sec-cardio">
           <h3 className="font-bold mb-3">
             심폐지구력 <span className="guideline-tag tag-acsm">ACSM</span>
           </h3>
@@ -432,7 +467,7 @@ export default async function AssessmentViewPage({
         a.pc1rm != null ||
         a.lp1rm != null ||
         est1rm != null) && (
-        <div className="card">
+        <div className="card" data-print-section="근력">
           <h3 className="font-bold mb-3">
             근력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
@@ -481,6 +516,15 @@ export default async function AssessmentViewPage({
               />
             )}
           </div>
+          {stGuide && (
+            <div className="guide-box">
+              <div className="guide-title">
+                💡 결과 기반 가이드 — {stGuide.headline}{' '}
+                <span style={{ color: '#8a8a8a', fontWeight: 500 }}>(기준 등급: {stGuide.levelLabel})</span>
+              </div>
+              <ul>{stGuide.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -491,8 +535,8 @@ export default async function AssessmentViewPage({
         squatEndClass ||
         pullupClass ||
         plank ||
-        a.sorensen !== undefined) && (
-        <div className="card">
+        a.sorensen != null) && (
+        <div className="card" data-print-section="근지구력">
           <h3 className="font-bold mb-3">
             근지구력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
@@ -532,7 +576,7 @@ export default async function AssessmentViewPage({
                 )}
               </>
             )}
-            {a.sorensen !== undefined && (
+            {a.sorensen != null && (
               <Fact
                 label="Biering-Sørensen (척추 신전근 지구력)"
                 value={`${a.sorensen}초${
@@ -541,11 +585,20 @@ export default async function AssessmentViewPage({
               />
             )}
           </div>
+          {enGuide && (
+            <div className="guide-box">
+              <div className="guide-title">
+                💡 결과 기반 가이드 — {enGuide.headline}{' '}
+                <span style={{ color: '#8a8a8a', fontWeight: 500 }}>(기준 등급: {enGuide.levelLabel})</span>
+              </div>
+              <ul>{enGuide.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
+            </div>
+          )}
         </div>
       )}
 
       {/* Posture */}
-      <div className="card">
+      <div className="card" data-print-section="자세 평가">
         <h3 className="font-bold mb-3">
           자세 <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
@@ -587,10 +640,33 @@ export default async function AssessmentViewPage({
             )}
           </>
         )}
+
+        {/* 질적 평가 — 체형 스케치 & 메모 */}
+        {a.postureDrawing && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ position: 'relative', aspectRatio: '1900 / 1076', border: '1px solid #e3e3e3', background: '#f5f5f5' }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={a.postureDrawing} alt="트레이너 스케치" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+          </div>
+        )}
+        {a.postureMemo && (
+          <div className="mt-3 text-sm p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #e3e3e3', color: '#333', whiteSpace: 'pre-wrap' }}>
+            <b style={{ color: '#111' }}>질적 평가 메모</b>
+            <br />
+            {a.postureMemo}
+          </div>
+        )}
       </div>
 
       {/* Movement / FMS */}
-      <div className="card">
+      <div className="card" data-print-section="움직임 (FMS)" id="sec-fms">
         <h3 className="font-bold mb-3">
           움직임 (FMS 2.0) <span className="guideline-tag tag-fms">FMS</span>
         </h3>
@@ -618,7 +694,7 @@ export default async function AssessmentViewPage({
       </div>
 
       {/* Recommendations */}
-      <div className="card">
+      <div className="card" data-print-section="권장사항">
         <h3 className="font-bold mb-3">
           우선순위 개선영역 & 운동처방 방향
           <span className="text-xs text-slate-500 ml-2">
@@ -674,7 +750,7 @@ export default async function AssessmentViewPage({
 
       {/* Notes */}
       {a.notes && (
-        <div className="card">
+        <div className="card" data-print-section="메모">
           <h3 className="font-bold mb-3">메모</h3>
           <p className="text-sm text-slate-700 whitespace-pre-wrap">{a.notes}</p>
         </div>
@@ -683,13 +759,24 @@ export default async function AssessmentViewPage({
   );
 }
 
-function HeroItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-white/10 rounded p-2">
-      <div className="text-[11px] uppercase opacity-80">{label}</div>
+function HeroItem({ label, value, href }: { label: string; value: string; href?: string }) {
+  const inner = (
+    <>
+      <div className="text-[11px] uppercase opacity-80">
+        {label}
+        {href && <span className="ml-1 opacity-70">↓</span>}
+      </div>
       <div className="font-semibold">{value}</div>
-    </div>
+    </>
   );
+  if (href) {
+    return (
+      <a href={href} className="bg-white/10 rounded p-2 block hover:bg-white/20 transition">
+        {inner}
+      </a>
+    );
+  }
+  return <div className="bg-white/10 rounded p-2">{inner}</div>;
 }
 
 function Fact({ label, value }: { label: string; value: string }) {

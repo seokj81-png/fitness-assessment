@@ -94,6 +94,8 @@ model Assessment {
 
   // Posture flags (JSON array of string keys)
   postureFlags String? // JSON: string[]
+  postureMemo    String? // 자세 질적 평가 메모
+  postureDrawing String? // 체형 스케치 (PNG dataURL, 그림 레이어만)
 
   // FMS scores (JSON: Record<string,number>)
   fms          String? // JSON: {dsq, hs_r, hs_l, lu_r, lu_l, sm_r, sm_l, aslr_r, aslr_l, tsp, rs_r, rs_l}

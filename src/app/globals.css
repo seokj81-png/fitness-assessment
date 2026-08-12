@@ -22,6 +22,10 @@
   --input-bd: #d6d6d6;
 }
 
+html { scroll-behavior: smooth; }
+/* 앵커 점프 시 스티키 헤더에 가리지 않도록 */
+[id^="sec-"] { scroll-margin-top: 84px; }
+
 html, body {
   background: var(--bg);
   color: var(--text);
@@ -215,4 +219,17 @@ hr, .divide-slate-200 > * + * {
   html, body { background: white !important; color: black !important; }
   .card { background: white !important; border-color: #d6d6d6 !important; box-shadow: none; page-break-inside: avoid; }
   nav, .no-print, .action-bar { display: none !important; }
+  .print-exclude { display: none !important; } /* 인쇄 항목 선택에서 제외된 섹션 */
 }
+
+/* 결과 기반 운동 가이드 박스 */
+.guide-box {
+  background: #f2f2f2;
+  border: 1px solid #e3e3e3;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+.guide-box .guide-title { font-weight: 700; font-size: 13px; color: #111; margin-bottom: 6px; }
+.guide-box ul { list-style: disc; padding-left: 18px; }
+.guide-box li { font-size: 13px; color: #444; margin: 3px 0; }

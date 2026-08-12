@@ -84,6 +84,8 @@ export interface AssessmentInput {
   sorensen?: number;
 
   postureFlags?: string[];
+  postureMemo?: string; // 자세 질적 평가 메모
+  postureDrawing?: string; // 체형 스케치 (PNG dataURL)
 
   fms?: Record<string, number>;
   clearSh?: 'neg' | 'pos';

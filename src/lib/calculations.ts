@@ -533,6 +533,121 @@ export function analyzePlank(
   return { frontClass, lrAsym, sideFrontRatio, sorensenRatio, warnings };
 }
 
+// -------- 결과 기반 운동 가이드 (영역별 처방) --------
+
+export interface DomainGuide {
+  level: Classification;
+  levelLabel: string;
+  headline: string;
+  lines: string[];
+}
+
+const CLASS_ORDER: Classification[] = ['poor', 'below', 'average', 'good', 'excellent'];
+
+// 여러 검사 등급 중 가장 약한 등급 — 처방은 약한 고리 기준
+export function worstClassification(list: Array<Classification | undefined | null>): Classification | null {
+  const present = list.filter(Boolean) as Classification[];
+  if (!present.length) return null;
+  return present.reduce((w, c) => (CLASS_ORDER.indexOf(c) < CLASS_ORDER.indexOf(w) ? c : w));
+}
+
+export function strengthGuide(level: Classification): DomainGuide {
+  const base = { level, levelLabel: LABEL[level] };
+  if (level === 'poor' || level === 'below')
+    return {
+      ...base,
+      headline: '근력 기초 다지기 (주 2–3회)',
+      lines: [
+        '전신 복합운동 위주 — 스쿼트·힌지(데드리프트)·밀기(벤치)·당기기(로우)',
+        '강도 65–70% 1RM × 8–12회 × 3세트 · 세트 간 휴식 60–90초',
+        '2주마다 중량 2.5–5% 점진 증가, 자세 우선',
+        '4주 후 재평가로 변화 확인',
+      ],
+    };
+  if (level === 'average')
+    return {
+      ...base,
+      headline: '근력 발전 단계 (주 3–4회)',
+      lines: [
+        '상·하체 분할 프로그램 — 복합운동 후 보조운동 2–3개',
+        '강도 70–80% 1RM × 6–10회 × 3–4세트 · 휴식 90–120초',
+        '주차별 점진적 과부하 + 4주 단위 디로드 1주',
+      ],
+    };
+  return {
+    ...base,
+    headline: '근력 유지·고급 (주기화)',
+    lines: [
+      '강도 75–90% 1RM × 3–6회 × 4–5세트 · 휴식 2–3분',
+      '블록 주기화(근비대→최대근력) + 약점 부위 보조운동',
+      '8–12주 주기 재평가로 정체 구간 점검',
+    ],
+  };
+}
+
+export function enduranceGuide(level: Classification): DomainGuide {
+  const base = { level, levelLabel: LABEL[level] };
+  if (level === 'poor' || level === 'below')
+    return {
+      ...base,
+      headline: '근지구력 기초 (주 2–3회)',
+      lines: [
+        '자중 서킷 — 스쿼트·푸시업(무릎 가능)·플랭크·로우 순환',
+        '12–15회(플랭크 20–30초) × 2–3라운드 · 라운드 간 휴식 60초',
+        '동작 템포 일정하게, 실패 직전 2회 남기고 멈추기',
+      ],
+    };
+  if (level === 'average')
+    return {
+      ...base,
+      headline: '근지구력 강화 (주 3회)',
+      lines: [
+        '서킷 15–20회 × 3라운드 · 휴식 30–45초로 단축',
+        '슈퍼세트(밀기+당기기) 도입, 코어는 플랭크 배터리 유지시간 +10%씩',
+      ],
+    };
+  return {
+    ...base,
+    headline: '근지구력 유지·고급',
+    lines: [
+      '고반복 슈퍼세트·EMOM(매분 정해진 횟수) 변형으로 자극 유지',
+      '약한 부위(밀기/당기기/하지/코어 중 최저 등급)에 볼륨 우선 배분',
+    ],
+  };
+}
+
+export function bodyCompGuide(level: Classification): DomainGuide {
+  const base = { level, levelLabel: LABEL[level] };
+  if (level === 'poor' || level === 'below')
+    return {
+      ...base,
+      headline: '체중·체지방 관리 (식이 + 운동 병행)',
+      lines: [
+        '일일 에너지 −300~500 kcal (급격한 절식 금지)',
+        '유산소 주 150분 이상 — 빠르게 걷기·자전거 등 중강도 분할 가능',
+        '저항운동 주 2–3회 병행 (제지방 유지가 핵심)',
+        '단백질 체중 1kg당 1.6g 목표 · 4주 후 체성분 재측정',
+      ],
+    };
+  if (level === 'average')
+    return {
+      ...base,
+      headline: '체성분 개선 (점진 감량·근육 증가)',
+      lines: [
+        '유산소 주 3–4회 30–40분 + 저항운동 주 3회',
+        '가공식품·액상당 줄이기, 단백질 매끼 손바닥 크기',
+      ],
+    };
+  return {
+    ...base,
+    headline: '체성분 유지',
+    lines: [
+      '현재 활동량·식사 패턴 유지 · 저항운동 주 2회 이상으로 근육량 보존',
+      '8–12주 주기 재측정으로 추세만 확인',
+    ],
+  };
+}
+
 // -------- PAR-Q+ --------
 
 export const PARQ_QUESTIONS = [

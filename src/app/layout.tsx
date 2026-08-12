@@ -1,11 +1,21 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import FontSizeToggle from '@/components/ui/FontSizeToggle';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: '파프짐 체력 평가 시스템 | Comprehensive Fitness Assessment',
   description:
     '운동 프로그램 설계를 위한 사전 평가 — ACSM · NSCA · NASM · FMS 가이드라인 기반',
+};
+
+// 모바일 핀치 축소 허용 (최소 50%) — 플로어에서 화면 전체 보기용
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 0.5,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <h1 className="text-lg md:text-xl font-bold leading-tight tracking-tight">파프짐 체력 평가 시스템</h1>
               <p className="text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
             </Link>
-            <nav className="flex gap-2 text-sm no-print">
+            <nav className="flex gap-2 text-sm no-print items-center">
+              <FontSizeToggle />
               <Link href="/" className="px-3.5 py-2 rounded-md border border-white/30 hover:border-white text-white">
                 회원님 목록
               </Link>

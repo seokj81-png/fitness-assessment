@@ -47,6 +47,7 @@ import type { AssessmentInput, Sex } from '@/lib/types';
 import ResultBox from '@/components/ui/ResultBox';
 import { pillClass } from './classification';
 import BodyPostureViewer from './BodyPostureViewer';
+import PostureSketch from './PostureSketch';
 import TrendCharts from './TrendCharts';
 import FitnessScoreCard from './FitnessScoreCard';
 
@@ -166,7 +167,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
-      'postureFlags','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
+      'postureFlags','postureMemo','postureDrawing','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
@@ -1117,6 +1118,27 @@ function PostureTab({
     <div>
       <h2 className="text-xl font-bold mb-4">정적 자세 평가 (NASM)</h2>
       <BodyPostureViewer />
+
+      <div className="card">
+        <h3 className="font-bold mb-2">질적 평가 — 체형 스케치 & 메모</h3>
+        <p className="text-xs text-slate-500 mb-3">
+          체크 항목으로 정의하기 어려운 주름·벌크·비대칭 등을 그림 위에 직접 표시하고 메모로 남기세요.
+        </p>
+        <PostureSketch
+          value={state.postureDrawing}
+          onChange={(v) => update('postureDrawing', v)}
+        />
+        <div className="mt-4">
+          <label className="label">질적 평가 메모</label>
+          <textarea
+            className="input"
+            rows={4}
+            placeholder="예: 우측 견갑 하각 돌출, 좌측 허리 주름 깊음, 종아리 벌크 비대칭 등"
+            value={state.postureMemo ?? ''}
+            onChange={(e) => update('postureMemo', e.target.value || undefined)}
+          />
+        </div>
+      </div>
       <p className="text-sm text-slate-600 mb-4">
         5 Kinetic Chain Checkpoints × 3 View — 관찰된 편차를 체크하면 NASM 자세 증후군이 자동 매칭됩니다.
       </p>
