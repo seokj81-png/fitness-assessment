@@ -229,6 +229,54 @@ export function classifyVO2max(v: number, age: number, sex: Sex): ClassifiedResu
   return classifyAscending(v, VO2MAX_NORMS, age, sex);
 }
 
+// ---- 여러 심폐 검사 중 최고 기록으로 최종 분류 ----
+
+export interface Vo2Estimate {
+  key: 'rockport' | 'run15' | 'run5min' | 'cooper';
+  label: string;
+  vo2: number;
+}
+
+export function allVo2Estimates(i: {
+  rockportTime?: number | null;
+  rockportHr?: number | null;
+  run15Time?: number | null;
+  run5minDist?: number | null;
+  cooperDist?: number | null;
+  weightKg?: number | null;
+  age?: number | null;
+  sex?: Sex | null;
+}): Vo2Estimate[] {
+  const out: Vo2Estimate[] = [];
+  if (i.rockportTime && i.rockportHr && i.weightKg && i.age && i.sex) {
+    out.push({
+      key: 'rockport',
+      label: 'Rockport 1마일 걷기',
+      vo2: rockportVO2max(i.rockportTime, i.rockportHr, i.weightKg, i.age, i.sex),
+    });
+  }
+  if (i.run15Time) {
+    out.push({ key: 'run15', label: '2.4km 달리기', vo2: run15MileVO2max(i.run15Time) });
+  }
+  if (i.run5minDist) {
+    const t = riegel2400FromRun5min(i.run5minDist);
+    if (t) out.push({ key: 'run5min', label: '5분 달리기 (Riegel)', vo2: vo2maxFrom2400(t) });
+  }
+  if (i.cooperDist) {
+    out.push({ key: 'cooper', label: '쿠퍼 12분 달리기', vo2: cooperVO2max(i.cooperDist) });
+  }
+  return out;
+}
+
+// 최종 분류 기준: 입력된 모든 검사 추정치 중 최고 VO2max
+export function bestVo2Estimate(
+  i: Parameters<typeof allVo2Estimates>[0]
+): Vo2Estimate | null {
+  const all = allVo2Estimates(i);
+  if (!all.length) return null;
+  return all.reduce((b, e) => (e.vo2 > b.vo2 ? e : b));
+}
+
 // 5-Min Run Test → predicted 2.4km (1.5-mile) time via Riegel endurance model
 //   T2 = T1 × (D2/D1)^1.06   (T1 = 5 min, D2 = 2400 m)
 export function riegel2400FromRun5min(dist5minM: number): number | null {

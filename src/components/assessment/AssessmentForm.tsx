@@ -18,6 +18,7 @@ import {
   classifyStepHR,
   riegel2400FromRun5min,
   vo2maxFrom2400,
+  allVo2Estimates,
   fmtMinSec,
   estimate1RM_avg,
   estimate1RM_epley,
@@ -46,7 +47,6 @@ import { FMS_TESTS, POSTURE_SYNDROMES } from '@/lib/norms';
 import type { AssessmentInput, Sex } from '@/lib/types';
 import ResultBox from '@/components/ui/ResultBox';
 import { pillClass } from './classification';
-import BodyPostureViewer from './BodyPostureViewer';
 import PostureSketch from './PostureSketch';
 import TrendCharts from './TrendCharts';
 import FitnessScoreCard from './FitnessScoreCard';
@@ -222,18 +222,21 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     const rhrClass = state.rhr ? classifyRHR(state.rhr) : null;
     const bpClass = state.sbp && state.dbp ? classifyBP(state.sbp, state.dbp) : null;
 
-    let vo2max: ReturnType<typeof classifyVO2max> = null;
-    if (state.rockportTime && state.rockportHr && weight && age && sex) {
-      const v = rockportVO2max(state.rockportTime, state.rockportHr, weight, age, sex);
-      vo2max = classifyVO2max(v, age, sex);
-    } else if (state.run15Time) {
-      vo2max = classifyVO2max(run15MileVO2max(state.run15Time), age, sex);
-    } else if (state.run5minDist) {
-      const t = riegel2400FromRun5min(state.run5minDist);
-      if (t) vo2max = classifyVO2max(vo2maxFrom2400(t), age, sex);
-    } else if (state.cooperDist) {
-      vo2max = classifyVO2max(cooperVO2max(state.cooperDist), age, sex);
-    }
+    // 입력된 모든 심폐 검사에서 VO2max를 추정하고, 최고 기록을 최종 분류로 사용
+    const vo2Estimates = allVo2Estimates({
+      rockportTime: state.rockportTime,
+      rockportHr: state.rockportHr,
+      run15Time: state.run15Time,
+      run5minDist: state.run5minDist,
+      cooperDist: state.cooperDist,
+      weightKg: weight,
+      age,
+      sex,
+    });
+    const bestVo2 = vo2Estimates.length
+      ? vo2Estimates.reduce((b, e) => (e.vo2 > b.vo2 ? e : b))
+      : null;
+    const vo2max = bestVo2 ? classifyVO2max(bestVo2.vo2, age, sex) : null;
 
     const stepClass = state.stepHr && sex ? classifyStepHR(state.stepHr, sex) : null;
 
@@ -294,6 +297,8 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       rhrClass,
       bpClass,
       vo2max,
+      vo2Estimates,
+      bestVo2,
       stepClass,
       bpRatio, sqRatio, dlRatio, ohpRatio, pcRatio, lpRatio,
       grip,
@@ -805,7 +810,31 @@ function CardioTab({
           <h3 className="font-bold mb-2">
             VO₂max 최종 분류 <span className="guideline-tag tag-acsm">ACSM</span>
           </h3>
+          {computed.vo2Estimates.length > 1 && (
+            <div className="text-sm mb-3 space-y-1">
+              <div className="text-xs text-slate-500 mb-1">
+                검사별 추정치 — 가장 좋은 기록이 최종 분류에 사용됩니다
+              </div>
+              {computed.vo2Estimates.map((e: any) => (
+                <div
+                  key={e.key}
+                  className="flex justify-between items-center px-3 py-1.5 rounded"
+                  style={
+                    e.key === computed.bestVo2?.key
+                      ? { background: '#111', color: '#fff', fontWeight: 600 }
+                      : { background: '#f2f2f2', color: '#555' }
+                  }
+                >
+                  <span>{e.key === computed.bestVo2?.key ? '★ ' : ''}{e.label}</span>
+                  <span className="tabular-nums">{e.vo2.toFixed(1)} ml/kg/min</span>
+                </div>
+              ))}
+            </div>
+          )}
           <ResultBox result={computed.vo2max} unit="ml/kg/min" />
+          {computed.bestVo2 && computed.vo2Estimates.length > 1 && (
+            <p className="text-xs text-slate-500 mt-2">기준 검사: {computed.bestVo2.label}</p>
+          )}
         </div>
       )}
     </div>
@@ -1117,12 +1146,13 @@ function PostureTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">정적 자세 평가 (NASM)</h2>
-      <BodyPostureViewer />
-
       <div className="card">
-        <h3 className="font-bold mb-2">질적 평가 — 체형 스케치 & 메모</h3>
+        <h3 className="font-bold mb-2">
+          NASM 정적 자세 평가 — 체형 스케치 & 메모 <span className="guideline-tag tag-nasm">NASM</span>
+        </h3>
         <p className="text-xs text-slate-500 mb-3">
-          체크 항목으로 정의하기 어려운 주름·벌크·비대칭 등을 그림 위에 직접 표시하고 메모로 남기세요.
+          5가지 운동 사슬 체크포인트(발·무릎·골반/LPHC·어깨·머리)를 전면·측면·후면에서 관찰하고,
+          체크 항목으로 정의하기 어려운 주름·벌크·비대칭 등은 그림 위에 직접 표시하거나 메모로 남기세요.
         </p>
         <PostureSketch
           value={state.postureDrawing}

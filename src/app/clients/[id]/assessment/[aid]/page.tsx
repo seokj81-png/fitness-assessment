@@ -36,6 +36,7 @@ import {
   cooperVO2max,
   riegel2400FromRun5min,
   vo2maxFrom2400,
+  allVo2Estimates,
   cardioComparison,
   trainingZones,
   vVO2max,
@@ -94,19 +95,22 @@ export default async function AssessmentViewPage({
   const rhrClass = a.rhr != null ? classifyRHR(a.rhr) : null;
 
   // ===== Cardio =====
-  let vo2 = a.vo2max;
-  if (!vo2) {
-    if (a.rockportTime && a.rockportHr && w) {
-      vo2 = rockportVO2max(a.rockportTime, a.rockportHr, w, age, sex);
-    } else if (a.run15Time) {
-      vo2 = run15MileVO2max(a.run15Time);
-    } else if (a.run5minDist) {
-      const t = riegel2400FromRun5min(a.run5minDist);
-      if (t) vo2 = vo2maxFrom2400(t);
-    } else if (a.cooperDist) {
-      vo2 = cooperVO2max(a.cooperDist);
-    }
-  }
+  // 입력된 모든 심폐 검사에서 VO2max를 추정 — 최고 기록이 최종 분류.
+  // 원자료가 있으면 저장값보다 우선(과거 우선순위-체인으로 저장된 값 자동 교정).
+  const vo2Estimates = allVo2Estimates({
+    rockportTime: a.rockportTime,
+    rockportHr: a.rockportHr,
+    run15Time: a.run15Time,
+    run5minDist: a.run5minDist,
+    cooperDist: a.cooperDist,
+    weightKg: w,
+    age,
+    sex,
+  });
+  const bestVo2 = vo2Estimates.length
+    ? vo2Estimates.reduce((b, e) => (e.vo2 > b.vo2 ? e : b))
+    : null;
+  const vo2 = bestVo2?.vo2 ?? a.vo2max ?? undefined;
   const vo2Class = vo2 ? classifyVO2max(vo2, age, sex) : null;
   const cardioCmp = vo2 ? cardioComparison(vo2, age, sex) : null;
   const zones = vo2 ? trainingZones(vVO2max(vo2)) : null;
@@ -367,6 +371,25 @@ export default async function AssessmentViewPage({
           <div className="grid md:grid-cols-2 gap-3">
             {vo2Class && (
               <ResultRow label="VO₂max" result={vo2Class} unit="ml/kg/min" />
+            )}
+            {vo2Estimates.length > 1 && (
+              <div className="md:col-span-2 text-sm space-y-1">
+                <div className="text-xs text-slate-500">검사별 추정치 — 최고 기록이 최종 분류에 사용됨</div>
+                {vo2Estimates.map((e) => (
+                  <div
+                    key={e.key}
+                    className="flex justify-between items-center px-3 py-1.5 rounded"
+                    style={
+                      e.key === bestVo2?.key
+                        ? { background: '#111', color: '#fff', fontWeight: 600 }
+                        : { background: '#f2f2f2', color: '#555' }
+                    }
+                  >
+                    <span>{e.key === bestVo2?.key ? '★ ' : ''}{e.label}</span>
+                    <span className="tabular-nums">{e.vo2.toFixed(1)} ml/kg/min</span>
+                  </div>
+                ))}
+              </div>
             )}
             {stepClass && (
               <ResultRow
