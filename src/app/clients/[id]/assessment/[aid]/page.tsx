@@ -209,6 +209,12 @@ export default async function AssessmentViewPage({
   ]);
   const enGuide = enWorst ? enduranceGuide(enWorst) : null;
 
+  // 요약 타일용 짧은 등급 라벨
+  const KO_LEVEL: Record<string, string> = {
+    excellent: '매우우수', good: '우수', average: '평균', below: '낮음', poor: '매우낮음',
+  };
+  const postureCount = (a.postureFlags || []).length;
+
   return (
     <div>
       <div className="flex items-start justify-between mb-5 flex-wrap gap-3 no-print">
@@ -283,6 +289,26 @@ export default async function AssessmentViewPage({
             value={`${fmsResult.total}/21`}
             href="#sec-fms"
           />
+          <HeroItem
+            label="근력"
+            value={stWorst ? KO_LEVEL[stWorst] : '-'}
+            href="#sec-strength"
+          />
+          <HeroItem
+            label="근지구력"
+            value={enWorst ? KO_LEVEL[enWorst] : '-'}
+            href="#sec-endurance"
+          />
+          <HeroItem
+            label="자세"
+            value={postureCount > 0 ? `이상 ${postureCount}건` : '양호'}
+            href="#sec-posture"
+          />
+          <HeroItem
+            label="안정시 심박"
+            value={a.rhr != null ? `${a.rhr} bpm` : '-'}
+            href="#sec-vitals"
+          />
           <HeroItem label="목적" value={goalLabel(client.goal)} />
         </div>
       </div>
@@ -343,7 +369,7 @@ export default async function AssessmentViewPage({
 
       {/* Vitals */}
       {(bpClass || rhrClass) && (
-        <div className="card" data-print-section="생체지표">
+        <div className="card" data-print-section="생체지표" id="sec-vitals">
           <h3 className="font-bold mb-3">
             안정시 활력징후 <span className="guideline-tag tag-acsm">ACSM</span>
           </h3>
@@ -490,7 +516,7 @@ export default async function AssessmentViewPage({
         a.pc1rm != null ||
         a.lp1rm != null ||
         est1rm != null) && (
-        <div className="card" data-print-section="근력">
+        <div className="card" data-print-section="근력" id="sec-strength">
           <h3 className="font-bold mb-3">
             근력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
@@ -559,7 +585,7 @@ export default async function AssessmentViewPage({
         pullupClass ||
         plank ||
         a.sorensen != null) && (
-        <div className="card" data-print-section="근지구력">
+        <div className="card" data-print-section="근지구력" id="sec-endurance">
           <h3 className="font-bold mb-3">
             근지구력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
@@ -621,7 +647,7 @@ export default async function AssessmentViewPage({
       )}
 
       {/* Posture */}
-      <div className="card" data-print-section="자세 평가">
+      <div className="card" data-print-section="자세 평가" id="sec-posture">
         <h3 className="font-bold mb-3">
           자세 <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
