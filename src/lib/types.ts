@@ -88,6 +88,10 @@ export interface AssessmentInput {
   postureDrawing?: string; // 체형 스케치 (PNG dataURL)
   posturePhotos?: string[]; // 자세 사진 (dataURL, 최대 4장)
 
+  // 평형성 — 눈뜨고 외발서기 (초)
+  balanceR?: number;
+  balanceL?: number;
+
   // 호흡 평가 (FMS Breathing Screen)
   breathFrc?: number; // FRC 숨참기 (초)
   breathTlc?: number; // TLC 숨참기 (초)

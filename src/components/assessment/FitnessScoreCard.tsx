@@ -216,6 +216,11 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
     { subject: '전면', score: flagScore(antCnt), display: `이상 ${antCnt}건` },
     { subject: '측면', score: flagScore(latCnt), display: `이상 ${latCnt}건` },
     { subject: '후면', score: flagScore(postCnt), display: `이상 ${postCnt}건` },
+    {
+      subject: '평형성',
+      score: clsScore(computed.balance?.cls?.classification),
+      display: computed.balance ? `${computed.balance.cls.value}초` : null,
+    },
     { subject: '호흡', score: breathScore, display: breath?.overall ? breath.overall.toUpperCase() : null },
   ];
 

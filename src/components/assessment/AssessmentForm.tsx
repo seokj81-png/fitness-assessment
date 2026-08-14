@@ -38,6 +38,8 @@ import {
   classifyPullup,
   breathScreen,
   BREATH_QUESTIONS,
+  analyzeBalance,
+  ageGroup,
   analyzePlank,
   PARQ_QUESTIONS,
   parqResult,
@@ -45,7 +47,7 @@ import {
   calcFMS,
   buildRecommendations,
 } from '@/lib/calculations';
-import { FMS_TESTS, POSTURE_SYNDROMES, MOVEMENT_COMPENSATIONS, POSTURE_SECTIONS } from '@/lib/norms';
+import { FMS_TESTS, POSTURE_SYNDROMES, MOVEMENT_COMPENSATIONS, POSTURE_SECTIONS, BALANCE_NORMS } from '@/lib/norms';
 import type { AssessmentInput, Sex } from '@/lib/types';
 import ResultBox from '@/components/ui/ResultBox';
 import { pillClass } from './classification';
@@ -170,7 +172,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
-      'postureFlags','postureMemo','postureDrawing','posturePhotos','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
+      'postureFlags','postureMemo','postureDrawing','posturePhotos','balanceR','balanceL','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
@@ -272,6 +274,9 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
           )
         : null;
 
+    const balance = analyzeBalance(state.balanceR, state.balanceL, age, sex);
+    const balanceRow = sex ? BALANCE_NORMS[sex][ageGroup(age || 30)] : null;
+
     const syndromes = matchPostureSyndromes(state.postureFlags || []);
     const fmsResult = calcFMS(state.fms || {}, {
       sh: state.clearSh,
@@ -312,6 +317,8 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       squatEnd,
       pullup,
       plank,
+      balance,
+      balanceRow,
       syndromes,
       fmsResult,
       parq,
@@ -1213,6 +1220,46 @@ function PostureTab({
             사진은 자동 압축되어 평가와 함께 저장되고 보고서에 표시됩니다.
           </p>
         </div>
+      </div>
+
+      {/* 평형성 — 눈뜨고 외발서기 */}
+      <div className="card">
+        <h3 className="font-bold mb-1">
+          평형성 — 눈뜨고 외발서기 <span className="guideline-tag">Balance</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-1">
+          양손은 허리 또는 자연스럽게 · 한쪽 발을 들어 유지한 시간(초) 기록 · 든 발이 바닥에
+          닿거나 지지물을 잡으면 종료. 좌우 각각 측정.
+        </p>
+        <p className="text-xs font-semibold mb-3" style={{ color: '#b42318' }}>
+          ⚠ 고령자는 낙상 위험 — 반드시 벽이나 튼튼한 의자를 바로 옆에 두고 실시하세요.
+        </p>
+        <div className="grid grid-cols-2 gap-3 max-w-sm mb-2">
+          <Num label="우측 지지 (초)" value={state.balanceR} onChange={(v) => update('balanceR', v)} />
+          <Num label="좌측 지지 (초)" value={state.balanceL} onChange={(v) => update('balanceL', v)} />
+        </div>
+        {computed.balanceRow && (
+          <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
+            이 연령대 기준 — 낮음 ≤{computed.balanceRow[0]}초 · 보통 ~{computed.balanceRow[1]}초 ·
+            양호 ~{computed.balanceRow[2]}초 · 우수 ~{computed.balanceRow[3]}초 · 매우우수 &gt;{computed.balanceRow[3]}초
+          </p>
+        )}
+        {computed.balance && (
+          <div className="mt-2">
+            <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" />
+            {computed.balance.asymPct != null && computed.balance.asymPct > 0 && (
+              <p className="text-xs mt-1.5" style={{ color: '#555' }}>
+                좌우 차이 {computed.balance.asymPct}%
+                {computed.balance.weakSide && ` (약한 쪽: ${computed.balance.weakSide === 'L' ? '좌' : '우'})`}
+              </p>
+            )}
+            {computed.balance.warning && (
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#b42318' }}>
+                ⚠ {computed.balance.warning}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 호흡 평가 — FMS Breathing Screen */}

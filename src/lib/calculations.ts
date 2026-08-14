@@ -15,6 +15,7 @@ import {
   CURLUP_NORMS,
   SQUAT_END_NORMS,
   PULLUP_NORMS,
+  BALANCE_NORMS,
   WHR_NORMS,
   POSTURE_SYNDROMES,
   type NormTable,
@@ -531,6 +532,40 @@ export function classifySquatEndurance(reps: number, age: number, sex: Sex) {
 }
 export function classifyPullup(reps: number, age: number, sex: Sex) {
   return classifyAscending(reps, PULLUP_NORMS, age, sex);
+}
+
+// 평형성 — 눈뜨고 외발서기 (연령별 기준, 좌우 중 약한 쪽으로 판정)
+export interface BalanceAnalysis {
+  cls: ClassifiedResult; // 약한 쪽 기준 분류
+  weakSide: 'L' | 'R' | null;
+  asymPct: number | null; // |R-L|/max
+  warning: string | null;
+}
+
+export function analyzeBalance(
+  r: number | null | undefined,
+  l: number | null | undefined,
+  age: number,
+  sex: Sex
+): BalanceAnalysis | null {
+  if (r == null && l == null) return null;
+  const worst = Math.min(r ?? Infinity, l ?? Infinity);
+  const cls = classifyAscending(worst, BALANCE_NORMS, age, sex);
+  if (!cls) return null;
+  let asymPct: number | null = null;
+  let weakSide: 'L' | 'R' | null = null;
+  let warning: string | null = null;
+  if (r != null && l != null && Math.max(r, l) > 0) {
+    asymPct = Math.round((Math.abs(r - l) / Math.max(r, l)) * 100);
+    weakSide = r < l ? 'R' : l < r ? 'L' : null;
+    if (asymPct >= 30 && weakSide) {
+      warning = `좌우 비대칭 ${asymPct}% — ${weakSide === 'L' ? '좌측' : '우측'} 균형·발목 안정성 훈련 권장`;
+    }
+  }
+  if (worst < 10) {
+    warning = (warning ? warning + ' · ' : '') + '10초 미만 — 낙상 위험 주의, 균형 훈련 우선';
+  }
+  return { cls, weakSide, asymPct, warning };
 }
 
 export interface PlankAnalysis {

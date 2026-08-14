@@ -47,6 +47,7 @@ import {
   enduranceGuide,
   bodyCompGuide,
   breathScreen,
+  analyzeBalance,
 } from '@/lib/calculations';
 import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
 import { MOVEMENT_COMPENSATIONS, POSTURE_ITEM_LABELS } from '@/lib/norms';
@@ -225,6 +226,9 @@ export default async function AssessmentViewPage({
   ]);
   const enGuide = enWorst ? enduranceGuide(enWorst) : null;
 
+  // ===== 평형성 (눈뜨고 외발서기) =====
+  const balance = analyzeBalance(a.balanceR, a.balanceL, age, sex);
+
   // ===== 호흡 평가 (FMS Breathing Screen) =====
   const breath = breathScreen({
     frc: a.breathFrc,
@@ -322,6 +326,8 @@ export default async function AssessmentViewPage({
     addDelta('컬업', p.curlupReps ?? null, a.curlupReps ?? null, '회', 'up');
     addDelta('스쿼트 지구력', p.squatReps ?? null, a.squatReps ?? null, '회', 'up');
     addDelta('전방 플랭크', p.plankFront ?? null, a.plankFront ?? null, '초', 'up');
+    addDelta('외발서기 (우)', p.balanceR ?? null, a.balanceR ?? null, '초', 'up');
+    addDelta('외발서기 (좌)', p.balanceL ?? null, a.balanceL ?? null, '초', 'up');
     addDelta('Sorensen', p.sorensen ?? null, a.sorensen ?? null, '초', 'up');
     addDelta('FMS 총점', prevFms, fmsEntered ? fmsResult.total : null, '점', 'up');
   }
@@ -520,6 +526,7 @@ export default async function AssessmentViewPage({
             squatEnd: squatEndClass,
             plank,
             fmsResult,
+            balance,
           }}
           state={{
             biaBf: a.biaBf,
@@ -702,6 +709,22 @@ export default async function AssessmentViewPage({
               </div>
             )}
           </>
+        )}
+
+        {/* 평형성 — 눈뜨고 외발서기 */}
+        {balance && (
+          <div className="mt-4">
+            <ResultRow
+              label={`평형성 — 외발서기 (우 ${a.balanceR ?? '-'}초 / 좌 ${a.balanceL ?? '-'}초)`}
+              result={balance.cls}
+              unit="초 (약한 쪽)"
+            />
+            {balance.warning && (
+              <p className="text-xs mt-1.5 font-semibold" style={{ color: '#b42318' }}>
+                ⚠ {balance.warning}
+              </p>
+            )}
+          </div>
         )}
 
         {/* 질적 평가 — 체형 스케치 & 메모 */}

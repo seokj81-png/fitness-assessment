@@ -115,6 +115,10 @@ model Assessment {
   postureDrawing String? // 체형 스케치 (PNG dataURL, 그림 레이어만)
   posturePhotos  String? // 자세 사진 첨부 (JSON: dataURL[], 최대 4장 압축 JPEG)
 
+  // 평형성 — 눈뜨고 외발서기 (초, 좌/우)
+  balanceR    Int?
+  balanceL    Int?
+
   // 호흡 평가 — FMS Breathing Screen (Kiesel et al. 2016)
   breathFrc   Int?    // FRC 숨참기 (초) — 일반 호기 후
   breathTlc   Int?    // TLC 숨참기 (초) — 최대 흡기 후

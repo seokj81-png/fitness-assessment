@@ -12,6 +12,7 @@ import {
   CURLUP_NORMS,
   SQUAT_END_NORMS,
   PULLUP_NORMS,
+  BALANCE_NORMS,
   type NormTable,
   type AgeGroup,
 } from '@/lib/norms';
@@ -35,6 +36,7 @@ const TESTS: Array<{ name: string; table: NormTable; unit: string; digits: numbe
   { name: '컬업', table: CURLUP_NORMS, unit: '회', digits: 0 },
   { name: '스쿼트 지구력', table: SQUAT_END_NORMS, unit: '회', digits: 0 },
   { name: '풀업', table: PULLUP_NORMS, unit: '회', digits: 0 },
+  { name: '외발서기 (눈뜨고)', table: BALANCE_NORMS, unit: '초', digits: 0 },
 ];
 
 // 회원 연령대·성별의 5등급 기준 범위표 — 트레이너 설명용
