@@ -518,7 +518,20 @@ export default async function AssessmentViewPage({
             plank,
             fmsResult,
           }}
-          state={{ biaBf: a.biaBf, sbp: a.sbp, dbp: a.dbp }}
+          state={{
+            biaBf: a.biaBf,
+            sbp: a.sbp,
+            dbp: a.dbp,
+            weight: w,
+            biaFm: a.biaFm,
+            biaFfm: a.biaFfm,
+            postureFlags: a.postureFlags,
+            ohsaFlags: a.ohsaFlags,
+            breathFrc: a.breathFrc,
+            breathTlc: a.breathTlc,
+            breathHiLo: a.breathHiLo,
+            breathQ: a.breathQ,
+          }}
         />
       </div>
 

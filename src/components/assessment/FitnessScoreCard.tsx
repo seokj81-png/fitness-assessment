@@ -8,6 +8,7 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
 } from 'recharts';
+import { breathScreen } from '@/lib/calculations';
 
 type Classification = 'excellent' | 'good' | 'average' | 'below' | 'poor';
 
@@ -27,12 +28,6 @@ function clsColor(cls?: string): string {
   return m[cls ?? ''] ?? '#c4c4c4';
 }
 
-function avgScore(classes: (string | undefined | null)[]): number {
-  const valid = classes.filter(Boolean) as string[];
-  if (!valid.length) return 0;
-  return Math.round(valid.reduce((s, c) => s + clsScore(c), 0) / valid.length);
-}
-
 function fmsCls(total: number): Classification | undefined {
   if (!total) return undefined;
   if (total >= 18) return 'excellent';
@@ -42,45 +37,13 @@ function fmsCls(total: number): Classification | undefined {
   return 'poor';
 }
 
-type Stat = { label: string; value: string | null; cls?: string };
-
-function StatBubble({ label, value, cls }: Stat) {
-  const score = cls ? clsScore(cls) : null;
-  const color = clsColor(cls);
-  return (
-    <div className="flex items-center gap-2.5">
-      <div
-        className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center font-black text-base"
-        style={{
-          background: cls ? `${color}1a` : '#f0f0f0',
-          border: `2.5px solid ${color}`,
-          color: cls ? '#111111' : '#8a8a8a',
-          boxShadow: 'none',
-        }}
-      >
-        {score ?? '–'}
-      </div>
-      <div className="min-w-0">
-        <div className="text-[11px] text-slate-400 leading-none mb-0.5">{label}</div>
-        <div className="text-xs text-white font-semibold truncate">{value ?? '–'}</div>
-      </div>
-    </div>
-  );
-}
-
-function StatGroup({ title, stats }: { title: string; stats: Stat[] }) {
-  return (
-    <div className="mb-5">
-      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 border-b border-slate-700 pb-1">
-        {title}
-      </div>
-      <div className="space-y-2.5">
-        {stats.map((s) => (
-          <StatBubble key={s.label} {...s} />
-        ))}
-      </div>
-    </div>
-  );
+// 보상/이상 소견 개수 → 점수 (적을수록 좋음)
+function flagScore(n: number): number {
+  if (n === 0) return 92;
+  if (n <= 2) return 76;
+  if (n <= 4) return 60;
+  if (n <= 6) return 44;
+  return 28;
 }
 
 function OverallCircle({ score }: { score: number }) {
@@ -114,39 +77,94 @@ function OverallCircle({ score }: { score: number }) {
   );
 }
 
+interface MiniItem {
+  subject: string;
+  score: number;
+  display: string | null; // 실측값 표기 (null=미측정)
+}
+
+// 카테고리별 하위 요인 미니 레이더 + 실측값 목록
+function MiniRadar({ title, items, note }: { title: string; items: MiniItem[]; note?: string }) {
+  return (
+    <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid #e3e3e3' }}>
+      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-700 pb-1 mb-1">
+        {title}
+      </div>
+      <ResponsiveContainer width="100%" height={170}>
+        <RadarChart data={items} margin={{ top: 10, right: 28, left: 28, bottom: 6 }}>
+          <PolarGrid stroke="#e9e9e9" />
+          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#555555' }} />
+          <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 8, fill: '#c4c4c4' }} />
+          <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.14} strokeWidth={2} />
+        </RadarChart>
+      </ResponsiveContainer>
+      <div className="mt-1 space-y-0.5">
+        {items.map((i) => (
+          <div key={i.subject} className="flex items-center justify-between text-[11px]">
+            <span className="text-slate-400">{i.subject}</span>
+            <span className="font-semibold tabular-nums" style={{ color: i.display ? '#111' : '#c4c4c4' }}>
+              {i.display ?? '미측정'}
+            </span>
+          </div>
+        ))}
+      </div>
+      {note && <p className="text-[10px] mt-1.5" style={{ color: '#9a9a9a' }}>{note}</p>}
+    </div>
+  );
+}
+
 export default function FitnessScoreCard({ computed, state }: { computed: any; state: any }) {
   const fmsTotal = computed.fmsResult?.total ?? 0;
   const fmsClsVal = fmsCls(fmsTotal);
 
+  // ── 플래그 카운트 ──
+  const postureFlags: string[] = state.postureFlags ?? [];
+  const ohsaFlags: string[] = state.ohsaFlags ?? [];
+  const antCnt = postureFlags.filter((k) => k.startsWith('ant_')).length;
+  const latCnt = postureFlags.filter((k) => k.startsWith('lat_')).length;
+  const postCnt = postureFlags.filter((k) => k.startsWith('post_')).length;
+  const ohCnt = ohsaFlags.filter((k) => k.startsWith('oh_')).length;
+  const slCnt = ohsaFlags.filter((k) => k.startsWith('sl_')).length;
+  const ppCnt = ohsaFlags.filter((k) => k.startsWith('pu_') || k.startsWith('pl_')).length;
+
+  // ── 호흡 (자세 카테고리 하위) ──
+  const breath = breathScreen({
+    frc: state.breathFrc,
+    tlc: state.breathTlc,
+    q: state.breathQ,
+    hiLo: state.breathHiLo,
+  });
+  const breathScore =
+    breath?.overall === 'green' ? 92 : breath?.overall === 'yellow' ? 60 : breath?.overall === 'red' ? 28 : 0;
+
+  // ── 점수 계산 ──
+  const bfScore = clsScore(computed.bodyFat?.classification);
+  const bmiScore = clsScore(computed.bmiClass?.classification);
+  const strengthScores = [
+    computed.bpRatio?.classification,
+    computed.sqRatio?.classification,
+    computed.dlRatio?.classification,
+    computed.grip?.classification,
+  ].filter(Boolean) as string[];
+  const enduranceScores = [
+    computed.pushup?.classification,
+    computed.pullup?.classification,
+    computed.curlup?.classification,
+    computed.squatEnd?.classification,
+    computed.plank?.frontClass?.classification,
+  ].filter(Boolean) as string[];
+  const avg = (arr: string[]) =>
+    arr.length ? Math.round(arr.reduce((s, c) => s + clsScore(c), 0) / arr.length) : 0;
+  const postureScore = flagScore(antCnt + latCnt + postCnt); // 이상 소견 적을수록 우수 (0건=양호)
+
+  // ── 카테고리 종합 레이더 (6각) — 신체조성 기준은 체지방률 ──
   const radarData = [
-    {
-      subject: '체성분',
-      score: avgScore([computed.bmiClass?.classification, computed.bodyFat?.classification]),
-    },
-    {
-      subject: '심폐체력',
-      score: clsScore(computed.vo2max?.classification),
-    },
-    {
-      subject: '근력',
-      score: avgScore([
-        computed.bpRatio?.classification,
-        computed.sqRatio?.classification,
-        computed.grip?.classification,
-      ]),
-    },
-    {
-      subject: '근지구력',
-      score: avgScore([
-        computed.pushup?.classification,
-        computed.curlup?.classification,
-        computed.plank?.frontClass?.classification,
-      ]),
-    },
-    {
-      subject: '움직임',
-      score: fmsTotal > 0 ? Math.round((fmsTotal / 21) * 100) : 0,
-    },
+    { subject: '신체조성', score: bfScore || bmiScore }, // 체지방률 우선, 없으면 BMI
+    { subject: '심폐체력', score: clsScore(computed.vo2max?.classification) },
+    { subject: '근력', score: avg(strengthScores) },
+    { subject: '근지구력', score: avg(enduranceScores) },
+    { subject: '움직임', score: fmsTotal > 0 ? Math.round((fmsTotal / 21) * 100) : 0 },
+    { subject: '자세', score: postureScore },
   ];
 
   const validScores = radarData.filter((d) => d.score > 0);
@@ -154,139 +172,60 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
     ? Math.round(validScores.reduce((s, d) => s + d.score, 0) / validScores.length)
     : 0;
 
-  // 항목별 상세 레이더 — 카테고리 내부의 모든 항목 (미측정=0)
-  const itemRadarData = [
-    { subject: 'BMI', score: clsScore(computed.bmiClass?.classification) },
-    { subject: '체지방률', score: clsScore(computed.bodyFat?.classification) },
-    { subject: 'WHR', score: clsScore(computed.whrClass?.classification) },
-    { subject: 'VO₂max', score: clsScore(computed.vo2max?.classification) },
-    { subject: '안정심박', score: clsScore(computed.rhrClass?.classification) },
-    { subject: '혈압', score: clsScore(computed.bpClass?.classification) },
-    { subject: '벤치', score: clsScore(computed.bpRatio?.classification) },
-    { subject: '스쿼트', score: clsScore(computed.sqRatio?.classification) },
-    { subject: '데드', score: clsScore(computed.dlRatio?.classification) },
-    { subject: '악력', score: clsScore(computed.grip?.classification) },
-    { subject: '푸시업', score: clsScore(computed.pushup?.classification) },
-    { subject: '풀업', score: clsScore(computed.pullup?.classification) },
-    { subject: '컬업', score: clsScore(computed.curlup?.classification) },
-    { subject: '스쿼트지구력', score: clsScore(computed.squatEnd?.classification) },
-    { subject: '플랭크', score: clsScore(computed.plank?.frontClass?.classification) },
-    { subject: 'FMS', score: fmsTotal > 0 ? Math.round((fmsTotal / 21) * 100) : 0 },
+  // ── 카테고리별 하위 요인 미니 레이더 데이터 ──
+  const fmt = (v: number | null | undefined, unit: string, digits = 1) =>
+    v != null ? `${Number(v).toFixed(digits).replace(/\.0$/, '')}${unit}` : null;
+
+  const bodyItems: MiniItem[] = [
+    { subject: '체중', score: state.weight != null ? bmiScore : 0, display: fmt(state.weight, 'kg') },
+    { subject: 'BMI', score: bmiScore, display: computed.bmiClass ? computed.bmiClass.value.toFixed(1) : null },
+    { subject: '제지방량', score: state.biaFfm != null ? bfScore : 0, display: fmt(state.biaFfm, 'kg') },
+    { subject: '체지방량', score: state.biaFm != null ? bfScore : 0, display: fmt(state.biaFm, 'kg') },
+    { subject: '체지방률', score: bfScore, display: computed.bodyFat ? `${computed.bodyFat.value.toFixed(1)}%` : null },
   ];
 
-  const leftStats: { title: string; stats: Stat[] }[] = [
-    {
-      title: '체성분',
-      stats: [
-        {
-          label: 'BMI',
-          value: computed.bmiClass ? `${computed.bmiClass.value.toFixed(1)} kg/m²` : null,
-          cls: computed.bmiClass?.classification,
-        },
-        {
-          label: '체지방률',
-          value: computed.bodyFat
-            ? `${computed.bodyFat.value.toFixed(1)}%`
-            : state.biaBf
-            ? `${state.biaBf}%`
-            : null,
-          cls: computed.bodyFat?.classification,
-        },
-        {
-          label: 'WHR',
-          value: computed.whrClass ? computed.whrClass.value.toFixed(2) : null,
-          cls: computed.whrClass?.classification,
-        },
-      ],
-    },
-    {
-      title: '근력',
-      stats: [
-        {
-          label: '벤치프레스 1RM',
-          value: computed.bpRatio ? `체중비 ${computed.bpRatio.value.toFixed(2)}` : null,
-          cls: computed.bpRatio?.classification,
-        },
-        {
-          label: '스쿼트 1RM',
-          value: computed.sqRatio ? `체중비 ${computed.sqRatio.value.toFixed(2)}` : null,
-          cls: computed.sqRatio?.classification,
-        },
-        {
-          label: '데드리프트 1RM',
-          value: computed.dlRatio ? `체중비 ${computed.dlRatio.value.toFixed(2)}` : null,
-          cls: computed.dlRatio?.classification,
-        },
-        {
-          label: '악력 합산',
-          value: computed.grip ? `${computed.grip.value.toFixed(0)} kg` : null,
-          cls: computed.grip?.classification,
-        },
-      ],
-    },
+  const cardioItems: MiniItem[] = [
+    { subject: 'VO₂max', score: clsScore(computed.vo2max?.classification), display: computed.vo2max ? computed.vo2max.value.toFixed(1) : null },
+    { subject: '안정 심박', score: clsScore(computed.rhrClass?.classification), display: computed.rhrClass ? `${computed.rhrClass.value}bpm` : null },
+    { subject: '혈압', score: clsScore(computed.bpClass?.classification), display: computed.bpClass ? `${state.sbp}/${state.dbp}` : null },
   ];
 
-  const rightStats: { title: string; stats: Stat[] }[] = [
-    {
-      title: '심폐체력',
-      stats: [
-        {
-          label: 'VO₂max',
-          value: computed.vo2max ? `${computed.vo2max.value.toFixed(1)} ml/kg/min` : null,
-          cls: computed.vo2max?.classification,
-        },
-        {
-          label: '안정 심박수',
-          value: computed.rhrClass ? `${computed.rhrClass.value} bpm` : null,
-          cls: computed.rhrClass?.classification,
-        },
-        {
-          label: '혈압',
-          value: computed.bpClass ? `${state.sbp}/${state.dbp} mmHg` : null,
-          cls: computed.bpClass?.classification,
-        },
-      ],
-    },
-    {
-      title: '근지구력',
-      stats: [
-        {
-          label: '푸시업',
-          value: computed.pushup ? `${computed.pushup.value}회` : null,
-          cls: computed.pushup?.classification,
-        },
-        {
-          label: '풀업',
-          value: computed.pullup ? `${computed.pullup.value}회` : null,
-          cls: computed.pullup?.classification,
-        },
-        {
-          label: '컬업',
-          value: computed.curlup ? `${computed.curlup.value}회` : null,
-          cls: computed.curlup?.classification,
-        },
-        {
-          label: '스쿼트 지구력',
-          value: computed.squatEnd ? `${computed.squatEnd.value}회` : null,
-          cls: computed.squatEnd?.classification,
-        },
-        {
-          label: '플랭크',
-          value: computed.plank?.frontClass ? `${computed.plank.frontClass.value}초` : null,
-          cls: computed.plank?.frontClass?.classification,
-        },
-      ],
-    },
-    {
-      title: '움직임',
-      stats: [
-        {
-          label: 'FMS 총점',
-          value: fmsTotal > 0 ? `${fmsTotal} / 21` : null,
-          cls: fmsClsVal,
-        },
-      ],
-    },
+  const strengthItems: MiniItem[] = [
+    { subject: '벤치', score: clsScore(computed.bpRatio?.classification), display: computed.bpRatio ? `×${computed.bpRatio.value.toFixed(2)}` : null },
+    { subject: '스쿼트', score: clsScore(computed.sqRatio?.classification), display: computed.sqRatio ? `×${computed.sqRatio.value.toFixed(2)}` : null },
+    { subject: '데드리프트', score: clsScore(computed.dlRatio?.classification), display: computed.dlRatio ? `×${computed.dlRatio.value.toFixed(2)}` : null },
+    { subject: '악력', score: clsScore(computed.grip?.classification), display: computed.grip ? `${computed.grip.value.toFixed(0)}kg` : null },
+  ];
+
+  const enduranceItems: MiniItem[] = [
+    { subject: '푸시업', score: clsScore(computed.pushup?.classification), display: computed.pushup ? `${computed.pushup.value}회` : null },
+    { subject: '풀업', score: clsScore(computed.pullup?.classification), display: computed.pullup ? `${computed.pullup.value}회` : null },
+    { subject: '컬업', score: clsScore(computed.curlup?.classification), display: computed.curlup ? `${computed.curlup.value}회` : null },
+    { subject: '스쿼트지구력', score: clsScore(computed.squatEnd?.classification), display: computed.squatEnd ? `${computed.squatEnd.value}회` : null },
+    { subject: '플랭크', score: clsScore(computed.plank?.frontClass?.classification), display: computed.plank?.frontClass ? `${computed.plank.frontClass.value}초` : null },
+  ];
+
+  const movementItems: MiniItem[] = [
+    { subject: 'FMS', score: fmsTotal > 0 ? Math.round((fmsTotal / 21) * 100) : 0, display: fmsTotal > 0 ? `${fmsTotal}/21` : null },
+    { subject: '오버헤드 스쿼트', score: flagScore(ohCnt), display: `보상 ${ohCnt}건` },
+    { subject: '싱글레그', score: flagScore(slCnt), display: `보상 ${slCnt}건` },
+    { subject: '푸시·풀', score: flagScore(ppCnt), display: `보상 ${ppCnt}건` },
+  ];
+
+  const postureItems: MiniItem[] = [
+    { subject: '전면', score: flagScore(antCnt), display: `이상 ${antCnt}건` },
+    { subject: '측면', score: flagScore(latCnt), display: `이상 ${latCnt}건` },
+    { subject: '후면', score: flagScore(postCnt), display: `이상 ${postCnt}건` },
+    { subject: '호흡', score: breathScore, display: breath?.overall ? breath.overall.toUpperCase() : null },
+  ];
+
+  const categories = [
+    { title: '신체조성', items: bodyItems, note: '체중·제지방량·체지방량 점수는 BMI/체지방률 등급 기준 환산' },
+    { title: '심폐체력', items: cardioItems },
+    { title: '근력 (1RM 체중비)', items: strengthItems },
+    { title: '근지구력', items: enduranceItems },
+    { title: '움직임', items: movementItems, note: '보상·이상 소견이 적을수록 점수 높음' },
+    { title: '자세', items: postureItems, note: '이상 소견이 적을수록 점수 높음 · 호흡=FMS Breathing Screen' },
   ];
 
   return (
@@ -302,65 +241,31 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
         <h3 className="text-sm font-bold text-slate-300 tracking-wider uppercase">체력요인 결과</h3>
       </div>
 
-      {/* Body */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-0">
-        {/* Left */}
-        <div className="p-5">
-          {leftStats.map((g) => (
-            <StatGroup key={g.title} title={g.title} stats={g.stats} />
-          ))}
-        </div>
-
-        {/* Center */}
-        <div className="flex flex-col items-center justify-start px-4 py-5 border-x border-slate-700/40 min-w-[200px]">
+      {/* 종합 점수 + 카테고리 6각 레이더 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center px-5 py-5 border-b border-slate-700/40">
+        <div className="flex justify-center">
           <OverallCircle score={overallScore} />
-          <div className="mt-4 w-full">
-            <ResponsiveContainer width="100%" height={220}>
-              <RadarChart data={radarData} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
-                <PolarGrid stroke="#e9e9e9" />
-                <PolarAngleAxis
-                  dataKey="subject"
-                  tick={{ fontSize: 10, fill: '#555555' }}
-                />
-                <PolarRadiusAxis
-                  angle={90}
-                  domain={[0, 100]}
-                  tickCount={3}
-                  tick={{ fontSize: 9, fill: '#8a8a8a' }}
-                />
-                <Radar
-                  dataKey="score"
-                  stroke="#111111"
-                  fill="#111111"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
         </div>
-
-        {/* Right */}
-        <div className="p-5">
-          {rightStats.map((g) => (
-            <StatGroup key={g.title} title={g.title} stats={g.stats} />
-          ))}
+        <div>
+          <ResponsiveContainer width="100%" height={240}>
+            <RadarChart data={radarData} margin={{ top: 12, right: 34, left: 34, bottom: 12 }}>
+              <PolarGrid stroke="#e9e9e9" />
+              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#555555' }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 9, fill: '#8a8a8a' }} />
+              <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.15} strokeWidth={2} />
+            </RadarChart>
+          </ResponsiveContainer>
+          <p className="text-[10px] text-center" style={{ color: '#9a9a9a' }}>
+            신체조성 기준: 체지방률 등급
+          </p>
         </div>
       </div>
 
-      {/* 항목별 상세 레이더 — 카테고리 내부 전 항목 */}
-      <div className="px-5 pb-2 pt-4 border-t border-slate-700/50">
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-          항목별 상세 레이더 <span className="normal-case font-medium">(미측정 항목은 0으로 표시)</span>
-        </div>
-        <ResponsiveContainer width="100%" height={320}>
-          <RadarChart data={itemRadarData} margin={{ top: 14, right: 40, left: 40, bottom: 14 }}>
-            <PolarGrid stroke="#e9e9e9" />
-            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#555555' }} />
-            <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 9, fill: '#8a8a8a' }} />
-            <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.12} strokeWidth={2} />
-          </RadarChart>
-        </ResponsiveContainer>
+      {/* 카테고리별 하위 요인 미니 레이더 */}
+      <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {categories.map((c) => (
+          <MiniRadar key={c.title} title={c.title} items={c.items} note={c.note} />
+        ))}
       </div>
 
       {/* Legend */}
