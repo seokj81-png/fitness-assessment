@@ -46,6 +46,7 @@ import {
   strengthGuide,
   enduranceGuide,
   bodyCompGuide,
+  breathScreen,
 } from '@/lib/calculations';
 import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
 import { MOVEMENT_COMPENSATIONS } from '@/lib/norms';
@@ -222,9 +223,23 @@ export default async function AssessmentViewPage({
   ]);
   const enGuide = enWorst ? enduranceGuide(enWorst) : null;
 
+  // ===== 호흡 평가 (FMS Breathing Screen) =====
+  const breath = breathScreen({
+    frc: a.breathFrc,
+    tlc: a.breathTlc,
+    q: a.breathQ,
+    hiLo: a.breathHiLo,
+  });
+
   // ===== 안전 주의 (위험 요소 상단 배너) =====
   const fmsEntered = Object.keys(a.fms || {}).length > 0;
   const risks: Array<{ title: string; guide: string }> = [];
+  if (breath?.overall === 'red') {
+    risks.push({
+      title: '호흡 스크린 Red — 호흡 기능부전 의심',
+      guide: '고부하 저항운동 보류 · 호흡 재훈련 우선 후 재검 (FMS Breathing Screen)',
+    });
+  }
   if (!parq.passed) {
     risks.push({
       title: `PAR-Q+ '예' ${parq.yesCount}개`,
@@ -650,6 +665,56 @@ export default async function AssessmentViewPage({
           </div>
         )}
       </div>
+
+      {/* 호흡 평가 — FMS Breathing Screen */}
+      {breath && (
+        <div className="card" data-print-section="호흡 평가">
+          <h3 className="font-bold mb-3">
+            호흡 평가 <span className="guideline-tag tag-fms">FMS Breathing Screen</span>
+          </h3>
+          {breath.overall && (
+            <div
+              className="p-3 rounded-lg mb-3"
+              style={
+                breath.overall === 'green'
+                  ? { background: '#edf7ee', border: '1.5px solid #a6d7ae' }
+                  : breath.overall === 'yellow'
+                  ? { background: '#fef7e6', border: '1.5px solid #f0d48a' }
+                  : { background: '#fef3f2', border: '1.5px solid #f0b4ae' }
+              }
+            >
+              <div
+                className="font-bold text-sm"
+                style={{ color: breath.overall === 'green' ? '#067647' : breath.overall === 'yellow' ? '#b54708' : '#b42318' }}
+              >
+                {breath.overall === 'green' ? '🟢' : breath.overall === 'yellow' ? '🟡' : '🔴'} {breath.label}
+              </div>
+              <div className="text-xs mt-1" style={{ color: '#555' }}>{breath.message}</div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            {a.breathFrc != null && (
+              <Fact label="FRC 숨참기 (일반 호기 후)" value={`${a.breathFrc}초 · ${(breath.frc || '').toUpperCase()}`} />
+            )}
+            {a.breathTlc != null && (
+              <Fact label="TLC 숨참기 (최대 흡기 후)" value={`${a.breathTlc}초 · ${(breath.tlc || '').toUpperCase()}`} />
+            )}
+            {a.breathQ && a.breathQ.length > 0 && (
+              <Fact label="호흡 설문 (4문항 최고점)" value={`${Math.max(...a.breathQ)}점 · ${(breath.q || '').toUpperCase()}`} />
+            )}
+            {a.breathHiLo && (
+              <Fact
+                label="Hi-Lo 관찰"
+                value={
+                  a.breathHiLo === 'diaph' ? '복식(횡격막) 우세 — 정상'
+                  : a.breathHiLo === 'thoracic' ? '흉식 우세 — 기능부전 의심'
+                  : '역설 호흡 — 기능부전'
+                }
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Movement / FMS */}
       <div className="card" data-print-section="움직임 (FMS)" id="sec-fms">

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 function serialize(data: Record<string, unknown>) {
-  const jsonFields = ['parq', 'postureFlags', 'fms', 'ohsaFlags', 'rom'];
+  const jsonFields = ['parq', 'postureFlags', 'fms', 'ohsaFlags', 'rom', 'breathQ'];
   const out: Record<string, unknown> = { ...data };
   for (const k of jsonFields) {
     if (out[k] !== undefined && out[k] !== null && typeof out[k] !== 'string') {

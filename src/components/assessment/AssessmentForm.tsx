@@ -36,6 +36,8 @@ import {
   classifyCurlup,
   classifySquatEndurance,
   classifyPullup,
+  breathScreen,
+  BREATH_QUESTIONS,
   analyzePlank,
   PARQ_QUESTIONS,
   parqResult,
@@ -167,7 +169,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
-      'postureFlags','postureMemo','postureDrawing','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
+      'postureFlags','postureMemo','postureDrawing','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
@@ -1188,6 +1190,127 @@ function PostureTab({
             onChange={(e) => update('postureMemo', e.target.value || undefined)}
           />
         </div>
+      </div>
+
+      {/* 호흡 평가 — FMS Breathing Screen */}
+      <div className="card">
+        <h3 className="font-bold mb-1">
+          호흡 평가 <span className="guideline-tag tag-fms">FMS Breathing Screen</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-3">
+          숨참기 2종 + 설문 4문항 — 통과 시 호흡 기능부전 배제 민감도 0.89 (Kiesel et al. 2016).
+          앉은 자세에서 실시.
+        </p>
+        <div className="grid md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <Num
+              label="① FRC 숨참기 (초)"
+              value={state.breathFrc}
+              onChange={(v) => update('breathFrc', v)}
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              평소처럼 내쉰 뒤 코 막고 유지 — 첫 호흡 욕구·호흡근 수축까지.
+              Green &gt;35 / Yellow 26–35 / Red ≤25
+            </p>
+          </div>
+          <div>
+            <Num
+              label="② TLC 숨참기 (초)"
+              value={state.breathTlc}
+              onChange={(v) => update('breathTlc', v)}
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              최대로 들이마신 뒤 한계까지 유지 (근육 사용 허용).
+              Green &gt;60 / Yellow 36–60 / Red ≤35
+            </p>
+          </div>
+          <div>
+            <label className="label">③ Hi-Lo 관찰 (가슴·복부 손 대고 5호흡)</label>
+            <select
+              className="input"
+              value={state.breathHiLo ?? ''}
+              onChange={(e) => update('breathHiLo', (e.target.value || undefined) as any)}
+            >
+              <option value="">미실시</option>
+              <option value="diaph">복식(횡격막) 우세 — 정상</option>
+              <option value="thoracic">흉식(상부 흉곽) 우세 — 기능부전 의심</option>
+              <option value="paradox">역설 호흡 (들숨에 배 함몰) — 기능부전</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mb-2">
+          <div className="label mb-2">④ 호흡 설문 (각 0–3)</div>
+          <div className="space-y-2">
+            {BREATH_QUESTIONS.map((qText, qi) => {
+              const answers = state.breathQ ?? [];
+              const cur = answers[qi];
+              return (
+                <div key={qi} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded" style={{ background: '#f7f7f7', border: '1px solid #e3e3e3' }}>
+                  <span className="text-sm" style={{ color: '#333' }}>Q{qi + 1}. {qText}</span>
+                  <div className="flex gap-1">
+                    {['전혀 0', '가끔 1', '자주 2', '매우 3'].map((lab, val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => {
+                          const next = [...(state.breathQ ?? [0, 0, 0, 0])];
+                          next[qi] = val;
+                          update('breathQ', next);
+                        }}
+                        className="px-2.5 py-1.5 rounded text-xs font-semibold transition"
+                        style={
+                          cur === val
+                            ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                            : { background: '#fff', color: '#777', border: '1px solid #d6d6d6' }
+                        }
+                      >
+                        {lab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {state.breathQ && (
+            <button
+              type="button"
+              className="text-xs underline mt-1.5"
+              style={{ color: '#8a8a8a' }}
+              onClick={() => update('breathQ', undefined)}
+            >
+              설문 초기화 (미실시로)
+            </button>
+          )}
+        </div>
+
+        {(() => {
+          const br = breathScreen({
+            frc: state.breathFrc,
+            tlc: state.breathTlc,
+            q: state.breathQ,
+            hiLo: state.breathHiLo,
+          });
+          if (!br || !br.overall) return null;
+          const c =
+            br.overall === 'green'
+              ? { bg: '#edf7ee', bd: '#a6d7ae', tx: '#067647' }
+              : br.overall === 'yellow'
+              ? { bg: '#fef7e6', bd: '#f0d48a', tx: '#b54708' }
+              : { bg: '#fef3f2', bd: '#f0b4ae', tx: '#b42318' };
+          return (
+            <div className="mt-3 p-3 rounded-lg" style={{ background: c.bg, border: `1.5px solid ${c.bd}` }}>
+              <div className="font-bold text-sm" style={{ color: c.tx }}>
+                {br.overall === 'green' ? '🟢' : br.overall === 'yellow' ? '🟡' : '🔴'} {br.label}
+              </div>
+              <div className="text-xs mt-1" style={{ color: c.tx }}>{br.message}</div>
+              <div className="text-[11px] mt-1.5" style={{ color: '#555' }}>
+                {br.frc && `FRC: ${br.frc.toUpperCase()}`}{br.tlc && ` · TLC: ${br.tlc.toUpperCase()}`}{br.q && ` · 설문: ${br.q.toUpperCase()}`}
+              </div>
+            </div>
+          );
+        })()}
       </div>
       <p className="text-sm text-slate-600 mb-4">
         5 Kinetic Chain Checkpoints × 3 View — 관찰된 편차를 체크하면 NASM 자세 증후군이 자동 매칭됩니다.

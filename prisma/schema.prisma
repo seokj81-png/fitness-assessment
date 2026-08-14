@@ -114,6 +114,12 @@ model Assessment {
   postureMemo    String? // 자세 질적 평가 메모
   postureDrawing String? // 체형 스케치 (PNG dataURL, 그림 레이어만)
 
+  // 호흡 평가 — FMS Breathing Screen (Kiesel et al. 2016)
+  breathFrc   Int?    // FRC 숨참기 (초) — 일반 호기 후
+  breathTlc   Int?    // TLC 숨참기 (초) — 최대 흡기 후
+  breathHiLo  String? // Hi-Lo 관찰: "diaph" | "thoracic" | "paradox"
+  breathQ     String? // JSON: number[4] — 4문항 각 0-3 (긴장/손발참/하품/야간 구강호흡)
+
   // FMS scores (JSON: Record<string,number>)
   fms          String? // JSON: {dsq, hs_r, hs_l, lu_r, lu_l, sm_r, sm_l, aslr_r, aslr_l, tsp, rs_r, rs_l}
   clearSh      String? // "neg" | "pos"

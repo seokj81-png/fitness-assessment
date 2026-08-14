@@ -697,6 +697,81 @@ export function bodyCompGuide(level: Classification): DomainGuide {
   };
 }
 
+// -------- 호흡 평가 — FMS Breathing Screen (Kiesel et al. 2016, 민감도 0.89) --------
+
+export type BreathLight = 'green' | 'yellow' | 'red';
+
+export const BREATH_QUESTIONS = [
+  '긴장감을 느낀다',
+  '손이나 발이 차다',
+  '하품을 자주 한다',
+  '밤에 입으로 호흡한다',
+];
+
+// FRC 숨참기: Red ≤25초 / Yellow 26–35초 / Green >35초
+export function breathFrcLight(sec: number): BreathLight {
+  if (sec > 35) return 'green';
+  if (sec >= 26) return 'yellow';
+  return 'red';
+}
+
+// TLC 숨참기: Red ≤35초 / Yellow 36–60초 / Green >60초
+export function breathTlcLight(sec: number): BreathLight {
+  if (sec > 60) return 'green';
+  if (sec >= 36) return 'yellow';
+  return 'red';
+}
+
+// 설문 4문항(각 0–3): 최고 응답 기준 — 2–3점 Red / 1점 Yellow / 0점 Green
+export function breathQLight(answers: number[]): BreathLight {
+  const m = Math.max(...answers);
+  if (m >= 2) return 'red';
+  if (m === 1) return 'yellow';
+  return 'green';
+}
+
+export interface BreathScreenResult {
+  frc: BreathLight | null;
+  tlc: BreathLight | null;
+  q: BreathLight | null;
+  hiLo?: 'diaph' | 'thoracic' | 'paradox';
+  overall: BreathLight | null; // 가장 나쁜 등급
+  label: string;
+  message: string;
+}
+
+const LIGHT_ORDER: BreathLight[] = ['green', 'yellow', 'red'];
+
+export function breathScreen(input: {
+  frc?: number | null;
+  tlc?: number | null;
+  q?: number[] | null;
+  hiLo?: 'diaph' | 'thoracic' | 'paradox' | null;
+}): BreathScreenResult | null {
+  const frc = input.frc != null ? breathFrcLight(input.frc) : null;
+  const tlc = input.tlc != null ? breathTlcLight(input.tlc) : null;
+  const q = input.q && input.q.length > 0 ? breathQLight(input.q) : null;
+  const lights = [frc, tlc, q].filter(Boolean) as BreathLight[];
+  if (!lights.length && !input.hiLo) return null;
+  const overall = lights.length
+    ? lights.reduce((w, l) => (LIGHT_ORDER.indexOf(l) > LIGHT_ORDER.indexOf(w) ? l : w))
+    : null;
+  const label =
+    overall === 'green' ? 'Green — 호흡 기능 양호'
+    : overall === 'yellow' ? 'Yellow — 일부 결손'
+    : overall === 'red' ? 'Red — 호흡 기능부전 의심'
+    : 'Hi-Lo 관찰만 기록됨';
+  const message =
+    overall === 'green'
+      ? '호흡이 최적 수준 — 운동을 정상 진행합니다.'
+      : overall === 'yellow'
+      ? '주의하며 진행 — 운동에 호흡 재훈련을 병행하고 변화를 모니터링하세요.'
+      : overall === 'red'
+      ? '호흡 기능 우선 해결 — 고부하 저항운동을 보류하고 호흡 재훈련 후 재검하세요 (2–3주 무변화 시 의료 의뢰).'
+      : '';
+  return { frc, tlc, q, hiLo: input.hiLo ?? undefined, overall, label, message };
+}
+
 // -------- PAR-Q+ --------
 
 export const PARQ_QUESTIONS = [
