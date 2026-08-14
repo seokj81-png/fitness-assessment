@@ -448,6 +448,21 @@ export default async function AssessmentViewPage({
         </div>
       </div>
 
+      {/* 미성년 회원 — 성인 규준 참고용 안내 (회원 전달용 보고서에도 포함) */}
+      {age < 20 && (
+        <div
+          className="card"
+          data-print-section="연령 기준 안내"
+          style={{ border: '1.5px solid #8a8a8a', background: '#f7f7f7' }}
+        >
+          <div className="text-sm" style={{ color: '#333' }}>
+            ℹ️ <b>{age <= 12 ? '어린이' : '청소년'} 회원 ({age}세)</b> — 본 보고서의 등급
+            분류(매우우수~매우낮음)는 <b>성인(만 20세 이상) 규준</b> 기준입니다. 소아·청소년 전용
+            기준이 아니므로 등급은 참고용이며, 이전 측정 대비 변화 추이를 중심으로 해석하세요.
+          </div>
+        </div>
+      )}
+
       {/* 📈 이전 평가 대비 변화 */}
       {p && deltas.length > 0 && (
         <div className="card" data-print-section="변화 비교">

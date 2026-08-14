@@ -361,6 +361,17 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         </nav>
       </div>
 
+      {/* 미성년 회원 — 성인 규준 참고용 안내 */}
+      {age > 0 && age < 20 && (
+        <div
+          className="mb-4 no-print text-sm px-4 py-3 rounded-xl"
+          style={{ background: '#f7f7f7', border: '1.5px solid #8a8a8a', color: '#333' }}
+        >
+          ℹ️ <b>{age <= 12 ? '어린이' : '청소년'} 회원 ({age}세)</b> — 등급 분류는 성인(만 20세
+          이상) 규준 기준이므로 참고용입니다. 절대 수치보다 이전 측정 대비 변화를 중심으로 해석하세요.
+        </div>
+      )}
+
       {tab === 'client' && (
         <ClientTab state={state} update={update} parqResult={computed.parq} computed={computed} />
       )}
@@ -1362,6 +1373,8 @@ function MovementTab({
             ['oh_knee_var', '무릎 내반 (Varus)'],
             ['oh_knee_valg', '무릎 외반 (Valgus)'],
             ['oh_low_back', '요추 과도 아치'],
+            ['oh_pelvis_ant', '골반 전방 경사'],
+            ['oh_pelvis_post', '골반 후방 경사'],
             ['oh_torso_lean', '상체 과도 전경'],
             ['oh_arms_fall', '팔 전방 낙하'],
             ['oh_heel_rise', '뒤꿈치 들림'],

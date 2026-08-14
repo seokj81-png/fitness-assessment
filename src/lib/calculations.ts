@@ -438,8 +438,9 @@ export function trainingZones(vvo2Kmh: number): TrainingZone[] {
       speedHighKmh: null,
       paceLow: paceMinKm(hi.speedLowKmh),
       paceHigh: null,
-      durationLabel: '인터벌 3–5분 × 4–5세트 (총 15–25분)',
-      detail: 'Zone 4–5 — VO₂max·무산소 역치 자극, 세트 간 1:1 회복',
+      durationLabel: '4분 운동 + 4분 회복 × 4세트 = 총 32분',
+      detail:
+        'Zone 4–5 — 목표 속도로 4분 달리기 → 느린 조깅·걷기로 4분 회복 (운동:휴식 = 1:1) · 주 1–2회. 시간이 없으면 2분 운동 + 2분 회복 × 6세트(총 24분)로 대체 가능',
     },
   ];
 }
