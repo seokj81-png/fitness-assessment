@@ -48,6 +48,7 @@ import {
   bodyCompGuide,
 } from '@/lib/calculations';
 import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
+import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthChart';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
@@ -66,6 +67,17 @@ export default async function AssessmentViewPage({
   ]);
   if (!client || !assessmentRaw || assessmentRaw.clientId !== client.id)
     notFound();
+
+  // 직전 평가 (변화 비교용)
+  const prevRaw = await prisma.assessment.findFirst({
+    where: {
+      clientId: client.id,
+      id: { not: assessmentRaw.id },
+      date: { lt: assessmentRaw.date },
+    },
+    orderBy: { date: 'desc' },
+  });
+  const p = prevRaw ? parseAssessment(prevRaw) : null;
 
   const a = parseAssessment(assessmentRaw);
   const sex: Sex = client.sex === 'F' ? 'F' : 'M';
@@ -209,6 +221,107 @@ export default async function AssessmentViewPage({
   ]);
   const enGuide = enWorst ? enduranceGuide(enWorst) : null;
 
+  // ===== 안전 주의 (위험 요소 상단 배너) =====
+  const fmsEntered = Object.keys(a.fms || {}).length > 0;
+  const risks: Array<{ title: string; guide: string }> = [];
+  if (!parq.passed) {
+    risks.push({
+      title: `PAR-Q+ '예' ${parq.yesCount}개`,
+      guide: '운동 시작 전 의료인 평가·감독 필요 (ACSM 사전 선별 기준)',
+    });
+  }
+  if (a.sbp != null && a.dbp != null && (a.sbp >= 130 || a.dbp >= 80)) {
+    const crisis = a.sbp >= 180 || a.dbp >= 120;
+    const stage2 = a.sbp >= 140 || a.dbp >= 90;
+    risks.push({
+      title: `혈압 ${a.sbp}/${a.dbp} mmHg — ${crisis ? '고혈압 위기' : stage2 ? '고혈압 2기' : '고혈압 1기/상승'}`,
+      guide: crisis
+        ? '운동 금지 — 즉시 의료 조치 필요'
+        : '발살바(숨 참기) 동반 고중량 저항운동 금지 · 점진적 워밍업 · 측정 전 안정 확인' +
+          (stage2 ? ' · 운동 전 의사 상담 권장' : ''),
+    });
+  }
+  if (a.rhr != null && a.rhr > 100) {
+    risks.push({
+      title: `안정시 심박 ${a.rhr} bpm — 빈맥`,
+      guide: '고강도 운동 보류 · 카페인/수면/스트레스 확인 후 재측정, 지속 시 의료 상담',
+    });
+  }
+  if (fmsEntered && fmsResult.zeros > 0) {
+    risks.push({
+      title: `FMS 통증 동작 ${fmsResult.zeros}개 (0점)`,
+      guide: '해당 움직임 패턴은 프로그램에서 즉시 제외 · 통증 평가 후 의료/운동처방 전문가 의뢰',
+    });
+  } else if (fmsEntered && fmsResult.total <= 14) {
+    risks.push({
+      title: `FMS 총점 ${fmsResult.total}/21 — 부상 위험 증가`,
+      guide: '고강도·고중량 진입 전 저점 항목(0-1점) 교정운동 우선 (Kiesel et al. 2007)',
+    });
+  }
+
+  // ===== 이전 평가 대비 변화 =====
+  type Dir = 'up' | 'down' | 'neutral'; // up = 클수록 개선
+  const deltas: Array<{ label: string; prev: number; cur: number; unit: string; dir: Dir }> = [];
+  const addDelta = (
+    label: string,
+    prevV: number | null | undefined,
+    curV: number | null | undefined,
+    unit: string,
+    dir: Dir
+  ) => {
+    if (prevV == null || curV == null) return;
+    deltas.push({ label, prev: prevV, cur: curV, unit, dir });
+  };
+  if (p) {
+    const pw = p.weight ?? client.weight ?? undefined;
+    const prevVo2 =
+      allVo2Estimates({
+        rockportTime: p.rockportTime, rockportHr: p.rockportHr, run15Time: p.run15Time,
+        run5minDist: p.run5minDist, cooperDist: p.cooperDist, weightKg: pw, age, sex,
+      }).reduce<number | null>((b, e) => (b == null || e.vo2 > b ? e.vo2 : b), null) ?? p.vo2max ?? null;
+    const prevFms = Object.keys(p.fms || {}).length > 0
+      ? calcFMS(p.fms || {}, { sh: p.clearSh || 'neg', ext: p.clearExt || 'neg', flex: p.clearFlex || 'neg' }).total
+      : null;
+    const round1 = (v: number | null | undefined) => (v == null ? null : Math.round(v * 10) / 10);
+
+    addDelta('체중', pw ?? null, w ?? null, 'kg', 'neutral');
+    addDelta('체지방률', p.biaBf ?? null, a.biaBf ?? null, '%', 'down');
+    addDelta('VO₂max', round1(prevVo2), round1(vo2 ?? null), '', 'up');
+    addDelta(
+      '악력 합산',
+      p.gripR != null && p.gripL != null ? p.gripR + p.gripL : null,
+      a.gripR != null && a.gripL != null ? a.gripR + a.gripL : null,
+      'kg', 'up'
+    );
+    addDelta('벤치프레스 1RM', p.bp1rm ?? null, a.bp1rm ?? null, 'kg', 'up');
+    addDelta('스쿼트 1RM', p.sq1rm ?? null, a.sq1rm ?? null, 'kg', 'up');
+    addDelta('데드리프트 1RM', p.dl1rm ?? null, a.dl1rm ?? null, 'kg', 'up');
+    addDelta('오버헤드프레스 1RM', p.ohp1rm ?? null, a.ohp1rm ?? null, 'kg', 'up');
+    addDelta('파워클린 1RM', p.pc1rm ?? null, a.pc1rm ?? null, 'kg', 'up');
+    addDelta('레그프레스 1RM', p.lp1rm ?? null, a.lp1rm ?? null, 'kg', 'up');
+    addDelta('푸시업', p.pushupReps ?? null, a.pushupReps ?? null, '회', 'up');
+    addDelta('풀업', p.pullupReps ?? null, a.pullupReps ?? null, '회', 'up');
+    addDelta('컬업', p.curlupReps ?? null, a.curlupReps ?? null, '회', 'up');
+    addDelta('스쿼트 지구력', p.squatReps ?? null, a.squatReps ?? null, '회', 'up');
+    addDelta('전방 플랭크', p.plankFront ?? null, a.plankFront ?? null, '초', 'up');
+    addDelta('Sorensen', p.sorensen ?? null, a.sorensen ?? null, '초', 'up');
+    addDelta('FMS 총점', prevFms, fmsEntered ? fmsResult.total : null, '점', 'up');
+  }
+
+  // ===== 1RM 체중비 바 차트 데이터 =====
+  const liftBars: LiftBar[] = w
+    ? ([
+        { name: '벤치 (상체)', v: a.bp1rm, cls: bpRatioClass?.classification },
+        { name: 'OHP (상체)', v: a.ohp1rm, cls: ohpRatioClass?.classification },
+        { name: '스쿼트 (하체)', v: a.sq1rm, cls: sqRatioClass?.classification },
+        { name: '데드 (하체)', v: a.dl1rm, cls: dlRatioClass?.classification },
+        { name: '레그프레스 (하체)', v: a.lp1rm, cls: lpRatioClass?.classification },
+        { name: '파워클린 (전신)', v: a.pc1rm, cls: pcRatioClass?.classification },
+      ] as Array<{ name: string; v: number | null | undefined; cls?: string }>)
+        .filter((l) => l.v != null)
+        .map((l) => ({ name: l.name, ratio: Math.round(((l.v as number) / w) * 100) / 100, cls: l.cls }))
+    : [];
+
   // 요약 타일용 짧은 등급 라벨
   const KO_LEVEL: Record<string, string> = {
     excellent: '매우우수', good: '우수', average: '평균', below: '낮음', poor: '매우낮음',
@@ -255,6 +368,27 @@ export default async function AssessmentViewPage({
       </div>
 
       <PrintSectionPicker />
+
+      {/* ⚠ 안전 주의 배너 — 위험 요소 최상단 우선 배치 */}
+      {risks.length > 0 && (
+        <div
+          className="card"
+          data-print-section="안전 주의"
+          style={{ border: '2px solid #d92d20', background: '#fef3f2' }}
+        >
+          <h3 className="font-bold mb-2" style={{ color: '#b42318' }}>
+            ⚠ 안전 주의 — 프로그램 설계 전 반드시 확인
+          </h3>
+          <ul className="space-y-2">
+            {risks.map((r) => (
+              <li key={r.title} className="text-sm" style={{ color: '#7a271a' }}>
+                <b style={{ color: '#b42318' }}>{r.title}</b>
+                <div className="text-xs mt-0.5" style={{ color: '#7a271a' }}>→ {r.guide}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Hero summary */}
       <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
@@ -313,6 +447,23 @@ export default async function AssessmentViewPage({
           />
         </div>
       </div>
+
+      {/* 📈 이전 평가 대비 변화 */}
+      {p && deltas.length > 0 && (
+        <div className="card" data-print-section="변화 비교">
+          <h3 className="font-bold mb-1">
+            📈 이전 평가 대비 변화{' '}
+            <span className="text-xs font-normal" style={{ color: '#8a8a8a' }}>
+              {new Date(p.date).toLocaleDateString('ko-KR')} → {new Date(a.date).toLocaleDateString('ko-KR')}
+            </span>
+          </h3>
+          <div className="grid md:grid-cols-2 gap-2 mt-2">
+            {deltas.map((d) => (
+              <DeltaRow key={d.label} d={d} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PAR-Q */}
       <div className="card" data-print-section="PAR-Q+">
@@ -476,7 +627,16 @@ export default async function AssessmentViewPage({
                   <span className="text-slate-900 font-semibold">{(cardioCmp.userSpeedKmh - cardioCmp.avgSpeedKmh).toFixed(1)} km/h 빠름</span>
                 ) : (
                   <span className="text-slate-900 font-semibold">{(cardioCmp.avgSpeedKmh - cardioCmp.userSpeedKmh).toFixed(1)} km/h 느림</span>
-                )}.
+                )}
+                {' · '}VO₂max는 동일 성별·나이 평균 대비{' '}
+                <span
+                  className="font-semibold"
+                  style={{ color: cardioCmp.userVo2 >= cardioCmp.avgVo2 ? '#067647' : '#b42318' }}
+                >
+                  {cardioCmp.userVo2 >= cardioCmp.avgVo2 ? '+' : ''}
+                  {(((cardioCmp.userVo2 - cardioCmp.avgVo2) / cardioCmp.avgVo2) * 100).toFixed(0)}%
+                </span>
+                .
               </p>
             </div>
           )}
@@ -521,6 +681,7 @@ export default async function AssessmentViewPage({
           <h3 className="font-bold mb-3">
             근력 <span className="guideline-tag tag-nsca">NSCA</span>
           </h3>
+          <StrengthChart lifts={liftBars} />
           <div className="grid md:grid-cols-2 gap-3">
             {a.bp1rm != null && (
               bpRatioClass
@@ -673,11 +834,13 @@ export default async function AssessmentViewPage({
                         (일치 {s.hits}건)
                       </span>
                     </div>
-                    <div className="text-xs text-slate-600 mt-1">
-                      <b>과활성:</b> {s.overactive}
+                    <div className="text-xs mt-1.5">
+                      <b style={{ color: '#b42318' }}>과활성 (이완·스트레칭 대상):</b>{' '}
+                      <MuscleChips text={s.overactive} tone="over" />
                     </div>
-                    <div className="text-xs text-slate-600">
-                      <b>저활성:</b> {s.underactive}
+                    <div className="text-xs mt-1.5">
+                      <b style={{ color: '#175cd3' }}>저활성 (활성화·강화 대상):</b>{' '}
+                      <MuscleChips text={s.underactive} tone="under" />
                     </div>
                   </div>
                 ))}
@@ -806,6 +969,60 @@ export default async function AssessmentViewPage({
         </div>
       )}
     </div>
+  );
+}
+
+// 이전 평가 대비 변화 행 — "악력 50 → 58kg (+8 · +16%)"
+function DeltaRow({
+  d,
+}: {
+  d: { label: string; prev: number; cur: number; unit: string; dir: 'up' | 'down' | 'neutral' };
+}) {
+  const diff = Math.round((d.cur - d.prev) * 10) / 10;
+  const pct = d.prev !== 0 ? Math.round((diff / Math.abs(d.prev)) * 100) : null;
+  const improved = d.dir === 'neutral' || diff === 0 ? null : d.dir === 'up' ? diff > 0 : diff < 0;
+  const color = improved === null ? '#8a8a8a' : improved ? '#067647' : '#b42318';
+  const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+  return (
+    <div
+      className="flex justify-between items-center gap-2 px-3 py-2 rounded"
+      style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}
+    >
+      <span className="text-sm" style={{ color: '#333' }}>{d.label}</span>
+      <span className="text-sm tabular-nums font-semibold whitespace-nowrap" style={{ color: '#111' }}>
+        {fmt(d.prev)} → {fmt(d.cur)}{d.unit}{' '}
+        <span style={{ color }}>
+          ({diff > 0 ? '+' : ''}{fmt(diff)}
+          {pct !== null && diff !== 0 ? ` · ${diff > 0 ? '+' : ''}${pct}%` : ''})
+        </span>
+      </span>
+    </div>
+  );
+}
+
+// NASM 과활성/저활성 근육 칩 — 빨강(이완)/파랑(강화) 시각 대비
+function MuscleChips({ text, tone }: { text: string; tone: 'over' | 'under' }) {
+  const names = text
+    .replace(/\s*\([^)]*\)\s*$/, '') // 뒤쪽 영문 병기 괄호 제거
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const c =
+    tone === 'over'
+      ? { bg: '#fef3f2', bd: '#f0b4ae', tx: '#b42318' }
+      : { bg: '#eff8ff', bd: '#b2ddff', tx: '#175cd3' };
+  return (
+    <span className="inline-flex flex-wrap gap-1 align-middle">
+      {names.map((n) => (
+        <span
+          key={n}
+          className="text-[11px] px-1.5 py-0.5 rounded"
+          style={{ background: c.bg, border: `1px solid ${c.bd}`, color: c.tx }}
+        >
+          {n}
+        </span>
+      ))}
+    </span>
   );
 }
 

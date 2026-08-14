@@ -68,7 +68,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             정보 수정
           </Link>
           <Link href={`/clients/${client.id}/assessment/new`} className="btn-primary">
-            + 새 체력평가
+            {client.assessments.length > 0 ? '+ 재평가' : '+ 첫 체력평가'}
           </Link>
           <DeleteClientButton id={client.id} />
         </div>
