@@ -51,6 +51,7 @@ import {
 import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
 import { MOVEMENT_COMPENSATIONS } from '@/lib/norms';
 import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthChart';
+import FitnessScoreCard from '@/components/assessment/FitnessScoreCard';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
@@ -495,6 +496,31 @@ export default async function AssessmentViewPage({
           </div>
         </div>
       )}
+
+      {/* 체력요인 종합 (폼 ⑧종합 탭과 동일한 요약) */}
+      <div className="mb-5" data-print-section="체력요인 종합">
+        <FitnessScoreCard
+          computed={{
+            bmiClass,
+            bodyFat: bfClass,
+            whrClass,
+            vo2max: vo2Class,
+            rhrClass,
+            bpClass,
+            bpRatio: bpRatioClass,
+            sqRatio: sqRatioClass,
+            dlRatio: dlRatioClass,
+            grip: gripClass,
+            pushup: pushupClass,
+            pullup: pullupClass,
+            curlup: curlupClass,
+            squatEnd: squatEndClass,
+            plank,
+            fmsResult,
+          }}
+          state={{ biaBf: a.biaBf, sbp: a.sbp, dbp: a.dbp }}
+        />
+      </div>
 
       {/* PAR-Q */}
       <div className="card" data-print-section="PAR-Q+">

@@ -24,9 +24,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header style={{ background: '#101010' }} className="text-white py-4 md:py-5 px-4 md:px-5 sticky top-0 z-40 border-b border-black">
           <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
-            <Link href="/" className="block">
-              <h1 className="text-lg md:text-xl font-bold leading-tight tracking-tight">파프짐 체력 평가 시스템</h1>
-              <p className="text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
+            <Link href="/" className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/pafgym-logo.png"
+                alt="PAFGYM 로고"
+                className="w-10 h-10 md:w-11 md:h-11 rounded"
+                style={{ border: '1px solid rgba(255,255,255,0.25)' }}
+              />
+              <span className="block">
+                <h1 className="text-lg md:text-xl font-bold leading-tight tracking-tight">파프짐 체력 평가 시스템</h1>
+                <p className="text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
+              </span>
             </Link>
             <nav className="flex gap-2 text-sm no-print items-center">
               <FontSizeToggle />
