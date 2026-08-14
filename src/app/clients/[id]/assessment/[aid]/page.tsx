@@ -485,6 +485,27 @@ export default async function AssessmentViewPage({
         </div>
       </div>
 
+      {/* Vitals */}
+      {(bpClass || rhrClass) && (
+        <div className="card" data-print-section="생체지표" id="sec-vitals">
+          <h3 className="font-bold mb-3">
+            안정시 활력징후 <span className="guideline-tag tag-acsm">ACSM</span>
+          </h3>
+          <div className="grid md:grid-cols-2 gap-3">
+            {bpClass && (
+              <ResultRow
+                label="혈압"
+                result={bpClass}
+                displayValue={`${a.sbp}/${a.dbp} mmHg`}
+              />
+            )}
+            {rhrClass && (
+              <ResultRow label="안정시 심박수" result={rhrClass} unit="bpm" />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Body composition */}
       <div className="card" data-print-section="신체조성" id="sec-body">
         <h3 className="font-bold mb-3">
@@ -519,26 +540,103 @@ export default async function AssessmentViewPage({
         )}
       </div>
 
-      {/* Vitals */}
-      {(bpClass || rhrClass) && (
-        <div className="card" data-print-section="생체지표" id="sec-vitals">
-          <h3 className="font-bold mb-3">
-            안정시 활력징후 <span className="guideline-tag tag-acsm">ACSM</span>
-          </h3>
-          <div className="grid md:grid-cols-2 gap-3">
-            {bpClass && (
-              <ResultRow
-                label="혈압"
-                result={bpClass}
-                displayValue={`${a.sbp}/${a.dbp} mmHg`}
-              />
+      {/* Posture */}
+      <div className="card" data-print-section="자세 평가" id="sec-posture">
+        <h3 className="font-bold mb-3">
+          자세 <span className="guideline-tag tag-nasm">NASM</span>
+        </h3>
+        {(a.postureFlags || []).length === 0 ? (
+          <p className="text-sm text-slate-500">관찰된 자세 이상 소견 없음.</p>
+        ) : (
+          <>
+            <p className="text-sm text-slate-600 mb-2">
+              관찰된 체크포인트 이상: {(a.postureFlags || []).length}건
+            </p>
+            {syndromes.length > 0 && (
+              <div className="space-y-3">
+                {syndromes.map((s) => (
+                  <div
+                    key={s.name}
+                    className="border-l-4 pl-3 py-1"
+                    style={{ borderLeftColor: '#111' }}
+                  >
+                    <div className="font-semibold text-slate-100">
+                      의심: {s.name}{' '}
+                      <span className="text-xs text-slate-500">
+                        (일치 {s.hits}건)
+                      </span>
+                    </div>
+                    <div className="text-xs mt-1.5">
+                      <b style={{ color: '#b42318' }}>과활성 (이완·스트레칭 대상):</b>{' '}
+                      <MuscleChips text={s.overactive} tone="over" />
+                    </div>
+                    <div className="text-xs mt-1.5">
+                      <b style={{ color: '#175cd3' }}>저활성 (활성화·강화 대상):</b>{' '}
+                      <MuscleChips text={s.underactive} tone="under" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-            {rhrClass && (
-              <ResultRow label="안정시 심박수" result={rhrClass} unit="bpm" />
+            {(a.ohsaFlags || []).length > 0 && (
+              <p className="text-sm text-slate-600 mt-3">
+                OHSA/동적 보상 패턴: {(a.ohsaFlags || []).length}건 관찰됨
+              </p>
             )}
+          </>
+        )}
+
+        {/* 질적 평가 — 체형 스케치 & 메모 */}
+        {a.postureDrawing && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ position: 'relative', aspectRatio: '1900 / 1076', border: '1px solid #e3e3e3', background: '#f5f5f5' }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={a.postureDrawing} alt="트레이너 스케치" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
           </div>
+        )}
+        {a.postureMemo && (
+          <div className="mt-3 text-sm p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #e3e3e3', color: '#333', whiteSpace: 'pre-wrap' }}>
+            <b style={{ color: '#111' }}>질적 평가 메모</b>
+            <br />
+            {a.postureMemo}
+          </div>
+        )}
+      </div>
+
+      {/* Movement / FMS */}
+      <div className="card" data-print-section="움직임 (FMS)" id="sec-fms">
+        <h3 className="font-bold mb-3">
+          움직임 (FMS 2.0) <span className="guideline-tag tag-fms">FMS</span>
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-3">
+          <MetricBig label="총점" value={`${fmsResult.total}/21`} />
+          <MetricBig
+            label="최저점 0개"
+            value={String(fmsResult.zeros)}
+            warn={fmsResult.zeros > 0}
+          />
+          <MetricBig
+            label="비대칭"
+            value={String(fmsResult.asymmetries)}
+            warn={fmsResult.asymmetries > 0}
+          />
+          <MetricBig
+            label="위험 판정"
+            value={fmsResult.total < 14 || fmsResult.zeros > 0 ? '부상 위험 ↑' : '통과'}
+            warn={fmsResult.total < 14 || fmsResult.zeros > 0}
+          />
         </div>
-      )}
+        <p className="text-xs text-slate-500">
+          FMS 14점 미만 또는 0점이 있으면 통증 평가 후 교정 우선. Cook (2014).
+        </p>
+      </div>
 
       {/* Cardio */}
       {(vo2Class || stepClass) && (
@@ -807,104 +905,6 @@ export default async function AssessmentViewPage({
           )}
         </div>
       )}
-
-      {/* Posture */}
-      <div className="card" data-print-section="자세 평가" id="sec-posture">
-        <h3 className="font-bold mb-3">
-          자세 <span className="guideline-tag tag-nasm">NASM</span>
-        </h3>
-        {(a.postureFlags || []).length === 0 ? (
-          <p className="text-sm text-slate-500">관찰된 자세 이상 소견 없음.</p>
-        ) : (
-          <>
-            <p className="text-sm text-slate-600 mb-2">
-              관찰된 체크포인트 이상: {(a.postureFlags || []).length}건
-            </p>
-            {syndromes.length > 0 && (
-              <div className="space-y-3">
-                {syndromes.map((s) => (
-                  <div
-                    key={s.name}
-                    className="border-l-4 pl-3 py-1"
-                    style={{ borderLeftColor: '#111' }}
-                  >
-                    <div className="font-semibold text-slate-100">
-                      의심: {s.name}{' '}
-                      <span className="text-xs text-slate-500">
-                        (일치 {s.hits}건)
-                      </span>
-                    </div>
-                    <div className="text-xs mt-1.5">
-                      <b style={{ color: '#b42318' }}>과활성 (이완·스트레칭 대상):</b>{' '}
-                      <MuscleChips text={s.overactive} tone="over" />
-                    </div>
-                    <div className="text-xs mt-1.5">
-                      <b style={{ color: '#175cd3' }}>저활성 (활성화·강화 대상):</b>{' '}
-                      <MuscleChips text={s.underactive} tone="under" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {(a.ohsaFlags || []).length > 0 && (
-              <p className="text-sm text-slate-600 mt-3">
-                OHSA/동적 보상 패턴: {(a.ohsaFlags || []).length}건 관찰됨
-              </p>
-            )}
-          </>
-        )}
-
-        {/* 질적 평가 — 체형 스케치 & 메모 */}
-        {a.postureDrawing && (
-          <div className="mt-4">
-            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ position: 'relative', aspectRatio: '1900 / 1076', border: '1px solid #e3e3e3', background: '#f5f5f5' }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={a.postureDrawing} alt="트레이너 스케치" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
-          </div>
-        )}
-        {a.postureMemo && (
-          <div className="mt-3 text-sm p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #e3e3e3', color: '#333', whiteSpace: 'pre-wrap' }}>
-            <b style={{ color: '#111' }}>질적 평가 메모</b>
-            <br />
-            {a.postureMemo}
-          </div>
-        )}
-      </div>
-
-      {/* Movement / FMS */}
-      <div className="card" data-print-section="움직임 (FMS)" id="sec-fms">
-        <h3 className="font-bold mb-3">
-          움직임 (FMS 2.0) <span className="guideline-tag tag-fms">FMS</span>
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-3">
-          <MetricBig label="총점" value={`${fmsResult.total}/21`} />
-          <MetricBig
-            label="최저점 0개"
-            value={String(fmsResult.zeros)}
-            warn={fmsResult.zeros > 0}
-          />
-          <MetricBig
-            label="비대칭"
-            value={String(fmsResult.asymmetries)}
-            warn={fmsResult.asymmetries > 0}
-          />
-          <MetricBig
-            label="위험 판정"
-            value={fmsResult.total < 14 || fmsResult.zeros > 0 ? '부상 위험 ↑' : '통과'}
-            warn={fmsResult.total < 14 || fmsResult.zeros > 0}
-          />
-        </div>
-        <p className="text-xs text-slate-500">
-          FMS 14점 미만 또는 0점이 있으면 통증 평가 후 교정 우선. Cook (2014).
-        </p>
-      </div>
 
       {/* Recommendations */}
       <div className="card" data-print-section="권장사항">

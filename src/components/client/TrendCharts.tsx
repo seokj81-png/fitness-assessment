@@ -104,6 +104,7 @@ interface ChartConfig {
   unit: string;
   domain?: [number | 'auto', number | 'auto'];
   refLine?: { value: number; label: string; color: string }[];
+  dir?: 'up' | 'down' | 'neutral'; // 개선 방향 (up=클수록 좋음) — 변화 배지 색상용
 }
 
 // Individual chart with hover-Y tracking
@@ -114,8 +115,35 @@ function SingleChart({
   config: ChartConfig;
   data: DataPoint[];
 }) {
-  const { key, label, color, unit, domain, refLine } = config;
+  const { key, label, color, unit, domain, refLine, dir } = config;
   const [activeY, setActiveY] = useState<number | null>(null);
+
+  // 첫 측정 → 최근 측정 변화량·변화율
+  const vals = data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((d) => (d as any)[key] as number | null | undefined)
+    .filter((v): v is number => v != null);
+  let deltaBadge: { text: string; color: string } | null = null;
+  if (vals.length >= 2) {
+    const first = vals[0];
+    const last = vals[vals.length - 1];
+    const diff = Math.round((last - first) * 10) / 10;
+    const pct = first !== 0 ? Math.round((diff / Math.abs(first)) * 100) : null;
+    const improved =
+      dir === 'neutral' || dir == null || diff === 0
+        ? null
+        : dir === 'up'
+        ? diff > 0
+        : diff < 0;
+    const badgeColor = improved === null ? '#6e6e6e' : improved ? '#067647' : '#b42318';
+    const fmtN = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+    deltaBadge = {
+      text: `${fmtN(first)} → ${fmtN(last)}${unit} (${diff > 0 ? '+' : ''}${fmtN(diff)}${
+        pct !== null && diff !== 0 ? ` · ${diff > 0 ? '+' : ''}${pct}%` : ''
+      })`,
+      color: badgeColor,
+    };
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMouseMove = useCallback((e: any) => {
@@ -136,11 +164,21 @@ function SingleChart({
         border: '1px solid #e3e3e3',
       }}
     >
-      <div
-        className="text-xs font-semibold mb-3 uppercase tracking-wide"
-        style={{ color }}
-      >
-        {label}
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <span
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color }}
+        >
+          {label}
+        </span>
+        {deltaBadge && (
+          <span
+            className="text-[11px] font-semibold tabular-nums px-1.5 py-0.5 rounded"
+            style={{ color: deltaBadge.color, background: '#f5f5f5', border: '1px solid #e3e3e3' }}
+          >
+            {deltaBadge.text}
+          </span>
+        )}
       </div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart
@@ -289,10 +327,19 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       });
   }, [assessments]);
 
+  // 평가 흐름 순서: ①생체지표 → ②신체조성 → ④움직임 → ⑤심폐 → ⑥근력 → ⑦근지구력
   const charts: ChartConfig[] = [
+    data.some((d) => d.rhr != null) && {
+      key: 'rhr',
+      label: '① 안정시 심박수 (bpm)',
+      color: '#111',
+      unit: '',
+      domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'down' as const,
+    },
     data.some((d) => d.bmi != null) && {
       key: 'bmi',
-      label: 'BMI',
+      label: '② BMI',
       color: '#111',
       unit: '',
       domain: [14, 38] as [number, number],
@@ -302,70 +349,72 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
         { value: 25, label: '과체중', color: '#9a9a9a' },
         { value: 30, label: '비만', color: '#9a9a9a' },
       ],
+      dir: 'neutral' as const,
     },
     data.some((d) => d.bodyFat != null) && {
       key: 'bodyFat',
-      label: '체지방률 (%)',
+      label: '② 체지방률 (%)',
       color: '#111',
       unit: '%',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
-    },
-    data.some((d) => d.vo2max != null) && {
-      key: 'vo2max',
-      label: 'VO₂max (mL/kg/min)',
-      color: '#111',
-      unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'down' as const,
     },
     data.some((d) => d.fms != null) && {
       key: 'fms',
-      label: 'FMS 총점 (/21)',
+      label: '④ FMS 총점 (/21)',
       color: '#111',
       unit: '',
       domain: [0, 21] as [number, number],
       refLine: [{ value: 14, label: '부상위험', color: '#9a9a9a' }],
+      dir: 'up' as const,
     },
-    data.some((d) => d.rhr != null) && {
-      key: 'rhr',
-      label: '안정시 심박수 (bpm)',
+    data.some((d) => d.vo2max != null) && {
+      key: 'vo2max',
+      label: '⑤ VO₂max (mL/kg/min)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
     data.some((d) => d.grip != null) && {
       key: 'grip',
-      label: '악력 평균 (kg)',
+      label: '⑥ 악력 평균 (kg)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
     data.some((d) => d.bench != null) && {
       key: 'bench',
-      label: '벤치프레스 1RM (kg)',
+      label: '⑥ 벤치프레스 1RM (kg)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
     data.some((d) => d.squat != null) && {
       key: 'squat',
-      label: '스쿼트 1RM (kg)',
+      label: '⑥ 스쿼트 1RM (kg)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
     data.some((d) => d.pushup != null) && {
       key: 'pushup',
-      label: '푸시업 (회)',
+      label: '⑦ 푸시업 (회)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
     data.some((d) => d.plank != null) && {
       key: 'plank',
-      label: '플랭크 (초)',
+      label: '⑦ 플랭크 (초)',
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      dir: 'up' as const,
     },
   ].filter(Boolean) as ChartConfig[];
 
