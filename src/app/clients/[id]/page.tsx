@@ -162,7 +162,12 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
       {/* Trend Charts – shown when there are ≥ 1 assessments with data */}
       {client.assessments.length >= 1 && (
-        <TrendCharts assessments={assessmentRows} />
+        <TrendCharts
+          assessments={assessmentRows}
+          sex={client.sex === 'F' ? 'F' : 'M'}
+          age={age ?? 30}
+          weight={client.weight}
+        />
       )}
     </div>
   );

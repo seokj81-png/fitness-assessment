@@ -12,6 +12,14 @@ import {
   ReferenceLine,
   Customized,
 } from 'recharts';
+import {
+  VO2MAX_NORMS,
+  GRIP_NORMS,
+  BP_RATIO_NORMS,
+  SQ_RATIO_NORMS,
+  PUSHUP_NORMS,
+} from '@/lib/norms';
+import { ageGroup } from '@/lib/calculations';
 
 interface AssessmentRow {
   id: string;
@@ -219,6 +227,7 @@ function SingleChart({
               stroke={r.color}
               strokeDasharray="4 4"
               strokeWidth={1}
+              ifOverflow="extendDomain"
               label={{
                 value: r.label,
                 position: 'insideTopRight',
@@ -296,7 +305,25 @@ function SingleChart({
   );
 }
 
-export default function TrendCharts({ assessments }: { assessments: AssessmentRow[] }) {
+export default function TrendCharts({
+  assessments,
+  sex = 'M',
+  age = 30,
+  weight,
+}: {
+  assessments: AssessmentRow[];
+  sex?: 'M' | 'F';
+  age?: number;
+  weight?: number | null;
+}) {
+  // 회색 기준선용 규준 (동일 성별·연령대)
+  const g = ageGroup(age);
+  const GRAY = '#9a9a9a';
+  const vo2Row = VO2MAX_NORMS[sex][g];
+  const gripRow = GRIP_NORMS[sex][g];
+  const bpRow = BP_RATIO_NORMS[sex][g];
+  const sqRow = SQ_RATIO_NORMS[sex][g];
+  const puRow = PUSHUP_NORMS[sex][g];
   // Sort oldest → newest for charts
   const data = useMemo<DataPoint[]>(() => {
     return [...assessments]
@@ -335,6 +362,10 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: [
+        { value: 60, label: '정상 하한 60', color: GRAY },
+        { value: 100, label: '정상 상한 100', color: GRAY },
+      ],
       dir: 'down' as const,
     },
     data.some((d) => d.bmi != null) && {
@@ -357,6 +388,15 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '%',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: sex === 'M'
+        ? [
+            { value: 19, label: '양호 상한 19', color: GRAY },
+            { value: 25, label: '평균 상한 25', color: GRAY },
+          ]
+        : [
+            { value: 25, label: '양호 상한 25', color: GRAY },
+            { value: 32, label: '평균 상한 32', color: GRAY },
+          ],
       dir: 'down' as const,
     },
     data.some((d) => d.fms != null) && {
@@ -374,6 +414,10 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: [
+        { value: vo2Row[1], label: `평균 하한 ${vo2Row[1]}`, color: GRAY },
+        { value: vo2Row[3], label: `우수 진입 ${vo2Row[3]}`, color: GRAY },
+      ],
       dir: 'up' as const,
     },
     data.some((d) => d.grip != null) && {
@@ -382,6 +426,10 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: [
+        { value: Math.round(gripRow[1] / 2), label: `평균 하한 ${Math.round(gripRow[1] / 2)}`, color: GRAY },
+        { value: Math.round(gripRow[3] / 2), label: `우수 진입 ${Math.round(gripRow[3] / 2)}`, color: GRAY },
+      ],
       dir: 'up' as const,
     },
     data.some((d) => d.bench != null) && {
@@ -390,6 +438,12 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: weight
+        ? [
+            { value: Math.round(bpRow[1] * weight), label: `평균 하한 ${Math.round(bpRow[1] * weight)}`, color: GRAY },
+            { value: Math.round(bpRow[3] * weight), label: `우수 진입 ${Math.round(bpRow[3] * weight)}`, color: GRAY },
+          ]
+        : undefined,
       dir: 'up' as const,
     },
     data.some((d) => d.squat != null) && {
@@ -398,6 +452,12 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: weight
+        ? [
+            { value: Math.round(sqRow[1] * weight), label: `평균 하한 ${Math.round(sqRow[1] * weight)}`, color: GRAY },
+            { value: Math.round(sqRow[3] * weight), label: `우수 진입 ${Math.round(sqRow[3] * weight)}`, color: GRAY },
+          ]
+        : undefined,
       dir: 'up' as const,
     },
     data.some((d) => d.pushup != null) && {
@@ -406,6 +466,10 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: [
+        { value: puRow[1], label: `평균 하한 ${puRow[1]}`, color: GRAY },
+        { value: puRow[3], label: `우수 진입 ${puRow[3]}`, color: GRAY },
+      ],
       dir: 'up' as const,
     },
     data.some((d) => d.plank != null) && {
@@ -414,6 +478,7 @@ export default function TrendCharts({ assessments }: { assessments: AssessmentRo
       color: '#111',
       unit: '',
       domain: ['auto', 'auto'] as ['auto', 'auto'],
+      refLine: [{ value: sex === 'M' ? 72 : 40, label: `McGill 기준 ${sex === 'M' ? 72 : 40}`, color: GRAY }],
       dir: 'up' as const,
     },
   ].filter(Boolean) as ChartConfig[];

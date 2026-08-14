@@ -439,8 +439,7 @@ export function trainingZones(vvo2Kmh: number): TrainingZone[] {
       paceLow: paceMinKm(hi.speedLowKmh),
       paceHigh: null,
       durationLabel: '4분 운동 + 4분 회복 × 4세트 = 총 32분',
-      detail:
-        'Zone 4–5 — 목표 속도로 4분 달리기 → 느린 조깅·걷기로 4분 회복 (운동:휴식 = 1:1) · 주 1–2회. 시간이 없으면 2분 운동 + 2분 회복 × 6세트(총 24분)로 대체 가능',
+      detail: `Zone 4–5 — 목표 속도(${hi.speedLowKmh.toFixed(1)} km/h 이상)로 4분 달리기 → 회복 4분은 ${rec.speedHighKmh?.toFixed(1)} km/h 이하 걷기·느린 조깅(≤60% vVO₂max, Zone 1–2) · 운동:휴식 = 1:1 · 주 1–2회. 시간이 없으면 2분 운동 + 2분 회복 × 6세트(총 24분)로 대체 가능`,
     },
   ];
 }

@@ -694,17 +694,17 @@ export default async function AssessmentViewPage({
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             {a.breathFrc != null && (
-              <Fact label="FRC 숨참기 (일반 호기 후)" value={`${a.breathFrc}초 · ${(breath.frc || '').toUpperCase()}`} />
+              <Fact label="FRC 숨참기 — 생화학 Biochemical" value={`${a.breathFrc}초 · ${(breath.frc || '').toUpperCase()}`} />
             )}
             {a.breathTlc != null && (
-              <Fact label="TLC 숨참기 (최대 흡기 후)" value={`${a.breathTlc}초 · ${(breath.tlc || '').toUpperCase()}`} />
+              <Fact label="TLC 숨참기 — 생화학 Biochemical" value={`${a.breathTlc}초 · ${(breath.tlc || '').toUpperCase()}`} />
             )}
             {a.breathQ && a.breathQ.length > 0 && (
-              <Fact label="호흡 설문 (4문항 최고점)" value={`${Math.max(...a.breathQ)}점 · ${(breath.q || '').toUpperCase()}`} />
+              <Fact label="호흡 설문 — 심리생리 Psychophysiological" value={`최고 ${Math.max(...a.breathQ)}점 · ${(breath.q || '').toUpperCase()}`} />
             )}
             {a.breathHiLo && (
               <Fact
-                label="Hi-Lo 관찰"
+                label="Hi-Lo 관찰 — 생역학 Biomechanical"
                 value={
                   a.breathHiLo === 'diaph' ? '복식(횡격막) 우세 — 정상'
                   : a.breathHiLo === 'thoracic' ? '흉식 우세 — 기능부전 의심'

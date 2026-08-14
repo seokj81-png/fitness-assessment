@@ -333,6 +333,38 @@ export const MOVEMENT_COMPENSATIONS: MovementCompensation[] = [
     overactive: '요방형근·광배근(기울인 측), TFL',
     underactive: '중둔근(지지 측), 심부 코어 안정근',
   },
+  // ── 푸시 (Pushing Assessment) ──
+  {
+    key: 'pu_low_back', label: '푸시 요추 과전만 (처짐)',
+    overactive: '고관절 굴곡근군, 척추기립근',
+    underactive: '대둔근, 햄스트링, 심부 코어 안정근',
+  },
+  {
+    key: 'pu_sh_elev', label: '푸시 어깨 거상',
+    overactive: '상부 승모근, 흉쇄유돌근, 견갑거근',
+    underactive: '중·하부 승모근',
+  },
+  {
+    key: 'pu_head_fwd', label: '푸시 머리 전방 이동',
+    overactive: '상부 승모근, 흉쇄유돌근, 견갑거근',
+    underactive: '심부 경추 굴곡근',
+  },
+  // ── 풀 (Pulling Assessment) ──
+  {
+    key: 'pl_low_back', label: '풀 요추 과전만',
+    overactive: '고관절 굴곡근군, 척추기립근',
+    underactive: '대둔근, 햄스트링, 심부 코어 안정근',
+  },
+  {
+    key: 'pl_sh_elev', label: '풀 어깨 거상',
+    overactive: '상부 승모근, 흉쇄유돌근, 견갑거근',
+    underactive: '중·하부 승모근',
+  },
+  {
+    key: 'pl_head_fwd', label: '풀 머리 전방 이동',
+    overactive: '상부 승모근, 흉쇄유돌근, 견갑거근',
+    underactive: '심부 경추 굴곡근',
+  },
 ];
 
 // FMS 7 tests

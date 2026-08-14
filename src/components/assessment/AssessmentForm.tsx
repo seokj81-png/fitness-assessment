@@ -1198,11 +1198,13 @@ function PostureTab({
           호흡 평가 <span className="guideline-tag tag-fms">FMS Breathing Screen</span>
         </h3>
         <p className="text-xs text-slate-500 mb-3">
-          숨참기 2종 + 설문 4문항 — 통과 시 호흡 기능부전 배제 민감도 0.89 (Kiesel et al. 2016).
-          앉은 자세에서 실시.
+          FMS 다차원 모델 — <b>생화학(Biochemical)</b> · <b>생역학(Biomechanical)</b> ·{' '}
+          <b>심리생리(Psychophysiological)</b> 3개 차원을 숨참기 2종 + 관찰 + 설문으로 평가.
+          통과 시 호흡 기능부전 배제 민감도 0.89 (Kiesel et al. 2016). 앉은 자세에서 실시.
         </p>
         <div className="grid md:grid-cols-3 gap-4 mb-4">
           <div>
+            <span className="guideline-tag" style={{ marginLeft: 0, marginBottom: 4, display: 'inline-block' }}>생화학 Biochemical</span>
             <Num
               label="① FRC 숨참기 (초)"
               value={state.breathFrc}
@@ -1214,6 +1216,7 @@ function PostureTab({
             </p>
           </div>
           <div>
+            <span className="guideline-tag" style={{ marginLeft: 0, marginBottom: 4, display: 'inline-block' }}>생화학 Biochemical</span>
             <Num
               label="② TLC 숨참기 (초)"
               value={state.breathTlc}
@@ -1225,6 +1228,7 @@ function PostureTab({
             </p>
           </div>
           <div>
+            <span className="guideline-tag" style={{ marginLeft: 0, marginBottom: 4, display: 'inline-block' }}>생역학 Biomechanical</span>
             <label className="label">③ Hi-Lo 관찰 (가슴·복부 손 대고 5호흡)</label>
             <select
               className="input"
@@ -1240,6 +1244,9 @@ function PostureTab({
         </div>
 
         <div className="mb-2">
+          <div className="mb-2">
+            <span className="guideline-tag" style={{ marginLeft: 0 }}>심리생리 Psychophysiological</span>
+          </div>
           <div className="label mb-2">④ 호흡 설문 (각 0–3)</div>
           <div className="space-y-2">
             {BREATH_QUESTIONS.map((qText, qi) => {
