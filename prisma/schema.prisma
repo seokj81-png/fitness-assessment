@@ -113,6 +113,7 @@ model Assessment {
   postureFlags String? // JSON: string[]
   postureMemo    String? // 자세 질적 평가 메모
   postureDrawing String? // 체형 스케치 (PNG dataURL, 그림 레이어만)
+  posturePhotos  String? // 자세 사진 첨부 (JSON: dataURL[], 최대 4장 압축 JPEG)
 
   // 호흡 평가 — FMS Breathing Screen (Kiesel et al. 2016)
   breathFrc   Int?    // FRC 숨참기 (초) — 일반 호기 후

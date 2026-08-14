@@ -113,6 +113,45 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
         <p className="text-sm py-4 text-center" style={{ color: '#8a8a8a' }}>아직 인바디 기록이 없습니다. 첫 측정을 입력하세요.</p>
       ) : (
         <>
+          {/* 첫 측정 대비 요약 */}
+          {sorted.length >= 2 && (
+            <div className="mb-3 p-3 rounded-lg" style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}>
+              <div className="text-xs font-bold mb-1.5" style={{ color: '#111' }}>
+                📌 첫 측정 대비 변화{' '}
+                <span className="font-medium" style={{ color: '#8a8a8a' }}>
+                  {new Date(sorted[0].date).toLocaleDateString('ko-KR')} →{' '}
+                  {new Date(sorted[sorted.length - 1].date).toLocaleDateString('ko-KR')}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {METRICS.map((m) => {
+                  const vals = sorted.filter((e) => e[m.key] != null);
+                  if (vals.length < 2) return null;
+                  const first = vals[0][m.key] as number;
+                  const last = vals[vals.length - 1][m.key] as number;
+                  const diff = Math.round((last - first) * 10) / 10;
+                  const pct = first !== 0 ? Math.round((diff / Math.abs(first)) * 100) : null;
+                  const improved = diff === 0 ? null : m.betterDown ? diff < 0 : diff > 0;
+                  const color = improved === null ? '#6e6e6e' : improved ? '#067647' : '#b42318';
+                  return (
+                    <span
+                      key={m.key}
+                      className="text-xs font-semibold tabular-nums px-2 py-1 rounded"
+                      style={{ background: '#fff', border: '1px solid #e3e3e3', color: '#333' }}
+                    >
+                      {m.label} {first} → {last}
+                      {m.unit === '%' ? '%' : 'kg'}{' '}
+                      <b style={{ color }}>
+                        ({diff > 0 ? '+' : ''}{diff}
+                        {pct !== null && diff !== 0 ? ` · ${diff > 0 ? '+' : ''}${pct}%` : ''})
+                      </b>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 추이 차트 3종 */}
           {sorted.length >= 2 && (
             <div className="grid md:grid-cols-3 gap-3 mb-4">

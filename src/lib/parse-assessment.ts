@@ -29,7 +29,7 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 export function parseAssessment(
   a: DbAssessment
 ): AssessmentInput & { id: string; date: string } {
-  const { parq, postureFlags, fms, fmsComments, ohsaFlags, rom, breathQ, date, ...rest } = a as DbAssessment & { fmsComments: string | null; breathQ: string | null };
+  const { parq, postureFlags, fms, fmsComments, ohsaFlags, rom, breathQ, posturePhotos, date, ...rest } = a as DbAssessment & { fmsComments: string | null; breathQ: string | null; posturePhotos: string | null };
   return {
     ...(rest as unknown as AssessmentInput),
     id: a.id,
@@ -42,5 +42,6 @@ export function parseAssessment(
     ohsaFlags: safeParse<string[]>(ohsaFlags, []),
     rom: safeParse<Record<string, number>>(rom, {}),
     breathQ: breathQ ? safeParse<number[]>(breathQ, []) : undefined,
+    posturePhotos: posturePhotos ? safeParse<string[]>(posturePhotos, []) : undefined,
   };
 }

@@ -49,9 +49,10 @@ import {
   breathScreen,
 } from '@/lib/calculations';
 import PrintSectionPicker from '@/components/ui/PrintSectionPicker';
-import { MOVEMENT_COMPENSATIONS } from '@/lib/norms';
+import { MOVEMENT_COMPENSATIONS, POSTURE_ITEM_LABELS } from '@/lib/norms';
 import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthChart';
 import FitnessScoreCard from '@/components/assessment/FitnessScoreCard';
+import NormsTable from '@/components/assessment/NormsTable';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
@@ -343,7 +344,9 @@ export default async function AssessmentViewPage({
   const KO_LEVEL: Record<string, string> = {
     excellent: '매우우수', good: '우수', average: '평균', below: '낮음', poor: '매우낮음',
   };
-  const postureCount = (a.postureFlags || []).length;
+  // 좌/우 상세 키(:L/:R)는 카운트에서 제외
+  const postureBaseFlags = (a.postureFlags || []).filter((k) => !k.includes(':'));
+  const postureCount = postureBaseFlags.length;
 
   return (
     <div>
@@ -615,13 +618,33 @@ export default async function AssessmentViewPage({
         <h3 className="font-bold mb-3">
           자세 <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
-        {(a.postureFlags || []).length === 0 ? (
+        {postureCount === 0 ? (
           <p className="text-sm text-slate-500">관찰된 자세 이상 소견 없음.</p>
         ) : (
           <>
             <p className="text-sm text-slate-600 mb-2">
-              관찰된 체크포인트 이상: {(a.postureFlags || []).length}건
+              관찰된 체크포인트 이상: {postureCount}건
             </p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {postureBaseFlags.map((k) => {
+                const sides = [
+                  (a.postureFlags || []).includes(`${k}:L`) && '좌',
+                  (a.postureFlags || []).includes(`${k}:R`) && '우',
+                ].filter(Boolean);
+                return (
+                  <span
+                    key={k}
+                    className="text-[11px] px-2 py-1 rounded"
+                    style={{ background: '#f2f2f2', border: '1px solid #d6d6d6', color: '#333' }}
+                  >
+                    {POSTURE_ITEM_LABELS[k] || k}
+                    {sides.length > 0 && (
+                      <b style={{ color: '#111' }}> ({sides.join('·')})</b>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
             {syndromes.length > 0 && (
               <div className="space-y-3">
                 {syndromes.map((s) => (
@@ -701,6 +724,27 @@ export default async function AssessmentViewPage({
             <b style={{ color: '#111' }}>질적 평가 메모</b>
             <br />
             {a.postureMemo}
+          </div>
+        )}
+
+        {/* 자세 사진 */}
+        {(a.posturePhotos || []).length > 0 && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
+              자세 사진 ({(a.posturePhotos || []).length}장)
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {(a.posturePhotos || []).map((p, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={p}
+                  alt={`자세 사진 ${i + 1}`}
+                  className="w-full rounded-lg"
+                  style={{ border: '1px solid #e3e3e3', objectFit: 'cover', aspectRatio: '3 / 4' }}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1050,6 +1094,11 @@ export default async function AssessmentViewPage({
           )}
         </div>
       )}
+
+      {/* 연령별 등급 기준표 — 회원 설명용 */}
+      <div data-print-section="연령별 기준표">
+        <NormsTable age={age} sex={sex} />
+      </div>
 
       {/* Recommendations */}
       <div className="card" data-print-section="권장사항">

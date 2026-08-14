@@ -118,7 +118,7 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
   const fmsClsVal = fmsCls(fmsTotal);
 
   // ── 플래그 카운트 ──
-  const postureFlags: string[] = state.postureFlags ?? [];
+  const postureFlags: string[] = (state.postureFlags ?? []).filter((k: string) => !k.includes(':')); // 좌/우 상세 키 제외
   const ohsaFlags: string[] = state.ohsaFlags ?? [];
   const antCnt = postureFlags.filter((k) => k.startsWith('ant_')).length;
   const latCnt = postureFlags.filter((k) => k.startsWith('lat_')).length;

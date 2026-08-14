@@ -45,13 +45,14 @@ import {
   calcFMS,
   buildRecommendations,
 } from '@/lib/calculations';
-import { FMS_TESTS, POSTURE_SYNDROMES, MOVEMENT_COMPENSATIONS } from '@/lib/norms';
+import { FMS_TESTS, POSTURE_SYNDROMES, MOVEMENT_COMPENSATIONS, POSTURE_SECTIONS } from '@/lib/norms';
 import type { AssessmentInput, Sex } from '@/lib/types';
 import ResultBox from '@/components/ui/ResultBox';
 import { pillClass } from './classification';
 import PostureSketch from './PostureSketch';
 import TrendCharts from './TrendCharts';
 import FitnessScoreCard from './FitnessScoreCard';
+import NormsTable from './NormsTable';
 
 interface ClientInfo {
   id: string;
@@ -169,7 +170,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
-      'postureFlags','postureMemo','postureDrawing','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
+      'postureFlags','postureMemo','postureDrawing','posturePhotos','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'notes',
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
@@ -1074,80 +1075,6 @@ function EnduranceTab({
   );
 }
 
-// Static posture checkpoint definitions — NASM CES Ch.5 (5 Kinetic Chain Checkpoints × 3 View)
-const POSTURE_SECTIONS = [
-  {
-    title: '전면 관찰 Anterior View',
-    note: '기준선: 두 뒤꿈치 중앙 → 골반·몸통·두개골 정중선. 발은 곧고 평행, ASIS 수평, 어깨 수평, 머리 중립.',
-    groups: [
-      { head: '① 발·발목', items: [
-        ['ant_foot_flat', '편평발 (아치 소실)'],
-        ['ant_foot_ext', '발 외회전 (평행 아님)'],
-        ['ant_foot_pron', '과회내'],
-      ] },
-      { head: '② 무릎', items: [
-        ['ant_knee_varus', '내반 (O다리 · 외측 편위)'],
-        ['ant_knee_valgus', '외반 (X다리 · 내측 편위)'],
-      ] },
-      { head: '③ LPHC', items: [
-        ['ant_lphc_asis', 'ASIS 좌우 높이 차이'],
-        ['ant_lphc_rot', '골반 회전'],
-      ] },
-      { head: '④ 어깨', items: [
-        ['ant_sh_elev', '어깨 거상 · 좌우 높이 차이'],
-        ['ant_sh_prot', '둥근 어깨 (전인)'],
-      ] },
-      { head: '⑤ 머리·경추', items: [
-        ['ant_head_tilt', '머리 측방 기울임'],
-        ['ant_head_rot', '머리 회전'],
-      ] },
-    ],
-  },
-  {
-    title: '측면 관찰 Lateral View',
-    note: '기준선: 외측 복사뼈 약간 앞 → 대퇴 중앙 → 어깨 중앙 → 귀 중앙. 하퇴는 발바닥과 직각.',
-    groups: [
-      { head: '① 발·발목', items: [
-        ['lat_foot_heel', '발뒤꿈치 들림'],
-        ['lat_ankle_align', '하퇴 수직 정렬 깨짐 (발목 중립 이탈)'],
-      ] },
-      { head: '② 무릎', items: [
-        ['lat_knee_hyperext', '과신전'],
-        ['lat_knee_flex', '굴곡'],
-      ] },
-      { head: '③ LPHC', items: [
-        ['lat_lphc_ant', '골반 전방경사 (요추 신전 증가)'],
-        ['lat_lphc_post', '골반 후방경사 (요추 굴곡)'],
-        ['lat_lphc_sway', 'Sway-back'],
-      ] },
-      { head: '④ 어깨·흉추', items: [
-        ['lat_sh_kyph', '흉추 과후만 (과도한 굽은 등)'],
-        ['lat_sh_round', '둥근어깨'],
-      ] },
-      { head: '⑤ 머리', items: [['lat_head_fwd', '머리 전방 돌출 (거북목)']] },
-    ],
-  },
-  {
-    title: '후면 관찰 Posterior View',
-    note: '기준선: 두 뒤꿈치 중앙 → 골반·척추·두개골 정중선. 뒤꿈치 곧고 평행, PSIS 수평, 견갑 내측연 평행(간격 약 7~10cm).',
-    groups: [
-      { head: '① 발·발목', items: [['post_foot_pron', '뒤꿈치 외반 · 과회내 (calcaneal eversion)']] },
-      { head: '② 무릎', items: [['post_knee_align', '무릎 내·외측 편위 (정렬 이탈)']] },
-      { head: '③ LPHC', items: [
-        ['post_lphc_psis', 'PSIS 좌우 높이 차이'],
-        ['post_lphc_trend', 'Trendelenburg (골반 측방 하강)'],
-      ] },
-      { head: '척추', items: [['post_spine_scol', '측만 Scoliosis 의심']] },
-      { head: '④ 어깨·견갑', items: [
-        ['post_scap_wing', '익상견갑 Winging'],
-        ['post_scap_elev', '견갑 거상'],
-        ['post_scap_prot', '견갑 전인 (내측연 간격 >10cm)'],
-      ] },
-      { head: '⑤ 머리', items: [['post_head_tilt', '머리 기울임 · 회전']] },
-    ],
-  },
-];
-
 function PostureTab({
   state,
   update,
@@ -1164,6 +1091,30 @@ function PostureTab({
     update('postureFlags', Array.from(flags));
   };
   const has = (key: string) => (state.postureFlags || []).includes(key);
+
+  // 본 체크 해제 시 좌/우 상세도 함께 제거
+  const toggleBase = (key: string) => {
+    const flags = new Set(state.postureFlags || []);
+    if (flags.has(key)) {
+      flags.delete(key);
+      flags.delete(`${key}:L`);
+      flags.delete(`${key}:R`);
+    } else {
+      flags.add(key);
+    }
+    update('postureFlags', Array.from(flags));
+  };
+  // 좌/우 토글 — 선택 시 본 체크 자동 활성
+  const toggleSide = (key: string, side: 'L' | 'R') => {
+    const flags = new Set(state.postureFlags || []);
+    const sk = `${key}:${side}`;
+    if (flags.has(sk)) flags.delete(sk);
+    else {
+      flags.add(sk);
+      flags.add(key);
+    }
+    update('postureFlags', Array.from(flags));
+  };
 
   return (
     <div>
@@ -1189,6 +1140,78 @@ function PostureTab({
             value={state.postureMemo ?? ''}
             onChange={(e) => update('postureMemo', e.target.value || undefined)}
           />
+        </div>
+
+        {/* 자세 사진 첨부 — 촬영 또는 앨범, 자동 압축 (최대 4장) */}
+        <div className="mt-4">
+          <label className="label">자세 사진 (촬영·앨범, 최대 4장)</label>
+          <div className="flex flex-wrap items-start gap-2">
+            {(state.posturePhotos ?? []).map((p, i) => (
+              <div key={i} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p}
+                  alt={`자세 사진 ${i + 1}`}
+                  className="rounded-lg"
+                  style={{ width: 96, height: 128, objectFit: 'cover', border: '1px solid #d6d6d6' }}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    update(
+                      'posturePhotos',
+                      (state.posturePhotos ?? []).filter((_, j) => j !== i).length
+                        ? (state.posturePhotos ?? []).filter((_, j) => j !== i)
+                        : undefined
+                    )
+                  }
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full text-xs font-bold"
+                  style={{ background: '#111', color: '#fff', border: '2px solid #fff' }}
+                  title="삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {(state.posturePhotos ?? []).length < 4 && (
+              <label
+                className="flex flex-col items-center justify-center rounded-lg cursor-pointer text-xs font-semibold"
+                style={{ width: 96, height: 128, border: '1.5px dashed #9a9a9a', color: '#555', background: '#fafafa' }}
+              >
+                📷
+                <span className="mt-1">촬영·추가</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    // 캔버스 압축: 최대 900px, JPEG 0.72 (~100-200KB)
+                    const url = await new Promise<string>((resolve, reject) => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+                        const c = document.createElement('canvas');
+                        c.width = Math.round(img.width * scale);
+                        c.height = Math.round(img.height * scale);
+                        c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+                        resolve(c.toDataURL('image/jpeg', 0.72));
+                      };
+                      img.onerror = reject;
+                      img.src = URL.createObjectURL(file);
+                    }).catch(() => null as unknown as string);
+                    if (url) update('posturePhotos', [...(state.posturePhotos ?? []), url]);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="text-[11px] mt-1" style={{ color: '#8a8a8a' }}>
+            사진은 자동 압축되어 평가와 함께 저장되고 보고서에 표시됩니다.
+          </p>
         </div>
       </div>
 
@@ -1335,16 +1358,36 @@ function PostureTab({
             {sec.groups.map((g) => (
               <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
                 <h4 className="text-sm font-bold mb-2">{g.head}</h4>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {g.items.map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={has(key)}
-                        onChange={() => toggle(key)}
-                      />
-                      <span>{label}</span>
-                    </label>
+                    <div key={key} className="flex items-center justify-between gap-1.5">
+                      <label className="flex items-center gap-2 text-sm flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={has(key)}
+                          onChange={() => toggleBase(key)}
+                        />
+                        <span>{label}</span>
+                      </label>
+                      <div className="flex gap-1 flex-shrink-0">
+                        {(['L', 'R'] as const).map((side) => (
+                          <button
+                            key={side}
+                            type="button"
+                            onClick={() => toggleSide(key, side)}
+                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
+                            style={
+                              has(`${key}:${side}`)
+                                ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                                : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
+                            }
+                            title={side === 'L' ? '좌측' : '우측'}
+                          >
+                            {side === 'L' ? '좌' : '우'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1655,6 +1698,10 @@ function SummaryTab({
       </div>
 
       <FitnessScoreCard computed={computed} state={state} />
+
+      <div className="mt-5">
+        <NormsTable age={age || 30} sex={client.sex === 'F' ? 'F' : 'M'} />
+      </div>
 
       <div className="card">
         <h3 className="font-bold mb-3">자세·움직임</h3>

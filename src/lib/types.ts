@@ -86,6 +86,7 @@ export interface AssessmentInput {
   postureFlags?: string[];
   postureMemo?: string; // 자세 질적 평가 메모
   postureDrawing?: string; // 체형 스케치 (PNG dataURL)
+  posturePhotos?: string[]; // 자세 사진 (dataURL, 최대 4장)
 
   // 호흡 평가 (FMS Breathing Screen)
   breathFrc?: number; // FRC 숨참기 (초)
