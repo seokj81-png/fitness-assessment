@@ -3,15 +3,27 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import DeleteClientButton from './DeleteClientButton';
 import TrendCharts from '@/components/client/TrendCharts';
+import InbodyLog, { type InbodyRow } from '@/components/client/InbodyLog';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const client = await prisma.client.findUnique({
     where: { id: params.id },
-    include: { assessments: { orderBy: { date: 'desc' } } },
+    include: {
+      assessments: { orderBy: { date: 'desc' } },
+      inbodyEntries: { orderBy: { date: 'asc' } },
+    },
   });
   if (!client) notFound();
+
+  const inbodyRows: InbodyRow[] = client.inbodyEntries.map((e) => ({
+    id: e.id,
+    date: e.date.toISOString(),
+    weight: e.weight,
+    bodyFat: e.bodyFat,
+    smm: e.smm,
+  }));
 
   const age = client.dob ? new Date().getFullYear() - new Date(client.dob).getFullYear() : null;
 
@@ -68,6 +80,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         <div className="card md:col-span-1">
           <h3 className="font-bold text-slate-100 mb-3">기본 정보</h3>
           <dl className="text-sm space-y-2">
+            <Row label="지점">{client.branch || '미지정'}</Row>
+            <Row label="담당 트레이너">{client.trainer || '미지정'}</Row>
             <Row label="운동경력">{expLabel(client.experience)}</Row>
             <Row label="운동 목적">{goalLabel(client.goal)}</Row>
             <Row label="직업">{client.occupation || '-'}</Row>
@@ -139,6 +153,11 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             )}
           </div>
         </div>
+      </div>
+
+      {/* 인바디 수시 기록 — 평가와 독립적으로 자주 측정·누적 */}
+      <div className="mt-5">
+        <InbodyLog clientId={client.id} initial={inbodyRows} />
       </div>
 
       {/* Trend Charts – shown when there are ≥ 1 assessments with data */}

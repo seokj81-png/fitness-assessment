@@ -1,11 +1,26 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { BRANCHES } from '@/lib/branches';
 
 export default function NewClientPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [trainers, setTrainers] = useState<string[]>([]);
+
+  // 기존 회원들의 담당 트레이너 목록 → 자동완성
+  useEffect(() => {
+    fetch('/api/clients')
+      .then((r) => r.json())
+      .then((list: Array<{ trainer?: string | null }>) => {
+        const names = Array.from(
+          new Set(list.map((c) => c.trainer).filter(Boolean) as string[])
+        ).sort();
+        setTrainers(names);
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,6 +33,8 @@ export default function NewClientPage() {
       height: fd.get('height') ? Number(fd.get('height')) : null,
       weight: fd.get('weight') ? Number(fd.get('weight')) : null,
       occupation: fd.get('occupation') || null,
+      branch: fd.get('branch') || null,
+      trainer: fd.get('trainer') || null,
       smoking: fd.get('smoking') || null,
       experience: fd.get('experience') || null,
       goal: fd.get('goal') || null,
@@ -59,6 +76,24 @@ export default function NewClientPage() {
           <div>
             <label className="label">생년월일 DOB</label>
             <input name="dob" type="date" className="input" />
+          </div>
+          <div>
+            <label className="label">지점 Branch</label>
+            <select name="branch" className="input">
+              <option value="">미지정</option>
+              {BRANCHES.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">담당 트레이너 Trainer</label>
+            <input name="trainer" className="input" list="trainer-list" placeholder="트레이너 이름" />
+            <datalist id="trainer-list">
+              {trainers.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
           </div>
           <div>
             <label className="label">직업 Occupation</label>

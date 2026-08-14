@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BRANCHES } from '@/lib/branches';
 
 type ClientData = {
   name: string;
@@ -14,6 +15,8 @@ type ClientData = {
   experience?: string | null;
   goal?: string | null;
   medical?: string | null;
+  branch?: string | null;
+  trainer?: string | null;
 };
 
 export default function EditClientPage() {
@@ -46,6 +49,8 @@ export default function EditClientPage() {
       height: fd.get('height') ? Number(fd.get('height')) : null,
       weight: fd.get('weight') ? Number(fd.get('weight')) : null,
       occupation: fd.get('occupation') || null,
+      branch: fd.get('branch') || null,
+      trainer: fd.get('trainer') || null,
       smoking: fd.get('smoking') || null,
       experience: fd.get('experience') || null,
       goal: fd.get('goal') || null,
@@ -86,6 +91,22 @@ export default function EditClientPage() {
           <div>
             <label className="label">직업</label>
             <input name="occupation" defaultValue={data.occupation || ''} className="input" />
+          </div>
+          <div>
+            <label className="label">지점</label>
+            <select name="branch" defaultValue={data.branch || ''} className="input">
+              <option value="">미지정</option>
+              {BRANCHES.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+              {data.branch && !BRANCHES.includes(data.branch as (typeof BRANCHES)[number]) && (
+                <option value={data.branch}>{data.branch}</option>
+              )}
+            </select>
+          </div>
+          <div>
+            <label className="label">담당 트레이너</label>
+            <input name="trainer" defaultValue={data.trainer || ''} className="input" placeholder="트레이너 이름" />
           </div>
           <div>
             <label className="label">신장 (cm)</label>
