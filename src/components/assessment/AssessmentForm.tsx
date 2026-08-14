@@ -43,7 +43,7 @@ import {
   calcFMS,
   buildRecommendations,
 } from '@/lib/calculations';
-import { FMS_TESTS, POSTURE_SYNDROMES } from '@/lib/norms';
+import { FMS_TESTS, POSTURE_SYNDROMES, MOVEMENT_COMPENSATIONS } from '@/lib/norms';
 import type { AssessmentInput, Sex } from '@/lib/types';
 import ResultBox from '@/components/ui/ResultBox';
 import { pillClass } from './classification';
@@ -1072,67 +1072,76 @@ function EnduranceTab({
   );
 }
 
-// Static posture checkpoint definitions
+// Static posture checkpoint definitions — NASM CES Ch.5 (5 Kinetic Chain Checkpoints × 3 View)
 const POSTURE_SECTIONS = [
   {
     title: '전면 관찰 Anterior View',
+    note: '기준선: 두 뒤꿈치 중앙 → 골반·몸통·두개골 정중선. 발은 곧고 평행, ASIS 수평, 어깨 수평, 머리 중립.',
     groups: [
-      { head: '발·발목', items: [
-        ['ant_foot_flat', '편평발'],
-        ['ant_foot_ext', '외회전'],
-        ['ant_foot_pron', '회내'],
+      { head: '① 발·발목', items: [
+        ['ant_foot_flat', '편평발 (아치 소실)'],
+        ['ant_foot_ext', '발 외회전 (평행 아님)'],
+        ['ant_foot_pron', '과회내'],
       ] },
-      { head: '무릎', items: [
-        ['ant_knee_varus', '내반 (O다리)'],
-        ['ant_knee_valgus', '외반 (X다리)'],
+      { head: '② 무릎', items: [
+        ['ant_knee_varus', '내반 (O다리 · 외측 편위)'],
+        ['ant_knee_valgus', '외반 (X다리 · 내측 편위)'],
       ] },
-      { head: 'LPHC', items: [
-        ['ant_lphc_asis', 'ASIS 비대칭'],
+      { head: '③ LPHC', items: [
+        ['ant_lphc_asis', 'ASIS 좌우 높이 차이'],
         ['ant_lphc_rot', '골반 회전'],
       ] },
-      { head: '어깨', items: [
-        ['ant_sh_elev', '좌우 높이 차이'],
-        ['ant_sh_prot', '견갑 전인'],
+      { head: '④ 어깨', items: [
+        ['ant_sh_elev', '어깨 거상 · 좌우 높이 차이'],
+        ['ant_sh_prot', '둥근 어깨 (전인)'],
       ] },
-      { head: '머리·경추', items: [
-        ['ant_head_tilt', '머리 측방 경사'],
+      { head: '⑤ 머리·경추', items: [
+        ['ant_head_tilt', '머리 측방 기울임'],
         ['ant_head_rot', '머리 회전'],
       ] },
     ],
   },
   {
     title: '측면 관찰 Lateral View',
+    note: '기준선: 외측 복사뼈 약간 앞 → 대퇴 중앙 → 어깨 중앙 → 귀 중앙. 하퇴는 발바닥과 직각.',
     groups: [
-      { head: '발·발목', items: [['lat_foot_heel', '발뒤꿈치 들림']] },
-      { head: '무릎', items: [
+      { head: '① 발·발목', items: [
+        ['lat_foot_heel', '발뒤꿈치 들림'],
+        ['lat_ankle_align', '하퇴 수직 정렬 깨짐 (발목 중립 이탈)'],
+      ] },
+      { head: '② 무릎', items: [
         ['lat_knee_hyperext', '과신전'],
         ['lat_knee_flex', '굴곡'],
       ] },
-      { head: 'LPHC', items: [
-        ['lat_lphc_ant', '골반 전방경사'],
-        ['lat_lphc_post', '골반 후방경사'],
+      { head: '③ LPHC', items: [
+        ['lat_lphc_ant', '골반 전방경사 (요추 신전 증가)'],
+        ['lat_lphc_post', '골반 후방경사 (요추 굴곡)'],
         ['lat_lphc_sway', 'Sway-back'],
       ] },
-      { head: '어깨·흉추', items: [
-        ['lat_sh_kyph', '흉추 과후만'],
+      { head: '④ 어깨·흉추', items: [
+        ['lat_sh_kyph', '흉추 과후만 (과도한 굽은 등)'],
         ['lat_sh_round', '둥근어깨'],
       ] },
-      { head: '머리', items: [['lat_head_fwd', '거북목 (Forward head)']] },
+      { head: '⑤ 머리', items: [['lat_head_fwd', '머리 전방 돌출 (거북목)']] },
     ],
   },
   {
     title: '후면 관찰 Posterior View',
+    note: '기준선: 두 뒤꿈치 중앙 → 골반·척추·두개골 정중선. 뒤꿈치 곧고 평행, PSIS 수평, 견갑 내측연 평행(간격 약 7~10cm).',
     groups: [
-      { head: '발·발목', items: [['post_foot_pron', '뒤꿈치 외반']] },
-      { head: 'LPHC', items: [
-        ['post_lphc_psis', 'PSIS 비대칭'],
-        ['post_lphc_trend', 'Trendelenburg'],
+      { head: '① 발·발목', items: [['post_foot_pron', '뒤꿈치 외반 · 과회내 (calcaneal eversion)']] },
+      { head: '② 무릎', items: [['post_knee_align', '무릎 내·외측 편위 (정렬 이탈)']] },
+      { head: '③ LPHC', items: [
+        ['post_lphc_psis', 'PSIS 좌우 높이 차이'],
+        ['post_lphc_trend', 'Trendelenburg (골반 측방 하강)'],
       ] },
       { head: '척추', items: [['post_spine_scol', '측만 Scoliosis 의심']] },
-      { head: '견갑', items: [
+      { head: '④ 어깨·견갑', items: [
         ['post_scap_wing', '익상견갑 Winging'],
         ['post_scap_elev', '견갑 거상'],
+        ['post_scap_prot', '견갑 전인 (내측연 간격 >10cm)'],
       ] },
+      { head: '⑤ 머리', items: [['post_head_tilt', '머리 기울임 · 회전']] },
     ],
   },
 ];
@@ -1186,9 +1195,12 @@ function PostureTab({
 
       {POSTURE_SECTIONS.map((sec) => (
         <div key={sec.title} className="card">
-          <h3 className="font-bold mb-3">
+          <h3 className="font-bold mb-1">
             {sec.title} <span className="guideline-tag tag-nasm">NASM</span>
           </h3>
+          {sec.note && (
+            <p className="text-xs text-slate-500 mb-3">{sec.note}</p>
+          )}
           <div className="grid md:grid-cols-3 gap-4">
             {sec.groups.map((g) => (
               <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
@@ -1366,24 +1378,42 @@ function MovementTab({
         <h3 className="font-bold mb-3">
           NASM Overhead Squat Assessment <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
-        <p className="text-xs text-slate-500 mb-3">5회 반복 중 관찰된 보상 패턴 체크</p>
-        <div className="grid md:grid-cols-2 gap-4">
+        <p className="text-xs text-slate-500 mb-3">
+          발 어깨너비·정면, 팔 머리 위 완전 신전 · 의자 높이까지 스쿼트 <b>5회</b> —
+          전면(발·무릎) → 측면(LPHC·어깨) → 후면(발·LPHC) 순서로 각각 관찰 (NASM CES)
+        </p>
+        <div className="grid md:grid-cols-3 gap-4">
           {[
-            ['oh_foot_flat', '발 편평·외회전'],
-            ['oh_knee_var', '무릎 내반 (Varus)'],
-            ['oh_knee_valg', '무릎 외반 (Valgus)'],
-            ['oh_low_back', '요추 과도 아치'],
-            ['oh_pelvis_ant', '골반 전방 경사'],
-            ['oh_pelvis_post', '골반 후방 경사'],
-            ['oh_torso_lean', '상체 과도 전경'],
-            ['oh_arms_fall', '팔 전방 낙하'],
-            ['oh_heel_rise', '뒤꿈치 들림'],
-            ['oh_asym_shift', '좌우 비대칭 이동'],
-          ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2 text-sm border border-slate-700 rounded p-2 bg-slate-800">
-              <input type="checkbox" checked={ohsaHas(key)} onChange={() => ohsaToggle(key)} />
-              <span>{label}</span>
-            </label>
+            { group: '전면 Anterior — 발·무릎', items: [
+              ['oh_foot_turnout', '발 외회전 (turn out)'],
+              ['oh_foot_flat', '발 편평 (과회내)'],
+              ['oh_knee_valg', '무릎 내측 이동 (외반 Valgus)'],
+              ['oh_knee_var', '무릎 외측 이동 (내반 Varus)'],
+            ] },
+            { group: '측면 Lateral — LPHC·어깨', items: [
+              ['oh_torso_lean', '과도한 전방 기울임'],
+              ['oh_low_back', '요추 과신전 (아치)'],
+              ['oh_low_back_round', '요추 굴곡 (라운딩)'],
+              ['oh_pelvis_ant', '골반 전방 경사'],
+              ['oh_pelvis_post', '골반 후방 경사'],
+              ['oh_arms_fall', '팔 전방 낙하'],
+            ] },
+            { group: '후면 Posterior — 발·LPHC', items: [
+              ['oh_heel_rise', '뒤꿈치 들림'],
+              ['oh_asym_shift', '비대칭 체중 이동'],
+            ] },
+          ].map((g) => (
+            <div key={g.group} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
+              <h4 className="text-sm font-bold mb-2">{g.group}</h4>
+              <div className="space-y-1.5">
+                {g.items.map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={ohsaHas(key)} onChange={() => ohsaToggle(key)} />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -1394,9 +1424,12 @@ function MovementTab({
         </h3>
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { group: 'Single-Leg Squat', items: [
-              ['sl_knee_valg', '지지 무릎 외반 (Valgus)'],
-              ['sl_hip_drop', 'Trendelenburg'],
+            { group: 'Single-Leg Squat (전면 관찰·5회씩 좌우)', items: [
+              ['sl_knee_valg', '무릎 내측 이동 (외반 Valgus)'],
+              ['sl_hip_hike', '골반 상승 (Hip Hike)'],
+              ['sl_hip_drop', '골반 하강 (Hip Drop·Trendelenburg)'],
+              ['sl_trunk_rot_in', '몸통 내회전'],
+              ['sl_trunk_rot_out', '몸통 외회전'],
               ['sl_torso_lat', '상체 측방 기울임'],
             ] },
             { group: 'Pushing', items: [
@@ -1424,6 +1457,38 @@ function MovementTab({
           ))}
         </div>
       </div>
+
+      {/* 체크된 보상 → 교정 대상 근육 (NASM CES Ch.6 표) */}
+      {(() => {
+        const checked = MOVEMENT_COMPENSATIONS.filter((c) =>
+          (state.ohsaFlags || []).includes(c.key)
+        );
+        if (!checked.length) return null;
+        return (
+          <div className="card">
+            <h3 className="font-bold mb-1">
+              교정 대상 근육 자동 매칭 <span className="guideline-tag tag-nasm">NASM CES</span>
+            </h3>
+            <p className="text-xs text-slate-500 mb-3">
+              체크한 보상 패턴별 — <b style={{ color: '#b42318' }}>과활성(이완·스트레칭 대상)</b> /{' '}
+              <b style={{ color: '#175cd3' }}>저활성(활성화·강화 대상)</b>
+            </p>
+            <div className="space-y-3">
+              {checked.map((c) => (
+                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
+                  <div className="font-semibold text-sm text-slate-100">{c.label}</div>
+                  <div className="text-xs mt-1" style={{ color: '#b42318' }}>
+                    <b>과활성:</b> {c.overactive}
+                  </div>
+                  <div className="text-xs" style={{ color: '#175cd3' }}>
+                    <b>저활성:</b> {c.underactive}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

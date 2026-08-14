@@ -232,6 +232,109 @@ export const POSTURE_SYNDROMES = [
   },
 ];
 
+// 움직임 평가 보상별 과활성/저활성 근육 — NASM CES (Clark & Lucett, Ch.6 표 기준)
+export interface MovementCompensation {
+  key: string;
+  label: string;
+  overactive: string; // 쉼표 구분 (이완·스트레칭 대상)
+  underactive: string; // 쉼표 구분 (활성화·강화 대상)
+}
+
+export const MOVEMENT_COMPENSATIONS: MovementCompensation[] = [
+  // ── 오버헤드 스쿼트 (OHSA) ──
+  {
+    key: 'oh_foot_turnout', label: 'OHSA 발 외회전',
+    overactive: '가자미근, 외측 비복근, 대퇴이두(단두), TFL',
+    underactive: '내측 비복근, 내측 햄스트링, 중둔근·대둔근, 박근, 슬와근, 봉공근',
+  },
+  {
+    key: 'oh_foot_flat', label: 'OHSA 발 편평(과회내)',
+    overactive: '비골근, 외측 비복근, 대퇴이두(단두), TFL',
+    underactive: '전경골근, 후경골근, 내측 비복근, 중둔근',
+  },
+  {
+    key: 'oh_knee_valg', label: 'OHSA 무릎 내측 이동(외반)',
+    overactive: '내전근군, 대퇴이두(단두), TFL, 외측 비복근, 외측광근',
+    underactive: '내측 햄스트링, 내측 비복근, 중둔근·대둔근, 내측광근(VMO), 전경골근, 후경골근',
+  },
+  {
+    key: 'oh_knee_var', label: 'OHSA 무릎 외측 이동(내반)',
+    overactive: '이상근, 대퇴이두, TFL·소둔근',
+    underactive: '내전근군, 내측 햄스트링, 대둔근',
+  },
+  {
+    key: 'oh_torso_lean', label: 'OHSA 과도한 전방 기울임',
+    overactive: '가자미근, 비복근, 고관절 굴곡근군, 복직근·외복사근',
+    underactive: '전경골근, 대둔근, 척추기립근, 심부 코어 안정근',
+  },
+  {
+    key: 'oh_low_back', label: 'OHSA 요추 과신전(아치)',
+    overactive: '고관절 굴곡근군, 척추기립근, 광배근',
+    underactive: '대둔근, 햄스트링, 심부 코어 안정근',
+  },
+  {
+    key: 'oh_low_back_round', label: 'OHSA 요추 굴곡(라운딩)',
+    overactive: '햄스트링, 대내전근, 복직근, 외복사근',
+    underactive: '대둔근, 척추기립근, 심부 코어 안정근, 고관절 굴곡근군, 광배근',
+  },
+  {
+    key: 'oh_pelvis_ant', label: 'OHSA 골반 전방 경사',
+    overactive: '고관절 굴곡근군, 척추기립근',
+    underactive: '대둔근, 햄스트링, 복근군(심부 코어)',
+  },
+  {
+    key: 'oh_pelvis_post', label: 'OHSA 골반 후방 경사',
+    overactive: '햄스트링, 복직근',
+    underactive: '고관절 굴곡근군, 척추기립근',
+  },
+  {
+    key: 'oh_arms_fall', label: 'OHSA 팔 전방 낙하',
+    overactive: '광배근, 대흉근·소흉근, 오훼완근, 대원근',
+    underactive: '중·하부 승모근, 능형근, 후면 삼각근, 회전근개',
+  },
+  {
+    key: 'oh_heel_rise', label: 'OHSA 뒤꿈치 들림',
+    overactive: '가자미근',
+    underactive: '전경골근',
+  },
+  {
+    key: 'oh_asym_shift', label: 'OHSA 비대칭 체중 이동',
+    overactive: '내전근군·TFL(이동 측), 비복근·가자미근, 이상근, 대퇴이두, 중둔근(반대 측)',
+    underactive: '중둔근(이동 측), 전경골근, 내전근군(반대 측)',
+  },
+  // ── 싱글레그 스쿼트 (SLS) ──
+  {
+    key: 'sl_knee_valg', label: 'SLS 무릎 내측 이동(외반)',
+    overactive: '내전근군, 대퇴이두(단두), TFL, 외측 비복근, 외측광근',
+    underactive: '내측 햄스트링, 내측 비복근, 중둔근·대둔근, 내측광근(VMO)',
+  },
+  {
+    key: 'sl_hip_hike', label: 'SLS 골반 상승(Hip Hike)',
+    overactive: '요방형근(반대 측), TFL·소둔근(지지 측)',
+    underactive: '내전근군(지지 측), 중둔근(지지 측)',
+  },
+  {
+    key: 'sl_hip_drop', label: 'SLS 골반 하강(Hip Drop)',
+    overactive: '내전근군(지지 측)',
+    underactive: '중둔근(지지 측), 요방형근(지지 측)',
+  },
+  {
+    key: 'sl_trunk_rot_in', label: 'SLS 몸통 내회전',
+    overactive: '내복사근(지지 측), 외복사근(반대 측), TFL·내전근군(지지 측)',
+    underactive: '내복사근(반대 측), 외복사근(지지 측), 중둔근·대둔근',
+  },
+  {
+    key: 'sl_trunk_rot_out', label: 'SLS 몸통 외회전',
+    overactive: '내복사근(반대 측), 외복사근(지지 측), 이상근(지지 측)',
+    underactive: '내복사근(지지 측), 외복사근(반대 측), 내전근군(반대 측), 중둔근·대둔근',
+  },
+  {
+    key: 'sl_torso_lat', label: 'SLS 상체 측방 기울임',
+    overactive: '요방형근·광배근(기울인 측), TFL',
+    underactive: '중둔근(지지 측), 심부 코어 안정근',
+  },
+];
+
 // FMS 7 tests
 export const FMS_TESTS = [
   {
