@@ -63,7 +63,12 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             {client.weight && ` · ${client.weight} kg`}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {client.assessments.length > 0 && (
+            <Link href={`/clients/${client.id}/report`} className="btn-secondary">
+              📋 리포트 만들기
+            </Link>
+          )}
           <Link href={`/clients/${client.id}/edit`} className="btn-secondary">
             정보 수정
           </Link>
