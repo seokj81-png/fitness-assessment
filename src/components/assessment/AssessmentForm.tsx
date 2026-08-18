@@ -1222,42 +1222,85 @@ function PostureTab({
         </div>
       </div>
 
-      {/* 평형성 — 눈뜨고 외발서기 */}
-      <div className="card">
-        <h3 className="font-bold mb-1">
-          평형성 — 눈뜨고 외발서기 <span className="guideline-tag">Balance</span>
-        </h3>
-        <p className="text-xs text-slate-500 mb-1">
-          양손은 허리 또는 자연스럽게 · 한쪽 발을 들어 유지한 시간(초) 기록 · 든 발이 바닥에
-          닿거나 지지물을 잡으면 종료. 좌우 각각 측정.
-        </p>
-        <p className="text-xs font-semibold mb-3" style={{ color: '#b42318' }}>
-          ⚠ 고령자는 낙상 위험 — 반드시 벽이나 튼튼한 의자를 바로 옆에 두고 실시하세요.
-        </p>
-        <div className="grid grid-cols-2 gap-3 max-w-sm mb-2">
-          <Num label="우측 지지 (초)" value={state.balanceR} onChange={(v) => update('balanceR', v)} />
-          <Num label="좌측 지지 (초)" value={state.balanceL} onChange={(v) => update('balanceL', v)} />
+      {POSTURE_SECTIONS.map((sec) => (
+        <div key={sec.title} className="card">
+          <h3 className="font-bold mb-1">
+            {sec.title} <span className="guideline-tag tag-nasm">NASM</span>
+          </h3>
+          {sec.note && (
+            <p className="text-xs text-slate-500 mb-3">{sec.note}</p>
+          )}
+          <div className="grid md:grid-cols-3 gap-4">
+            {sec.groups.map((g) => (
+              <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
+                <h4 className="text-sm font-bold mb-2">{g.head}</h4>
+                <div className="space-y-1.5">
+                  {g.items.map(([key, label]) => (
+                    <div key={key} className="flex items-center justify-between gap-1.5">
+                      <label className="flex items-center gap-2 text-sm flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={has(key)}
+                          onChange={() => toggleBase(key)}
+                        />
+                        <span>{label}</span>
+                      </label>
+                      <div className="flex gap-1 flex-shrink-0">
+                        {(['L', 'R'] as const).map((side) => (
+                          <button
+                            key={side}
+                            type="button"
+                            onClick={() => toggleSide(key, side)}
+                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
+                            style={
+                              has(`${key}:${side}`)
+                                ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                                : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
+                            }
+                            title={side === 'L' ? '좌측' : '우측'}
+                          >
+                            {side === 'L' ? '좌' : '우'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        {computed.balanceRow && (
-          <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
-            이 연령대 기준 — 낮음 ≤{computed.balanceRow[0]}초 · 보통 ~{computed.balanceRow[1]}초 ·
-            양호 ~{computed.balanceRow[2]}초 · 우수 ~{computed.balanceRow[3]}초 · 매우우수 &gt;{computed.balanceRow[3]}초
+      ))}
+
+      <div className="card">
+        <h3 className="font-bold mb-3">
+          자세 증후군 자동 매칭 <span className="guideline-tag tag-nasm">NASM</span>
+        </h3>
+        {(state.postureFlags || []).length === 0 ? (
+          <p className="text-sm text-slate-500">체크된 항목이 없습니다.</p>
+        ) : computed.syndromes.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            선택된 편차가 특정 증후군 패턴과 일치하지 않습니다. 개별 편차를 기록하고 Corrective 전략을 설계하세요.
           </p>
-        )}
-        {computed.balance && (
-          <div className="mt-2">
-            <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" />
-            {computed.balance.asymPct != null && computed.balance.asymPct > 0 && (
-              <p className="text-xs mt-1.5" style={{ color: '#555' }}>
-                좌우 차이 {computed.balance.asymPct}%
-                {computed.balance.weakSide && ` (약한 쪽: ${computed.balance.weakSide === 'L' ? '좌' : '우'})`}
-              </p>
-            )}
-            {computed.balance.warning && (
-              <p className="text-xs mt-1 font-semibold" style={{ color: '#b42318' }}>
-                ⚠ {computed.balance.warning}
-              </p>
-            )}
+        ) : (
+          <div className="space-y-3">
+            {computed.syndromes.map((m: any) => (
+              <div key={m.id} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <strong className="text-slate-100">{m.name}</strong>
+                  <span className="pill-below">일치 편차 {m.hits}개</span>
+                </div>
+                <div className="text-sm mt-2">
+                  <strong>과활성(Short/Tight):</strong> <span className="text-slate-300">{m.overactive}</span>
+                </div>
+                <div className="text-sm mt-1">
+                  <strong>저활성(Weak):</strong> <span className="text-slate-300">{m.underactive}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  → SMR + 정적 스트레칭 (과활성) + 활성화 + 통합 운동 (저활성)
+                </p>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -1393,85 +1436,42 @@ function PostureTab({
         5 Kinetic Chain Checkpoints × 3 View — 관찰된 편차를 체크하면 NASM 자세 증후군이 자동 매칭됩니다.
       </p>
 
-      {POSTURE_SECTIONS.map((sec) => (
-        <div key={sec.title} className="card">
-          <h3 className="font-bold mb-1">
-            {sec.title} <span className="guideline-tag tag-nasm">NASM</span>
-          </h3>
-          {sec.note && (
-            <p className="text-xs text-slate-500 mb-3">{sec.note}</p>
-          )}
-          <div className="grid md:grid-cols-3 gap-4">
-            {sec.groups.map((g) => (
-              <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
-                <h4 className="text-sm font-bold mb-2">{g.head}</h4>
-                <div className="space-y-1.5">
-                  {g.items.map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between gap-1.5">
-                      <label className="flex items-center gap-2 text-sm flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={has(key)}
-                          onChange={() => toggleBase(key)}
-                        />
-                        <span>{label}</span>
-                      </label>
-                      <div className="flex gap-1 flex-shrink-0">
-                        {(['L', 'R'] as const).map((side) => (
-                          <button
-                            key={side}
-                            type="button"
-                            onClick={() => toggleSide(key, side)}
-                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
-                            style={
-                              has(`${key}:${side}`)
-                                ? { background: '#111', color: '#fff', border: '1px solid #111' }
-                                : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
-                            }
-                            title={side === 'L' ? '좌측' : '우측'}
-                          >
-                            {side === 'L' ? '좌' : '우'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
+      {/* 평형성 — 눈뜨고 외발서기 */}
       <div className="card">
-        <h3 className="font-bold mb-3">
-          자세 증후군 자동 매칭 <span className="guideline-tag tag-nasm">NASM</span>
+        <h3 className="font-bold mb-1">
+          평형성 — 눈뜨고 외발서기 <span className="guideline-tag">Balance</span>
         </h3>
-        {(state.postureFlags || []).length === 0 ? (
-          <p className="text-sm text-slate-500">체크된 항목이 없습니다.</p>
-        ) : computed.syndromes.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            선택된 편차가 특정 증후군 패턴과 일치하지 않습니다. 개별 편차를 기록하고 Corrective 전략을 설계하세요.
+        <p className="text-xs text-slate-500 mb-1">
+          양손은 허리 또는 자연스럽게 · 한쪽 발을 들어 유지한 시간(초) 기록 · 든 발이 바닥에
+          닿거나 지지물을 잡으면 종료. 좌우 각각 측정.
+        </p>
+        <p className="text-xs font-semibold mb-3" style={{ color: '#b42318' }}>
+          ⚠ 고령자는 낙상 위험 — 반드시 벽이나 튼튼한 의자를 바로 옆에 두고 실시하세요.
+        </p>
+        <div className="grid grid-cols-2 gap-3 max-w-sm mb-2">
+          <Num label="우측 지지 (초)" value={state.balanceR} onChange={(v) => update('balanceR', v)} />
+          <Num label="좌측 지지 (초)" value={state.balanceL} onChange={(v) => update('balanceL', v)} />
+        </div>
+        {computed.balanceRow && (
+          <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
+            이 연령대 기준 — 낮음 ≤{computed.balanceRow[0]}초 · 보통 ~{computed.balanceRow[1]}초 ·
+            양호 ~{computed.balanceRow[2]}초 · 우수 ~{computed.balanceRow[3]}초 · 매우우수 &gt;{computed.balanceRow[3]}초
           </p>
-        ) : (
-          <div className="space-y-3">
-            {computed.syndromes.map((m: any) => (
-              <div key={m.id} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <strong className="text-slate-100">{m.name}</strong>
-                  <span className="pill-below">일치 편차 {m.hits}개</span>
-                </div>
-                <div className="text-sm mt-2">
-                  <strong>과활성(Short/Tight):</strong> <span className="text-slate-300">{m.overactive}</span>
-                </div>
-                <div className="text-sm mt-1">
-                  <strong>저활성(Weak):</strong> <span className="text-slate-300">{m.underactive}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">
-                  → SMR + 정적 스트레칭 (과활성) + 활성화 + 통합 운동 (저활성)
-                </p>
-              </div>
-            ))}
+        )}
+        {computed.balance && (
+          <div className="mt-2">
+            <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" />
+            {computed.balance.asymPct != null && computed.balance.asymPct > 0 && (
+              <p className="text-xs mt-1.5" style={{ color: '#555' }}>
+                좌우 차이 {computed.balance.asymPct}%
+                {computed.balance.weakSide && ` (약한 쪽: ${computed.balance.weakSide === 'L' ? '좌' : '우'})`}
+              </p>
+            )}
+            {computed.balance.warning && (
+              <p className="text-xs mt-1 font-semibold" style={{ color: '#b42318' }}>
+                ⚠ {computed.balance.warning}
+              </p>
+            )}
           </div>
         )}
       </div>
