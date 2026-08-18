@@ -426,7 +426,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         padding: '10px 16px calc(10px + env(safe-area-inset-bottom))',
       }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 flex-wrap">
         {/* 탭 이동 (플로어 한손 입력용) */}
         {(() => {
           const idx = TABS.findIndex((t) => t.id === tab);

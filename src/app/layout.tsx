@@ -34,10 +34,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               />
               <span className="block">
                 <h1 className="text-lg md:text-xl font-bold leading-tight tracking-tight">파프짐 체력 평가 시스템</h1>
-                <p className="text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
+                {/* 모바일: 영문 부제 숨김 — 글자 확대 시 헤더가 화면을 과점하는 것 방지 */}
+                <p className="hidden sm:block text-[11px] md:text-xs" style={{ color: '#9a9a9a' }}>Comprehensive Fitness Assessment — ACSM · NSCA · NASM · FMS</p>
               </span>
             </Link>
-            <nav className="flex gap-2 text-sm no-print items-center">
+            <nav className="flex gap-2 text-sm no-print items-center flex-wrap">
               <FontSizeToggle />
               <Link href="/" className="px-3.5 py-2 rounded-md border border-white/30 hover:border-white text-white">
                 회원님 목록

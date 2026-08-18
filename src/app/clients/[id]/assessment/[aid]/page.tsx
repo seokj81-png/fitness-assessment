@@ -377,7 +377,7 @@ export default async function AssessmentViewPage({
             {assessmentRaw.assessor && ` · 측정자: ${assessmentRaw.assessor}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link
             href={`/clients/${client.id}/assessment/${a.id}/edit`}
             className="btn-secondary"
@@ -1202,13 +1202,19 @@ function DeltaRow({
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
   return (
     <div
-      className="flex justify-between items-center gap-2 px-3 py-2 rounded"
+      className="flex justify-between items-center gap-2 px-3 py-2 rounded flex-wrap"
       style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}
     >
       <span className="text-sm" style={{ color: '#333' }}>{d.label}</span>
-      <span className="text-sm tabular-nums font-semibold whitespace-nowrap" style={{ color: '#111' }}>
-        {fmt(d.prev)} → {fmt(d.cur)}{d.unit}{' '}
-        <span style={{ color }}>
+      {/* 값·변화량을 각각 nowrap으로 — 좁은 화면에선 변화량만 다음 줄로 (글자 단위 깨짐 방지) */}
+      <span
+        className="text-sm tabular-nums font-semibold inline-flex flex-wrap justify-end gap-x-1"
+        style={{ color: '#111' }}
+      >
+        <span className="whitespace-nowrap">
+          {fmt(d.prev)} → {fmt(d.cur)}{d.unit}
+        </span>
+        <span className="whitespace-nowrap" style={{ color }}>
           ({diff > 0 ? '+' : ''}{fmt(diff)}
           {pct !== null && diff !== 0 ? ` · ${diff > 0 ? '+' : ''}${pct}%` : ''})
         </span>

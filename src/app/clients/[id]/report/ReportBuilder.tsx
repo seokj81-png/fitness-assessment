@@ -307,7 +307,7 @@ export default function ReportBuilder({
             회원님께 전달하는 1페이지 리포트 — 이미지 저장 후 카톡으로 보내거나 A4로 인쇄하세요.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={saveImage} disabled={busy} className="btn-primary">
             {busy ? '이미지 생성 중…' : '🖼️ 이미지 저장 (카톡 전송)'}
           </button>

@@ -31,6 +31,10 @@ html, body {
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* 한국어 단어 단위 줄바꿈 — 좁은 화면·글자 확대에서도 어절이 깨지지 않게.
+     overflow-wrap은 한 단어가 칸보다 길 때만 강제 분리(오버플로 방지 폴백) */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 @layer components {
@@ -43,6 +47,7 @@ html, body {
   .btn-primary {
     background: var(--ink);
     @apply text-white px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    white-space: nowrap; /* 버튼 라벨은 글자 단위로 쪼개지 않음 — 좁으면 버튼째 줄바꿈 */
   }
   .btn-primary:hover { background: #000; }
   .btn-primary:disabled { background: #9a9a9a; }
@@ -51,6 +56,7 @@ html, body {
     color: var(--ink);
     border: 1px solid #cfcfcf;
     @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    white-space: nowrap;
   }
   .btn-secondary:hover { background: #f0f0f0; border-color: #9a9a9a; }
   .btn-danger {
@@ -58,6 +64,7 @@ html, body {
     color: var(--ink);
     border: 1px solid #cfcfcf;
     @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    white-space: nowrap;
   }
   .btn-danger:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
   .input {

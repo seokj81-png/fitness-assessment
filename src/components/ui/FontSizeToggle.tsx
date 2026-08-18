@@ -35,7 +35,7 @@ export default function FontSizeToggle() {
 
   return (
     <div
-      className="flex items-center rounded-md overflow-hidden no-print"
+      className="flex items-center rounded-md overflow-hidden no-print flex-shrink-0"
       style={{ border: '1px solid rgba(255,255,255,0.3)' }}
       aria-label="글자 크기 조절"
     >

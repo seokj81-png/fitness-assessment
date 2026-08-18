@@ -55,6 +55,10 @@ export default function NormsTable({ age, sex }: { age: number; sex: Sex }) {
       <p className="text-xs mb-3" style={{ color: '#8a8a8a' }}>
         ACSM·NSCA 규준. 값이 클수록 우수 — 각 칸은 해당 등급의 범위입니다. 회원 설명용.
       </p>
+      {/* 모바일: 표가 화면보다 넓어 가로 스크롤됨을 안내 */}
+      <p className="md:hidden text-[11px] mb-1" style={{ color: '#9a9a9a' }}>
+        ↔ 표를 옆으로 밀면 전체 등급이 보입니다
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm" style={{ borderCollapse: 'collapse', minWidth: 560 }}>
           <thead>
