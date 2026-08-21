@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toPng } from 'html-to-image';
-import { allVo2Estimates, calcFMS } from '@/lib/calculations';
+import { allVo2Estimates, calcFMS, classifyVO2max, breathScreen } from '@/lib/calculations';
+import { buildFittProgram } from '@/lib/fitt';
 import { printPage } from '@/lib/browser';
 import type { Sex } from '@/lib/types';
 
@@ -17,6 +18,14 @@ export interface ReportAssessment {
   id: string;
   date: string;
   assessor: string | null;
+  rhr: number | null;
+  sbp: number | null;
+  dbp: number | null;
+  breathFrc: number | null;
+  breathTlc: number | null;
+  breathHiLo: string | null;
+  breathQ: string | null;
+  postureFlags: string | null;
   weight: number | null;
   height: number | null;
   bmi: number | null;
@@ -55,6 +64,8 @@ interface ClientInfo {
   name: string;
   sex: 'M' | 'F';
   age: number | null;
+  goal?: string | null;
+  experience?: string | null;
   trainer: string | null;
   branch: string | null;
   weight: number | null;
@@ -92,7 +103,7 @@ function fmtN(v: number): string {
   return Number.isInteger(v) ? String(v) : v.toFixed(1);
 }
 
-function fmsTotal(a: ReportAssessment): number | null {
+function fmsResultOf(a: ReportAssessment) {
   if (!a.fms) return null;
   try {
     const scores = JSON.parse(a.fms) as Record<string, number>;
@@ -101,10 +112,15 @@ function fmsTotal(a: ReportAssessment): number | null {
       sh: (a.clearSh as 'neg' | 'pos') || 'neg',
       ext: (a.clearExt as 'neg' | 'pos') || 'neg',
       flex: (a.clearFlex as 'neg' | 'pos') || 'neg',
-    }).total;
+    });
   } catch {
     return null;
   }
+}
+
+function fmsTotal(a: ReportAssessment): number | null {
+  const r = fmsResultOf(a);
+  return r && r.tested > 0 ? r.total : null;
 }
 
 export default function ReportBuilder({
@@ -120,6 +136,7 @@ export default function ReportBuilder({
   const [comment, setComment] = useState('');
   const [goals, setGoals] = useState('');
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [includeProgram, setIncludeProgram] = useState(true);
   const [busy, setBusy] = useState(false);
 
   let base = assessments.find((a) => a.id === baseId) ?? assessments[0];
@@ -231,6 +248,71 @@ export default function ReportBuilder({
 
   const goalLines = goals.split('\n').map((s) => s.trim()).filter(Boolean);
 
+  // ── FITT-VP 운동 프로그램 — 최근 회차 평가 결과 기반 자동 생성 ──
+  const program = useMemo(() => {
+    const fmsRes = fmsResultOf(target);
+    let breathRed = false;
+    try {
+      const q = target.breathQ ? (JSON.parse(target.breathQ) as number[]) : undefined;
+      const br = breathScreen({
+        frc: target.breathFrc ?? undefined,
+        tlc: target.breathTlc ?? undefined,
+        q,
+        hiLo: (target.breathHiLo ?? undefined) as Parameters<typeof breathScreen>[0]['hiLo'],
+      });
+      breathRed = br?.overall === 'red';
+    } catch {
+      /* 손상된 JSON — 호흡 판정 생략 */
+    }
+    let postureCount = 0;
+    try {
+      postureCount = target.postureFlags
+        ? (JSON.parse(target.postureFlags) as string[]).filter((k) => !k.includes(':')).length
+        : 0;
+    } catch {
+      /* ignore */
+    }
+    const vo2 = vo2Of(target);
+    const vo2Level =
+      vo2 != null && client.age != null
+        ? classifyVO2max(vo2, client.age, client.sex as Sex)?.classification ?? null
+        : null;
+    const oneRm = (
+      [
+        ['벤치프레스', target.bp1rm],
+        ['스쿼트', target.sq1rm],
+        ['데드리프트', target.dl1rm],
+        ['오버헤드프레스', target.ohp1rm],
+        ['레그프레스', target.lp1rm],
+      ] as [string, number | null][]
+    )
+      .filter((x): x is [string, number] => x[1] != null)
+      .map(([name, kg]) => ({ name, kg }));
+    const balanceLowSec =
+      target.balanceR != null && target.balanceL != null
+        ? Math.min(target.balanceR, target.balanceL)
+        : target.balanceR ?? target.balanceL;
+    return buildFittProgram({
+      age: client.age,
+      sex: client.sex,
+      goal: client.goal,
+      experience: client.experience,
+      rhr: target.rhr,
+      sbp: target.sbp,
+      dbp: target.dbp,
+      vo2,
+      vo2Level,
+      oneRm,
+      fmsTested: (fmsRes?.tested ?? 0) > 0,
+      fmsTotal: fmsRes?.total,
+      fmsZeros: fmsRes?.zeros,
+      postureCount,
+      balanceLowSec,
+      breathRed,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, client.age, client.sex, client.goal, client.experience]);
+
   // ── 모바일 미리보기 축소 (시트는 794px 고정, 래퍼에 zoom) ──
   const outerRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -300,6 +382,7 @@ export default function ReportBuilder({
           .report-controls, .report-topbar { display: none !important; }
           .report-zoomwrap { zoom: 1 !important; }
           .report-sheet { width: 100% !important; box-shadow: none !important; }
+          .fitt-section { break-before: page; padding-top: 4mm; }
         }
       `,
         }}
@@ -379,6 +462,14 @@ export default function ReportBuilder({
           </div>
         </div>
 
+        <label className="flex items-center gap-1.5 text-sm text-slate-300 cursor-pointer mb-3">
+          <input
+            type="checkbox"
+            checked={includeProgram}
+            onChange={(e) => setIncludeProgram(e.target.checked)}
+          />
+          권장 운동 프로그램(FITT-VP) 포함 — 평가 결과 기반 자동 생성, 인쇄 시 2쪽
+        </label>
         {rows.length > 0 && (
           <div>
             <label className="label">표시 항목 (체크 해제 시 리포트에서 제외)</label>
@@ -608,6 +699,99 @@ export default function ReportBuilder({
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* 권장 운동 프로그램 — FITT-VP (평가 결과 기반 자동 생성) */}
+              {includeProgram && (
+                <div className="fitt-section" style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: NAVY, marginBottom: 2 }}>
+                    권장 운동 프로그램 — FITT-VP
+                  </div>
+                  <div style={{ fontSize: 10.5, color: MUTED, marginBottom: 6 }}>{program.basis}</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, tableLayout: 'fixed' }}>
+                    <thead>
+                      <tr style={{ background: NAVY, color: '#fff' }}>
+                        <th style={{ width: 44, padding: '5px 6px', textAlign: 'left', fontWeight: 700 }}>구분</th>
+                        {program.domains.map((d) => (
+                          <th key={d.domain} style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 700 }}>
+                            {d.domain}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(
+                        [
+                          ['빈도 F', 'F'],
+                          ['강도 I', 'I'],
+                          ['시간 T', 'T'],
+                          ['형태 T', 'type'],
+                          ['양 V', 'V'],
+                          ['진행 P', 'P'],
+                        ] as [string, keyof (typeof program.domains)[number]][]
+                      ).map(([label, k], ri) => (
+                        <tr key={k} style={{ background: ri % 2 ? WARM : '#fff', verticalAlign: 'top' }}>
+                          <th
+                            scope="row"
+                            style={{
+                              padding: '5px 6px',
+                              borderBottom: `1px solid ${LINE}`,
+                              fontSize: 10,
+                              textAlign: 'left',
+                              color: MUTED,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {label}
+                          </th>
+                          {program.domains.map((d) => (
+                            <td
+                              key={d.domain}
+                              style={{ padding: '5px 8px', borderBottom: `1px solid ${LINE}`, lineHeight: 1.5 }}
+                            >
+                              {d[k]}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {program.loads.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        background: WARM,
+                        border: `1px solid ${LINE}`,
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        lineHeight: 1.7,
+                      }}
+                    >
+                      <b>이번 1RM 기준 권장 훈련 중량</b> — {program.loads.join(' · ')}
+                    </div>
+                  )}
+                  {program.cautions.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        borderLeft: `4px solid ${RED}`,
+                        background: '#faf4f4',
+                        borderRadius: '0 8px 8px 0',
+                        padding: '8px 12px',
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 800, color: RED, marginBottom: 3 }}>⚠ 안전 유의</div>
+                      <ul style={{ margin: 0, paddingLeft: 16, listStyle: 'disc' }}>
+                        {program.cautions.map((c, idx) => (
+                          <li key={idx} style={{ fontSize: 10.5, lineHeight: 1.6 }}>
+                            {c}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 
