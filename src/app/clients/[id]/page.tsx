@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
+import { fullAge } from '@/lib/calculations';
 import DeleteClientButton from './DeleteClientButton';
 import TrendCharts from '@/components/client/TrendCharts';
 import InbodyLog, { type InbodyRow } from '@/components/client/InbodyLog';
@@ -25,7 +26,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     smm: e.smm,
   }));
 
-  const age = client.dob ? new Date().getFullYear() - new Date(client.dob).getFullYear() : null;
+  const age = fullAge(client.dob);
 
   // Serialize for client components
   const assessmentRows = client.assessments.map((a) => ({
@@ -75,7 +76,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           <Link href={`/clients/${client.id}/assessment/new`} className="btn-primary">
             {client.assessments.length > 0 ? '+ 재평가' : '+ 첫 체력평가'}
           </Link>
-          <DeleteClientButton id={client.id} />
+          <DeleteClientButton id={client.id} name={client.name} />
         </div>
       </div>
 
@@ -117,7 +118,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             </h3>
             {client.assessments.length === 0 ? (
               <p className="text-sm text-slate-500 py-8 text-center">
-                아직 체력평가 기록이 없습니다. 상단의 &lsquo;+ 새 체력평가&rsquo; 버튼으로 시작하세요.
+                아직 체력평가 기록이 없습니다. 상단의 &lsquo;+ 첫 체력평가&rsquo; 버튼으로 시작하세요.
               </p>
             ) : (
               <div className="divide-y divide-slate-700">

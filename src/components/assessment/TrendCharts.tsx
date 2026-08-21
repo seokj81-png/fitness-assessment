@@ -58,9 +58,15 @@ function fmsScore(obj: Record<string, number>, id: string, bilateral: boolean): 
 
 function parseFmsTotal(raw: string | null | undefined): number | null {
   const obj = parseFms(raw);
-  const keys = ['dsq', 'hs_r', 'hs_l', 'lu_r', 'lu_l', 'sm_r', 'sm_l', 'aslr_r', 'aslr_l', 'tsp', 'rs_r', 'rs_l'];
+  // FMS 총점 = 검사별 점수 합 (양측 검사는 좌우 중 낮은 쪽) — 좌우를 모두 더하면 최대 36점으로 왜곡됨
+  const tests: [string, boolean][] = [
+    ['dsq', false], ['hs', true], ['lu', true], ['sm', true], ['aslr', true], ['tsp', false], ['rs', true],
+  ];
   let total = 0; let hasAny = false;
-  for (const k of keys) { if (obj[k] != null) { total += obj[k]; hasAny = true; } }
+  for (const [id, bilateral] of tests) {
+    const v = fmsScore(obj, id, bilateral);
+    if (v != null) { total += v; hasAny = true; }
+  }
   return hasAny ? total : null;
 }
 

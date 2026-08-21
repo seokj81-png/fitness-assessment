@@ -71,7 +71,11 @@ export default function PrintSectionPicker() {
             {excluded.size > 0 && (
               <button
                 onClick={() => {
-                  excluded.forEach((n) => toggle(n));
+                  // toggle을 반복 호출하면 stale state로 일부만 복원됨 — 한 번에 초기화
+                  setExcluded(new Set());
+                  document
+                    .querySelectorAll<HTMLElement>('[data-print-section]')
+                    .forEach((el) => el.classList.remove('print-exclude'));
                 }}
                 className="btn-secondary text-sm"
               >

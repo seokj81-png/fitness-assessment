@@ -122,8 +122,14 @@ export default function ReportBuilder({
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
-  const base = assessments.find((a) => a.id === baseId) ?? assessments[0];
-  const target = assessments.find((a) => a.id === targetId) ?? assessments[n - 1];
+  let base = assessments.find((a) => a.id === baseId) ?? assessments[0];
+  let target = assessments.find((a) => a.id === targetId) ?? assessments[n - 1];
+  // 회차를 반대로 골라도 항상 과거 → 최근 방향으로 비교 (변화 방향·색 반전 방지)
+  if (new Date(base.date) > new Date(target.date)) {
+    const t = base;
+    base = target;
+    target = t;
+  }
   const single = n < 2 || base.id === target.id;
 
   // 다음 재평가 예정일 — 기본: 최근 평가 + 4주
@@ -164,12 +170,14 @@ export default function ReportBuilder({
       { key: 'sq1rm', label: '스쿼트 1RM', unit: 'kg', dir: 'up', get: (a) => a.sq1rm },
       { key: 'dl1rm', label: '데드리프트 1RM', unit: 'kg', dir: 'up', get: (a) => a.dl1rm },
       { key: 'ohp1rm', label: '오버헤드프레스 1RM', unit: 'kg', dir: 'up', get: (a) => a.ohp1rm },
+      { key: 'pc1rm', label: '파워클린 1RM', unit: 'kg', dir: 'up', get: (a) => a.pc1rm },
       { key: 'lp1rm', label: '레그프레스 1RM', unit: 'kg', dir: 'up', get: (a) => a.lp1rm },
       { key: 'pushup', label: '푸시업', unit: '회', dir: 'up', get: (a) => a.pushupReps },
       { key: 'pullup', label: '풀업', unit: '회', dir: 'up', get: (a) => a.pullupReps },
       { key: 'squatReps', label: '스쿼트 지구력', unit: '회', dir: 'up', get: (a) => a.squatReps },
       { key: 'curlup', label: '컬업', unit: '회', dir: 'up', get: (a) => a.curlupReps },
       { key: 'plank', label: '전방 플랭크', unit: '초', dir: 'up', get: (a) => a.plankFront },
+      { key: 'sorensen', label: 'Sorensen (요부 지구력)', unit: '초', dir: 'up', get: (a) => a.sorensen },
       {
         key: 'balance', label: '외발서기 (좌/우 낮은 쪽)', unit: '초', dir: 'up',
         get: (a) =>

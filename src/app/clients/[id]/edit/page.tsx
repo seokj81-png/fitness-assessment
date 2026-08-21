@@ -29,17 +29,30 @@ export default function EditClientPage() {
   const [data, setData] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [loadError, setLoadError] = useState(false);
   useEffect(() => {
+    setLoadError(false);
     fetch(`/api/clients/${params.id}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
       .then((c) => {
         setData({
           ...c,
           dob: c.dob ? new Date(c.dob).toISOString().slice(0, 10) : '',
         });
-      });
+      })
+      .catch(() => setLoadError(true));
   }, [params.id]);
 
+  if (loadError)
+    return (
+      <div className="card text-center py-10">
+        <p className="text-sm text-slate-500 mb-4">회원 정보를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.</p>
+        <button onClick={() => location.reload()} className="btn-secondary">다시 시도</button>
+      </div>
+    );
   if (!data) return <div className="text-slate-500">로딩 중...</div>;
 
   async function save(e: React.FormEvent<HTMLFormElement>) {

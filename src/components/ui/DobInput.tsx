@@ -19,6 +19,13 @@ export default function DobInput({
     if (digits.length > 6) out = `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
     else if (digits.length > 4) out = `${digits.slice(0, 4)}-${digits.slice(4)}`;
     setV(out);
+    // 형식은 맞아도 존재하지 않는 날짜(13월·2월 31일 등)는 제출 차단
+    const done = /^\d{4}-\d{2}-\d{2}$/.test(out);
+    const okYear = done && +out.slice(0, 4) >= 1900 && +out.slice(0, 4) <= new Date().getFullYear();
+    const okDate = done && !Number.isNaN(new Date(`${out}T00:00:00`).getTime());
+    e.target.setCustomValidity(
+      !out || (done && okYear && okDate) ? '' : '올바른 생년월일 8자리를 입력하세요 (예: 19850315)'
+    );
   }
 
   const complete = /^\d{4}-\d{2}-\d{2}$/.test(v);

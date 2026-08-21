@@ -31,6 +31,18 @@ const LABEL: Record<Classification, string> = {
   poor: '매우낮음 Poor',
 };
 
+// 만 나이 — 생일이 지나지 않았으면 1 적게 (연령별 규준표 정확도). at = 기준일(기본 오늘)
+export function fullAge(dob: string | Date | null | undefined, at?: Date): number | null {
+  if (!dob) return null;
+  const b = new Date(dob);
+  if (Number.isNaN(b.getTime())) return null;
+  const now = at ?? new Date();
+  let a = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) a--;
+  return a;
+}
+
 export function ageGroup(age: number): AgeGroup {
   return Math.min(60, Math.max(20, Math.floor(age / 10) * 10)) as AgeGroup;
 }
@@ -164,21 +176,22 @@ export function classifyBodyFat(bf: number, sex: Sex): ClassifiedResult {
 
 export function classifyBP(sbp: number, dbp: number): ClassifiedResult {
   let c: Classification, label: string;
-  if (sbp < 120 && dbp < 80) {
-    c = 'excellent';
-    label = '정상 Normal';
-  } else if (sbp < 130 && dbp < 80) {
-    c = 'average';
-    label = '상승 Elevated';
-  } else if (sbp < 140 || dbp < 90) {
-    c = 'below';
-    label = '고혈압 1기 Stage 1 HTN';
-  } else if (sbp < 180 || dbp < 120) {
-    c = 'poor';
-    label = '고혈압 2기 Stage 2 HTN';
-  } else {
+  // 내림차순 판정 — 두 값 중 나쁜 쪽이 병기를 결정 (ACC/AHA)
+  if (sbp >= 180 || dbp >= 120) {
     c = 'poor';
     label = '고혈압 위기 Crisis';
+  } else if (sbp >= 140 || dbp >= 90) {
+    c = 'poor';
+    label = '고혈압 2기 Stage 2 HTN';
+  } else if (sbp >= 130 || dbp >= 80) {
+    c = 'below';
+    label = '고혈압 1기 Stage 1 HTN';
+  } else if (sbp >= 120) {
+    c = 'average';
+    label = '상승 Elevated';
+  } else {
+    c = 'excellent';
+    label = '정상 Normal';
   }
   return { value: sbp, label, classification: c };
 }
@@ -606,8 +619,8 @@ export function analyzePlank(
   if (r && l) {
     lrAsym = Math.abs(r - l) / Math.max(r, l);
     if (lrAsym > 0.05) warnings.push('측면 플랭크 좌우 5% 초과 비대칭 — 편측 약화');
-    sideFrontRatio = Math.max(r, l) / front;
-    if (sideFrontRatio > 0.75) warnings.push('측면/전방 비율 > 0.75 — 전방 신전근 상대 약화');
+    if (front > 0) sideFrontRatio = Math.max(r, l) / front;
+    if (sideFrontRatio && sideFrontRatio > 0.75) warnings.push('측면/전방 비율 > 0.75 — 전방 신전근 상대 약화');
   }
   if (sorensen && front) {
     sorensenRatio = sorensen / front;
@@ -863,6 +876,7 @@ export function matchPostureSyndromes(flags: string[]): SyndromeMatch[] {
 
 export interface FmsResult {
   total: number;
+  tested: number; // 입력 완료된 검사 수 (0~7) — 7 미만이면 총점 비교 무의미
   zeros: number;
   asymmetries: number;
   classification: Classification;
@@ -900,11 +914,13 @@ export function calcFMS(
     return v;
   };
 
+  let tested = 0;
   ['dsq', 'hs', 'lu', 'sm', 'aslr', 'tsp', 'rs'].forEach((id) => {
     const s = pair(id);
     if (s !== undefined) {
       perTest[id] = s;
       total += s;
+      tested++;
       if (s === 0) zeros++;
     }
   });
@@ -912,18 +928,18 @@ export function calcFMS(
   // Clearing tests downgrade related sub-tests
   if (clearing.sh === 'pos' && perTest.sm !== undefined) {
     total -= perTest.sm;
+    if (perTest.sm !== 0) zeros++; // 이미 0점이면 이중 카운트 방지
     perTest.sm = 0;
-    zeros++;
   }
   if (clearing.ext === 'pos' && perTest.tsp !== undefined) {
     total -= perTest.tsp;
+    if (perTest.tsp !== 0) zeros++; // 이미 0점이면 이중 카운트 방지
     perTest.tsp = 0;
-    zeros++;
   }
   if (clearing.flex === 'pos' && perTest.rs !== undefined) {
     total -= perTest.rs;
+    if (perTest.rs !== 0) zeros++; // 이미 0점이면 이중 카운트 방지
     perTest.rs = 0;
-    zeros++;
   }
 
   let classification: Classification;
@@ -931,6 +947,9 @@ export function calcFMS(
   if (zeros > 0) {
     classification = 'poor';
     message = '⚠ 0점 검사 존재 — 통증 유발, 의료 평가 권장';
+  } else if (tested < 7) {
+    classification = 'average';
+    message = `참고: ${tested}/7개 검사만 입력 — 총점 판정은 7개 완료 후`;
   } else if (total <= 14) {
     classification = 'poor';
     message = '⚠ 14점 이하 — 손상 위험 증가 (Kiesel et al. 2007)';
@@ -945,7 +964,7 @@ export function calcFMS(
     message = '평균 범위';
   }
 
-  return { total, zeros, asymmetries, classification, message, perTest };
+  return { total, tested, zeros, asymmetries, classification, message, perTest };
 }
 
 // -------- Recommendation engine --------

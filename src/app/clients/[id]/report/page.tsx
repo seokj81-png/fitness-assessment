@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
+import { fullAge } from '@/lib/calculations';
 import ReportBuilder, { type ReportAssessment } from './ReportBuilder';
 
 export const dynamic = 'force-dynamic';
@@ -63,9 +64,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
     clearFlex: a.clearFlex,
   }));
 
-  const age = client.dob
-    ? new Date().getFullYear() - new Date(client.dob).getFullYear()
-    : null;
+  const age = fullAge(client.dob);
 
   return (
     <ReportBuilder

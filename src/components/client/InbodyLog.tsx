@@ -72,8 +72,13 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
 
   async function remove(id: string) {
     if (!confirm('이 인바디 기록을 삭제할까요?')) return;
-    const res = await fetch(`/api/inbody/${id}`, { method: 'DELETE' });
-    if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
+    try {
+      const res = await fetch(`/api/inbody/${id}`, { method: 'DELETE' });
+      if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
+      else alert('삭제 실패: 잠시 후 다시 시도해 주세요.');
+    } catch {
+      alert('삭제 실패: 네트워크 연결을 확인해 주세요.');
+    }
   }
 
   // 직전 기록 대비 변화값
@@ -214,7 +219,12 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                         </td>
                       ))}
                       <td className="py-2 text-right no-print">
-                        <button onClick={() => remove(e.id)} className="text-xs underline" style={{ color: '#8a8a8a' }}>
+                        {/* 터치 타겟 확보: 시각 크기는 유지하고 패딩으로 44px 근접 */}
+                        <button
+                          onClick={() => remove(e.id)}
+                          className="text-xs underline p-3 -m-2"
+                          style={{ color: '#8a8a8a' }}
+                        >
                           삭제
                         </button>
                       </td>

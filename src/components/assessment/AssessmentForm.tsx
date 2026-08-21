@@ -6,6 +6,7 @@ import { printPage } from '@/lib/browser';
 import { COLLAPSIBLE_CARDS, BASIC_BY_GOAL, GOAL_LABEL, goalKeyOf } from '@/lib/assess-presets';
 import {
   bmi,
+  fullAge,
   classifyBMI_AsiaPacific,
   whr,
   classifyWHR,
@@ -110,13 +111,7 @@ type FormState = Partial<AssessmentInput> & {
 export default function AssessmentForm({ client, existing, pageTitle, pageSubtitle, backHref, backLabel }: Props) {
   const router = useRouter();
   const sex = client.sex as Sex;
-  const age = useMemo(
-    () =>
-      client.dob
-        ? Math.abs(new Date().getFullYear() - new Date(client.dob).getFullYear())
-        : 0,
-    [client.dob]
-  );
+  const age = useMemo(() => fullAge(client.dob) ?? 0, [client.dob]);
   const [tab, setTab] = useState<Tab>('toc');
 
   // 탭 전환 시 항상 최상단으로 — 이전 탭의 스크롤 위치(최하단)가 유지되는 문제 방지 (트레이너 피드백)
@@ -125,6 +120,18 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     if (!tabMounted.current) { tabMounted.current = true; return; }
     window.scrollTo({ top: 0 });
   }, [tab]);
+
+  // 미저장 입력이 있으면 새로고침·창 닫기 전에 확인 (30분 측정치 유실 방지)
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [dirty]);
 
   // 모바일: 입력란 포커스 시 상단 고정 헤더·하단 바에 가려지지 않게 화면 중앙으로 (트레이너 피드백)
   useEffect(() => {
@@ -185,23 +192,33 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
   const weight = state.weight ?? client.weight ?? 0;
   const height = state.height ?? client.height ?? 0;
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+  const update = <K extends keyof FormState>(
+    key: K,
+    value: FormState[K] | ((prev: FormState[K]) => FormState[K])
+  ) => {
+    setDirty(true);
     setState((s) => {
-      const next = { ...s, [key]: value };
+      const v =
+        typeof value === 'function'
+          ? (value as (prev: FormState[K]) => FormState[K])(s[key])
+          : value;
+      const next = { ...s, [key]: v };
 
-      if (key === 'biaBf' && value != null && weight > 0) {
-        const bf = value as number;
-        const fm = Math.round(weight * (bf / 100) * 10) / 10;
-        const ffm = Math.round((weight - fm) * 10) / 10;
+      // BIA 파생값(체지방량·제지방량·TBW·BMR) — 체지방률 또는 체중·신장이 바뀔 때마다 재계산
+      const w = (key === 'weight' ? (v as number | undefined) : next.weight) ?? client.weight ?? 0;
+      const hgt = (key === 'height' ? (v as number | undefined) : next.height) ?? client.height ?? 0;
+      const bf = next.biaBf;
+      if ((key === 'biaBf' || key === 'weight' || key === 'height') && bf != null && w > 0) {
+        const fm = Math.round(w * (bf / 100) * 10) / 10;
         next.biaFm = fm;
-        next.biaFfm = ffm;
+        next.biaFfm = Math.round((w - fm) * 10) / 10;
         // Watson formula for TBW
         const a = age || 30;
         const tbw = sex === 'F'
-          ? -2.097 + 0.1069 * height + 0.2466 * weight
-          : 2.447 - 0.09156 * a + 0.1074 * height + 0.3362 * weight;
+          ? -2.097 + 0.1069 * hgt + 0.2466 * w
+          : 2.447 - 0.09156 * a + 0.1074 * hgt + 0.3362 * w;
         next.biaTbw = Math.round(tbw * 10) / 10;
-        const bmrBase = 10 * weight + 6.25 * height - 5 * a;
+        const bmrBase = 10 * w + 6.25 * hgt - 5 * a;
         next.biaBmr = Math.round(sex === 'F' ? bmrBase - 161 : bmrBase + 5);
       }
 
@@ -224,7 +241,8 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
     for (const [k, v] of Object.entries(state)) {
-      if (ALLOWED.has(k)) payload[k] = v;
+      // undefined는 JSON에서 키째 탈락해 PATCH가 옛 값을 유지함 — 지운 값은 null로 명시
+      if (ALLOWED.has(k)) payload[k] = v === undefined ? null : v;
     }
     payload.fmsComments = JSON.stringify(state.fmsComments ?? {});
     // Attach computed vo2max for quick display
@@ -235,26 +253,33 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     const currentId = savedId;
     const url = currentId ? `/api/assessments/${currentId}` : '/api/assessments';
     const method = currentId ? 'PATCH' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      const saved = await res.json();
-      const id = saved.id || currentId;
-      setSavedId(id);
-      if (exitAfter) {
-        router.push(`/clients/${client.id}/assessment/${id}`);
-        router.refresh();
-      } else {
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        const id = saved.id || currentId;
+        setSavedId(id);
+        setDirty(false);
+        if (exitAfter) {
+          router.push(`/clients/${client.id}/assessment/${id}`);
+          router.refresh();
+          return; // 이동 중 saving 유지 (중복 클릭 방지)
+        }
         setSavedAt(new Date());
-        setSaving(false);
+        setTimeout(() => setSavedAt(null), 2500); // 토스트 자동 사라짐
         router.refresh(); // 목록 카운터 등 갱신
+      } else {
+        const errBody = await res.json().catch(() => ({}));
+        alert(`저장 실패 (${res.status}): ${errBody?.error || res.statusText}`);
       }
-    } else {
-      const errBody = await res.json().catch(() => ({}));
-      alert(`저장 실패 (${res.status}): ${errBody?.error || res.statusText}`);
+    } catch {
+      // 오프라인·타임아웃 등 — 입력은 그대로 남아 있으니 재시도 가능
+      alert('저장 실패: 네트워크 연결을 확인한 뒤 다시 저장해 주세요.\n입력한 내용은 화면에 그대로 남아 있습니다.');
+    } finally {
       setSaving(false);
     }
   }
@@ -305,10 +330,10 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         ? estimate1RM_avg(state.est1rmW, state.est1rmReps)
         : null;
 
-    const pushup = state.pushupReps ? classifyPushup(state.pushupReps, age, sex) : null;
-    const ymcaBp = state.ymcaBpReps ? classifyYMCABP(state.ymcaBpReps, age, sex) : null;
-    const curlup = state.curlupReps ? classifyCurlup(state.curlupReps, age, sex) : null;
-    const squatEnd = state.squatReps ? classifySquatEndurance(state.squatReps, age, sex) : null;
+    const pushup = state.pushupReps != null ? classifyPushup(state.pushupReps, age, sex) : null;
+    const ymcaBp = state.ymcaBpReps != null ? classifyYMCABP(state.ymcaBpReps, age, sex) : null;
+    const curlup = state.curlupReps != null ? classifyCurlup(state.curlupReps, age, sex) : null;
+    const squatEnd = state.squatReps != null ? classifySquatEndurance(state.squatReps, age, sex) : null;
     const pullup = state.pullupReps != null ? classifyPullup(state.pullupReps, age, sex) : null;
     const plank =
       state.plankFront
@@ -332,10 +357,12 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     });
     const parq = parqResult(state.parq || []);
 
+    // FMS 미실시(입력 0건) 시 총점 0을 위험 신호로 오인하지 않도록 가드
+    const fmsEntered = fmsResult.tested > 0;
     const recommendations = buildRecommendations({
-      fmsTotal: fmsResult.total,
-      fmsZeros: fmsResult.zeros,
-      fmsAsym: fmsResult.asymmetries,
+      fmsTotal: fmsEntered ? fmsResult.total : undefined,
+      fmsZeros: fmsEntered ? fmsResult.zeros : undefined,
+      fmsAsym: fmsEntered ? fmsResult.asymmetries : undefined,
       postureFlags: state.postureFlags,
       vo2max: vo2max?.value,
       bpRatio: state.bp1rm && weight ? state.bp1rm / weight : undefined,
@@ -368,6 +395,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       balanceRow,
       syndromes,
       fmsResult,
+      fmsEntered,
       parq,
       recommendations,
     };
@@ -498,22 +526,29 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
           );
         })()}
 
-        {/* 저장 완료 토스트 (모바일에서는 숨김) */}
-        <div
-          className="hidden md:flex text-sm font-semibold items-center gap-1.5 transition-all duration-300"
-          style={{ color: '#111', opacity: savedAt ? 1 : 0, transform: savedAt ? 'translateY(0)' : 'translateY(4px)' }}
-        >
-          {savedAt && (
-            <>
-              <span className="inline-block w-2 h-2 rounded-full" style={{ background: '#111' }} />
-              저장됨 — {savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              {!savedId && null}
-            </>
-          )}
-        </div>
+        {/* 저장 완료 토스트 — 전 기기 플로팅 (모바일이 주 사용 기기) */}
+        {savedAt && (
+          <div
+            className="fixed left-1/2 -translate-x-1/2 z-[60] no-print pointer-events-none"
+            style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))' }}
+          >
+            <div
+              className="px-4 py-2 rounded-full text-sm font-semibold text-white shadow-lg"
+              style={{ background: 'rgba(17,17,17,0.92)' }}
+            >
+              ✓ 저장됨 — {savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-2 ml-auto">
-          <button onClick={() => router.back()} className="btn-secondary text-sm px-3 md:px-4 py-2 hidden sm:block">
+          <button
+            onClick={() => {
+              if (dirty && !confirm('저장하지 않은 입력이 있습니다. 정말 나가시겠어요?')) return;
+              router.back();
+            }}
+            className="btn-secondary text-sm px-3 md:px-4 py-2 hidden sm:block"
+          >
             취소
           </button>
           {/* 저장 — 현재 페이지 유지 */}
@@ -543,7 +578,10 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
 
 interface TabProps {
   state: FormState;
-  update: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  update: <K extends keyof FormState>(
+    key: K,
+    value: FormState[K] | ((prev: FormState[K]) => FormState[K])
+  ) => void;
   computed: ReturnType<typeof useComputed>;
 }
 type ComputedT = any; // local alias
@@ -714,6 +752,14 @@ function CompositionTab({
         <p className="text-[11px] text-slate-500 mt-2">
           아시아-태평양 기준: 정상 18.5-22.9 · 과체중 23-24.9 · 비만 I 25-29.9 · 비만 II ≥30
         </p>
+        <div className="mt-4 pt-3" style={{ borderTop: '1px solid #ececec' }}>
+          <div className="text-sm font-bold mb-2">둘레 측정 — 허리·엉덩이 비율 (WHR)</div>
+          <div className="grid grid-cols-2 gap-3 mb-3 max-w-xs">
+            <Num label="허리둘레 (cm)" value={state.waist} onChange={(v) => update('waist', v)} step="0.5" />
+            <Num label="엉덩이둘레 (cm)" value={state.hip} onChange={(v) => update('hip', v)} step="0.5" />
+          </div>
+          {computed.whrClass && <ResultBox result={computed.whrClass} unit="WHR" />}
+        </div>
       </div>
 
       <div className="card">
@@ -746,7 +792,7 @@ function CompositionTab({
         )}
         {state.biaBf != null && (
           <div className="mt-3">
-            <ResultBox result={computed.bodyFatClass} unit="%" />
+            <ResultBox result={computed.bodyFat} unit="%" />
           </div>
         )}
       </div>
@@ -762,12 +808,18 @@ function MinSecInput({
 }: {
   label: string;
   valueMin: number | null | undefined;
-  onChange: (decimalMin: number) => void;
+  onChange: (decimalMin: number | undefined) => void;
 }) {
   const min = decimalMin != null ? Math.floor(decimalMin) : '';
   const sec = decimalMin != null ? Math.round((decimalMin % 1) * 60) : '';
 
   const handle = (field: 'min' | 'sec', val: string) => {
+    // 두 칸을 모두 비우면 기록 삭제 (0초 기록과 미실시를 구분)
+    const otherEmpty = field === 'min' ? sec === '' : min === '';
+    if (val === '' && otherEmpty) {
+      onChange(undefined);
+      return;
+    }
     const m = field === 'min' ? (parseInt(val) || 0) : (typeof min === 'number' ? min : 0);
     const s = field === 'sec' ? (parseInt(val) || 0) : (typeof sec === 'number' ? sec : 0);
     onChange(m + s / 60);
@@ -833,9 +885,17 @@ function CardioTab({
           />
           <Num label="종료시 심박수 (bpm)" value={state.rockportHr} onChange={(v) => update('rockportHr', v)} />
         </div>
-        {state.rockportTime && state.rockportHr && computed.vo2max && (
-          <ResultBox result={computed.vo2max} unit="ml/kg/min" />
-        )}
+        {(() => {
+          const rock = (computed.vo2Estimates as { key: string; vo2: number }[] | undefined)?.find(
+            (e) => e.key === 'rockport'
+          );
+          return rock ? (
+            <p className="text-sm mt-1">
+              이 검사 추정 VO₂max: <b>{rock.vo2.toFixed(1)}</b> ml/kg/min{' '}
+              <span className="text-xs text-slate-500">(최종 분류는 전체 검사 중 최고값 기준)</span>
+            </p>
+          ) : null;
+        })()}
       </div>
 
       <div className="card" style={{ display: tier.vis('cardio.run15') ? undefined : 'none' }}>
@@ -1226,12 +1286,10 @@ function PostureTab({
                 <button
                   type="button"
                   onClick={() =>
-                    update(
-                      'posturePhotos',
-                      (state.posturePhotos ?? []).filter((_, j) => j !== i).length
-                        ? (state.posturePhotos ?? []).filter((_, j) => j !== i)
-                        : undefined
-                    )
+                    update('posturePhotos', (prev) => {
+                      const n = (prev ?? []).filter((_, j) => j !== i);
+                      return n.length ? n : undefined;
+                    })
                   }
                   className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full text-xs font-bold"
                   style={{ background: '#111', color: '#fff', border: '2px solid #fff' }}
@@ -1279,7 +1337,8 @@ function PostureTab({
                       if (url) added.push(url);
                     }
                     if (added.length) {
-                      update('posturePhotos', [...(state.posturePhotos ?? []), ...added]);
+                      // 함수형 업데이트 — 압축 중 다른 조작이 있어도 최신 배열 기준으로 병합
+                      update('posturePhotos', (prev) => [...(prev ?? []), ...added].slice(0, 4));
                     } else {
                       alert('사진을 불러오지 못했습니다. 다른 사진으로 다시 시도해 주세요.');
                     }
@@ -1300,7 +1359,7 @@ function PostureTab({
           정적 자세 관찰 매트릭스 <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
         <p className="text-xs text-slate-500 mb-1">
-          해당 소견에 체크하고 필요하면 좌/우를 구분하세요. 각 행 첫 칸에 관찰 기준선이 있습니다.
+          해당 소견에 체크하고 필요하면 좌/우를 구분하세요. 체크하면 아래에 NASM 자세 증후군이 자동 매칭됩니다. 각 행 첫 칸에 관찰 기준선이 있습니다.
         </p>
         <p className="md:hidden text-[11px] mb-2" style={{ color: '#9a9a9a' }}>
           ↔ 표를 옆으로 밀면 전체 부위가 보입니다
@@ -1537,10 +1596,6 @@ function PostureTab({
           );
         })()}
       </div>
-      <p className="text-sm text-slate-600 mb-4">
-        5 Kinetic Chain Checkpoints × 3 View — 관찰된 편차를 체크하면 NASM 자세 증후군이 자동 매칭됩니다.
-      </p>
-
       {/* 평형성 — 눈뜨고 외발서기 */}
       <div className="card" style={{ display: tier.vis('post.balance') ? undefined : 'none' }}>
         <h3 className="font-bold mb-1">
@@ -1847,7 +1902,7 @@ function SummaryTab({
           <SummaryItem label="BMI" value={computed.bmiClass?.value.toFixed(1) || '-'} />
           <SummaryItem label="체지방률" value={computed.bodyFat?.value.toFixed(1) ? `${computed.bodyFat.value.toFixed(1)}%` : state.biaBf ? `${state.biaBf}%` : '-'} />
           <SummaryItem label="VO₂max" value={computed.vo2max?.value.toFixed(1) || '-'} />
-          <SummaryItem label="FMS" value={`${computed.fmsResult.total}/21`} />
+          <SummaryItem label="FMS" value={computed.fmsEntered ? `${computed.fmsResult.total}/21` : '미실시'} />
           <SummaryItem label="목적" value={goalLabel(client.goal)} />
         </div>
       </div>
@@ -1861,7 +1916,9 @@ function SummaryTab({
       <div className="card">
         <h3 className="font-bold mb-3">자세·움직임</h3>
         <ul className="text-sm space-y-1.5">
-          <li>• FMS 총점 {computed.fmsResult.total}/21 · 0점 {computed.fmsResult.zeros}개 · 비대칭 {computed.fmsResult.asymmetries}개</li>
+          {computed.fmsEntered && (
+            <li>• FMS 총점 {computed.fmsResult.total}/21 · 0점 {computed.fmsResult.zeros}개 · 비대칭 {computed.fmsResult.asymmetries}개</li>
+          )}
           {computed.syndromes.length > 0 && (
             <li>• 의심 자세 증후군: {computed.syndromes.map((s: any) => s.name).join(', ')}</li>
           )}

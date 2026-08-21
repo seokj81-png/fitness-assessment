@@ -68,7 +68,7 @@ function OverallCircle({ score }: { score: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black text-white leading-none">{score}</span>
+          <span className="text-3xl font-black leading-none" style={{ color: '#111' }}>{score}</span>
         </div>
       </div>
       <span className="mt-1 text-xs font-bold" style={{ color }}>{label}</span>
@@ -158,7 +158,11 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
   ].filter(Boolean) as string[];
   const avg = (arr: string[]) =>
     arr.length ? Math.round(arr.reduce((s, c) => s + clsScore(c), 0) / arr.length) : 0;
-  const postureScore = flagScore(antCnt + latCnt + postCnt); // 이상 소견 적을수록 우수 (0건=양호)
+  // 자세 검사 수행 여부 — 아무 기록이 없으면 '미측정'(0)으로 두어 92점 허위 우수 방지
+  const postureAssessed =
+    postureFlags.length > 0 || !!state.postureMemo || !!state.postureDrawing ||
+    (Array.isArray(state.posturePhotos) && state.posturePhotos.length > 0);
+  const postureScore = postureAssessed ? flagScore(antCnt + latCnt + postCnt) : 0; // 이상 소견 적을수록 우수 (0건=양호)
 
   // ── 카테고리 종합 레이더 (6각) — 신체조성 기준은 체지방률 ──
   const radarData = [

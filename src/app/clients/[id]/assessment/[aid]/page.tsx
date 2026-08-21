@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { parseAssessment } from '@/lib/parse-assessment';
 import { pillClass } from '@/components/assessment/classification';
 import {
+  fullAge,
   bmi as calcBmi,
   classifyBMI_AsiaPacific,
   whr as calcWhr,
@@ -86,10 +87,7 @@ export default async function AssessmentViewPage({
 
   const a = parseAssessment(assessmentRaw);
   const sex: Sex = client.sex === 'F' ? 'F' : 'M';
-  const age = client.dob
-    ? new Date(a.date || Date.now()).getFullYear() -
-      new Date(client.dob).getFullYear()
-    : 30;
+  const age = fullAge(client.dob, new Date(a.date || Date.now())) ?? 30;
 
   // 측정 시점 신장·체중 우선(없으면 회원 프로필)
   const w = a.weight ?? client.weight ?? undefined;
@@ -188,6 +186,7 @@ export default async function AssessmentViewPage({
   const parq = parqResult(a.parq || []);
 
   // ===== Movement / Posture =====
+  const fmsEntered = Object.keys(a.fms || {}).length > 0;
   const fmsResult = calcFMS(a.fms || {}, {
     sh: a.clearSh || 'neg',
     ext: a.clearExt || 'neg',
@@ -197,9 +196,10 @@ export default async function AssessmentViewPage({
 
   // ===== Recommendations =====
   const recs = buildRecommendations({
-    fmsTotal: fmsResult.total,
-    fmsZeros: fmsResult.zeros,
-    fmsAsym: fmsResult.asymmetries,
+    // FMS 미실시 시 총점 0을 위험 신호로 오인하지 않도록 가드
+    fmsTotal: fmsEntered ? fmsResult.total : undefined,
+    fmsZeros: fmsEntered ? fmsResult.zeros : undefined,
+    fmsAsym: fmsEntered ? fmsResult.asymmetries : undefined,
     postureFlags: a.postureFlags || [],
     vo2max: vo2Class?.value,
     bpRatio: bpRatioClass?.value,
@@ -238,7 +238,6 @@ export default async function AssessmentViewPage({
   });
 
   // ===== 안전 주의 (위험 요소 상단 배너) =====
-  const fmsEntered = Object.keys(a.fms || {}).length > 0;
   const risks: Array<{ title: string; guide: string }> = [];
   if (breath?.overall === 'red') {
     risks.push({
@@ -453,7 +452,7 @@ export default async function AssessmentViewPage({
           />
           <HeroItem
             label="FMS (움직임)"
-            value={`${fmsResult.total}/21`}
+            value={fmsEntered ? `${fmsResult.total}/21` : '-'}
             href="#sec-fms"
           />
           <HeroItem
@@ -822,7 +821,8 @@ export default async function AssessmentViewPage({
         </div>
       )}
 
-      {/* Movement / FMS */}
+      {/* Movement / FMS — 미실시 시 숨김 (0/21 허위 위험 표시 방지) */}
+      {fmsEntered && (
       <div className="card" data-print-section="움직임 (FMS)" id="sec-fms">
         <h3 className="font-bold mb-3">
           움직임 (FMS 2.0) <span className="guideline-tag tag-fms">FMS</span>
@@ -849,6 +849,7 @@ export default async function AssessmentViewPage({
           FMS 14점 미만 또는 0점이 있으면 통증 평가 후 교정 우선. Cook (2014).
         </p>
       </div>
+      )}
 
       {/* Cardio */}
       {(vo2Class || stepClass) && (
@@ -1196,7 +1197,8 @@ function DeltaRow({
   d: { label: string; prev: number; cur: number; unit: string; dir: 'up' | 'down' | 'neutral' };
 }) {
   const diff = Math.round((d.cur - d.prev) * 10) / 10;
-  const pct = d.prev !== 0 ? Math.round((diff / Math.abs(d.prev)) * 100) : null;
+  const isPP = d.unit === '%'; // 체지방률 등 % 지표는 상대% 대신 %p 절대차만 표시 (혼동 방지)
+  const pct = !isPP && d.prev !== 0 ? Math.round((diff / Math.abs(d.prev)) * 100) : null;
   const improved = d.dir === 'neutral' || diff === 0 ? null : d.dir === 'up' ? diff > 0 : diff < 0;
   const color = improved === null ? '#8a8a8a' : improved ? '#067647' : '#b42318';
   const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
@@ -1215,7 +1217,7 @@ function DeltaRow({
           {fmt(d.prev)} → {fmt(d.cur)}{d.unit}
         </span>
         <span className="whitespace-nowrap" style={{ color }}>
-          ({diff > 0 ? '+' : ''}{fmt(diff)}
+          ({diff > 0 ? '+' : ''}{fmt(diff)}{isPP ? '%p' : ''}
           {pct !== null && diff !== 0 ? ` · ${diff > 0 ? '+' : ''}${pct}%` : ''})
         </span>
       </span>

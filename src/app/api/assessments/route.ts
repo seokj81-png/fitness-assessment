@@ -9,8 +9,11 @@ function serialize(data: Record<string, unknown>) {
       out[k] = JSON.stringify(out[k]);
     }
   }
-  if (out.date && typeof out.date === 'string') {
-    out.date = new Date(out.date);
+  if (typeof out.date === 'string') {
+    // 빈 문자열·잘못된 날짜는 저장하지 않음 (Prisma 500 방지) — POST는 기본값(now), PATCH는 기존값 유지
+    const d = out.date ? new Date(out.date) : null;
+    if (d && !Number.isNaN(d.getTime())) out.date = d;
+    else delete out.date;
   }
   return out;
 }

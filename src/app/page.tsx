@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { fullAge } from '@/lib/calculations';
 import ClientDirectory, { type ClientRow } from '@/components/client/ClientDirectory';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,7 @@ export default async function HomePage() {
     id: c.id,
     name: c.name,
     sex: c.sex,
-    age: c.dob ? new Date().getFullYear() - new Date(c.dob).getFullYear() : null,
+    age: fullAge(c.dob),
     branch: c.branch,
     trainer: c.trainer,
     goal: c.goal,
