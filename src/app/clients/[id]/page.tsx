@@ -93,6 +93,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
             <Row label="흡연">
               {client.smoking === 'yes' ? '현재' : client.smoking === 'ex' ? '과거' : '비흡연'}
             </Row>
+            <Row label="음주">
+              {drinkLabel(client.drinking)}
+              {client.drinkingAmt ? ` · ${client.drinkingAmt}` : ''}
+            </Row>
             <Row label="등록일">{new Date(client.createdAt).toLocaleDateString('ko-KR')}</Row>
           </dl>
           {client.medical && (
@@ -223,6 +227,14 @@ function goalLabel(v: string | null) {
       strength: '근력/근비대',
       performance: '경기력',
       rehab: '재활',
-    }[v || ''] || '-'
+    }[v || ''] ||
+    v || // 직접 입력한 목적은 그대로 표시
+    '-'
+  );
+}
+
+function drinkLabel(v: string | null) {
+  return (
+    { none: '안 함', monthly: '월 1~2회', weekly: '주 1~2회', often: '주 3회 이상' }[v || ''] || '-'
   );
 }

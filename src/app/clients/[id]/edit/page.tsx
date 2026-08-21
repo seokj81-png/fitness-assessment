@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import DobInput from '@/components/ui/DobInput';
+import GoalInput from '@/components/ui/GoalInput';
 import { useEffect, useState } from 'react';
 import { BRANCHES } from '@/lib/branches';
 
@@ -13,6 +14,8 @@ type ClientData = {
   weight?: number | null;
   occupation?: string | null;
   smoking?: string | null;
+  drinking?: string | null;
+  drinkingAmt?: string | null;
   experience?: string | null;
   goal?: string | null;
   medical?: string | null;
@@ -53,6 +56,8 @@ export default function EditClientPage() {
       branch: fd.get('branch') || null,
       trainer: fd.get('trainer') || null,
       smoking: fd.get('smoking') || null,
+      drinking: fd.get('drinking') || null,
+      drinkingAmt: fd.get('drinkingAmt') || null,
       experience: fd.get('experience') || null,
       goal: fd.get('goal') || null,
       medical: fd.get('medical') || null,
@@ -128,13 +133,7 @@ export default function EditClientPage() {
           </div>
           <div>
             <label className="label">운동 목적</label>
-            <select name="goal" defaultValue={data.goal || 'health'} className="input">
-              <option value="health">일반 건강</option>
-              <option value="weight">체중 관리</option>
-              <option value="strength">근력/근비대</option>
-              <option value="performance">경기력</option>
-              <option value="rehab">재활</option>
-            </select>
+            <GoalInput defaultValue={data.goal || 'health'} />
           </div>
           <div>
             <label className="label">흡연</label>
@@ -143,6 +142,19 @@ export default function EditClientPage() {
               <option value="ex">과거</option>
               <option value="yes">현재</option>
             </select>
+          </div>
+          <div>
+            <label className="label">음주</label>
+            <select name="drinking" defaultValue={data.drinking || 'none'} className="input">
+              <option value="none">안 함</option>
+              <option value="monthly">월 1~2회</option>
+              <option value="weekly">주 1~2회</option>
+              <option value="often">주 3회 이상</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">1회 음주량</label>
+            <input name="drinkingAmt" defaultValue={data.drinkingAmt || ''} className="input" placeholder="예) 소주 1병" />
           </div>
         </div>
         <div>

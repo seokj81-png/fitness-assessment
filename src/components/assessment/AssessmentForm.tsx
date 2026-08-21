@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { printPage } from '@/lib/browser';
+import { COLLAPSIBLE_CARDS, BASIC_BY_GOAL, GOAL_LABEL, goalKeyOf } from '@/lib/assess-presets';
 import {
   bmi,
   classifyBMI_AsiaPacific,
@@ -77,6 +78,7 @@ interface Props {
 }
 
 type Tab =
+  | 'toc'
   | 'client'
   | 'composition'
   | 'cardio'
@@ -87,6 +89,7 @@ type Tab =
   | 'summary';
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'toc', label: '목차' },
   { id: 'client', label: '① 기본/PAR-Q+' },
   { id: 'composition', label: '② 신체조성' },
   { id: 'posture', label: '③ 자세' },
@@ -114,7 +117,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         : 0,
     [client.dob]
   );
-  const [tab, setTab] = useState<Tab>('client');
+  const [tab, setTab] = useState<Tab>('toc');
 
   // 탭 전환 시 항상 최상단으로 — 이전 탭의 스크롤 위치(최하단)가 유지되는 문제 방지 (트레이너 피드백)
   const tabMounted = useRef(false);
@@ -136,6 +139,28 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     document.addEventListener('focusin', onFocus);
     return () => document.removeEventListener('focusin', onFocus);
   }, []);
+
+  // ── 기본/심화 접기 — 운동목적별 프리셋 (lib/assess-presets.ts에서 조정) ──
+  const goalKey = goalKeyOf(client.goal);
+  const [advOpen, setAdvOpen] = useState<Record<string, boolean>>(() =>
+    // 기존 평가 수정 시엔 입력된 값이 숨겨지지 않게 전부 펼침
+    existing ? { cardio: true, strength: true, endurance: true, posture: true, movement: true } : ({} as Record<string, boolean>)
+  );
+  const tierFor = useCallback(
+    (tabId: string): TierProps => {
+      const basics = BASIC_BY_GOAL[goalKey];
+      const open = !!advOpen[tabId];
+      return {
+        vis: (id: string) => basics.includes(id) || open,
+        open,
+        hiddenNames: (COLLAPSIBLE_CARDS[tabId] ?? [])
+          .filter((c) => !basics.includes(c.id))
+          .map((c) => c.title),
+        toggle: () => setAdvOpen((prev) => ({ ...prev, [tabId]: !prev[tabId] })),
+      };
+    },
+    [goalKey, advOpen]
+  );
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | undefined>(existing?.id);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -404,6 +429,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         </div>
       )}
 
+      {tab === 'toc' && <TocTab goal={client.goal} goTab={setTab} />}
       {tab === 'client' && (
         <ClientTab state={state} update={update} parqResult={computed.parq} computed={computed} />
       )}
@@ -411,19 +437,19 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         <CompositionTab state={state} update={update} computed={computed} height={height} weight={weight} />
       )}
       {tab === 'cardio' && (
-        <CardioTab state={state} update={update} computed={computed} />
+        <CardioTab state={state} update={update} computed={computed} tier={tierFor('cardio')} />
       )}
       {tab === 'strength' && (
-        <StrengthTab state={state} update={update} computed={computed} weight={weight} />
+        <StrengthTab state={state} update={update} computed={computed} weight={weight} tier={tierFor('strength')} />
       )}
       {tab === 'endurance' && (
-        <EnduranceTab state={state} update={update} computed={computed} />
+        <EnduranceTab state={state} update={update} computed={computed} tier={tierFor('endurance')} />
       )}
       {tab === 'posture' && (
-        <PostureTab state={state} update={update} computed={computed} />
+        <PostureTab state={state} update={update} computed={computed} tier={tierFor('posture')} />
       )}
       {tab === 'movement' && (
-        <MovementTab state={state} update={update} computed={computed} />
+        <MovementTab state={state} update={update} computed={computed} tier={tierFor('movement')} />
       )}
       {tab === 'summary' && (
         <SummaryTab client={client} age={age} state={state} computed={computed} update={update} />
@@ -776,10 +802,12 @@ function MinSecInput({
 }
 
 function CardioTab({
+  tier,
   state,
   update,
   computed,
 }: {
+  tier: TierProps;
   state: FormState;
   update: TabProps['update'];
   computed: any;
@@ -787,11 +815,12 @@ function CardioTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">심폐지구력 평가 (ACSM)</h2>
+      <AdvToggle tier={tier} />
       <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 text-sm p-3 mb-4">
         ⚠ 최대하/최대 검사 전 PAR-Q+ 통과 및 안정시 혈압/심박수 확인 필수.
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('cardio.rockport') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           Rockport 1-Mile Walking Test <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
@@ -809,7 +838,7 @@ function CardioTab({
         )}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('cardio.run15') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           1.5-Mile (2.4 km) Run Test <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
@@ -840,7 +869,7 @@ function CardioTab({
         })() : null}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('cardio.cooper') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           12-Min Cooper Run <span className="guideline-tag tag-acsm">ACSM</span>
         </h3>
@@ -885,11 +914,13 @@ function CardioTab({
 }
 
 function StrengthTab({
+  tier,
   state,
   update,
   computed,
   weight,
 }: {
+  tier: TierProps;
   state: FormState;
   update: TabProps['update'];
   computed: any;
@@ -899,11 +930,12 @@ function StrengthTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">근력 평가 (NSCA)</h2>
+      <AdvToggle tier={tier} />
       <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 text-sm p-3 mb-4">
         ⚠ 1RM 직접 검사 전 NSCA 권장 준비운동 프로토콜 준수 — 부하를 올려가며 <b>세트당 5-10회 → 3-5회 → 2-3회</b> 수행 후 1RM 시도 (시도 간 휴식 2-4분).
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('str.rm1') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           1RM 직접 측정 <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
@@ -931,7 +963,7 @@ function StrengthTab({
         )}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('str.est') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           다중반복 1RM 추정 <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
@@ -982,10 +1014,12 @@ function StrengthTab({
 }
 
 function EnduranceTab({
+  tier,
   state,
   update,
   computed,
 }: {
+  tier: TierProps;
   state: FormState;
   update: TabProps['update'];
   computed: any;
@@ -993,6 +1027,7 @@ function EnduranceTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">근지구력 평가 (NSCA · ACSM)</h2>
+      <AdvToggle tier={tier} />
 
       <div className="card">
         <h3 className="font-bold mb-2">
@@ -1007,7 +1042,7 @@ function EnduranceTab({
         )}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('end.ymca') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           YMCA Bench Press 근지구력 <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
@@ -1022,7 +1057,7 @@ function EnduranceTab({
         )}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('end.pullup') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           Pull-up Test 상체 당기기 <span className="guideline-tag tag-acsm">Field</span>
         </h3>
@@ -1039,7 +1074,7 @@ function EnduranceTab({
         )}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('end.curlup') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           Partial Curl-up Test <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
@@ -1106,10 +1141,12 @@ function EnduranceTab({
 }
 
 function PostureTab({
+  tier,
   state,
   update,
   computed,
 }: {
+  tier: TierProps;
   state: FormState;
   update: TabProps['update'];
   computed: any;
@@ -1149,6 +1186,7 @@ function PostureTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">정적 자세 평가 (NASM)</h2>
+      <AdvToggle tier={tier} />
       <div className="card">
         <h3 className="font-bold mb-2">
           NASM 정적 자세 평가 — 체형 스케치 & 메모 <span className="guideline-tag tag-nasm">NASM</span>
@@ -1256,55 +1294,88 @@ function PostureTab({
         </div>
       </div>
 
-      {POSTURE_SECTIONS.map((sec) => (
-        <div key={sec.title} className="card">
-          <h3 className="font-bold mb-1">
-            {sec.title} <span className="guideline-tag tag-nasm">NASM</span>
-          </h3>
-          {sec.note && (
-            <p className="text-xs text-slate-500 mb-3">{sec.note}</p>
-          )}
-          <div className="grid md:grid-cols-3 gap-4">
-            {sec.groups.map((g) => (
-              <div key={g.head} className="border border-slate-700 rounded-lg p-3 bg-slate-800">
-                <h4 className="text-sm font-bold mb-2">{g.head}</h4>
-                <div className="space-y-1.5">
-                  {g.items.map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between gap-1.5">
-                      <label className="flex items-center gap-2 text-sm flex-1 min-w-0">
-                        <input
-                          type="checkbox"
-                          checked={has(key)}
-                          onChange={() => toggleBase(key)}
-                        />
-                        <span>{label}</span>
-                      </label>
-                      <div className="flex gap-1 flex-shrink-0">
-                        {(['L', 'R'] as const).map((side) => (
-                          <button
-                            key={side}
-                            type="button"
-                            onClick={() => toggleSide(key, side)}
-                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
-                            style={
-                              has(`${key}:${side}`)
-                                ? { background: '#111', color: '#fff', border: '1px solid #111' }
-                                : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
-                            }
-                            title={side === 'L' ? '좌측' : '우측'}
-                          >
-                            {side === 'L' ? '좌' : '우'}
-                          </button>
-                        ))}
-                      </div>
+      {/* 정적 자세 관찰 매트릭스 — 행: 전면/측면/후면 · 열: 부위 (트레이너 요청으로 3개 카드 통합) */}
+      <div className="card">
+        <h3 className="font-bold mb-1">
+          정적 자세 관찰 매트릭스 <span className="guideline-tag tag-nasm">NASM</span>
+        </h3>
+        <p className="text-xs text-slate-500 mb-1">
+          해당 소견에 체크하고 필요하면 좌/우를 구분하세요. 각 행 첫 칸에 관찰 기준선이 있습니다.
+        </p>
+        <p className="md:hidden text-[11px] mb-2" style={{ color: '#9a9a9a' }}>
+          ↔ 표를 옆으로 밀면 전체 부위가 보입니다
+        </p>
+        <div className="overflow-x-auto">
+          <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1024 }}>
+            <thead>
+              <tr>
+                <th style={{ ...pmTh, width: 132 }}>관찰</th>
+                {POSTURE_COLS.map((c) => (
+                  <th key={c.key} style={pmTh}>{c.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {POSTURE_SECTIONS.map((sec) => (
+                <tr key={sec.title} style={{ verticalAlign: 'top' }}>
+                  <th scope="row" style={{ ...pmTd, background: '#fafafa', textAlign: 'left' }}>
+                    <div className="text-sm font-bold">{sec.title.split(' ')[0]}</div>
+                    <div className="text-[10px] font-normal mt-1 leading-relaxed" style={{ color: '#9a9a9a' }}>
+                      {sec.note}
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                  </th>
+                  {POSTURE_COLS.map((col) => {
+                    const items = sec.groups
+                      .filter((g) => postureColOf(g.head) === col.key)
+                      .flatMap((g) => g.items);
+                    return (
+                      <td key={col.key} style={pmTd}>
+                        {items.length === 0 ? (
+                          <span className="text-xs" style={{ color: '#c4c4c4' }}>—</span>
+                        ) : (
+                          <div className="space-y-2">
+                            {items.map(([key, label]) => (
+                              <div key={key}>
+                                <label className="flex items-start gap-1.5 text-xs leading-snug">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5"
+                                    checked={has(key)}
+                                    onChange={() => toggleBase(key)}
+                                  />
+                                  <span>{label}</span>
+                                </label>
+                                <div className="flex gap-1 mt-1 ml-5">
+                                  {(['L', 'R'] as const).map((side) => (
+                                    <button
+                                      key={side}
+                                      type="button"
+                                      onClick={() => toggleSide(key, side)}
+                                      className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
+                                      style={
+                                        has(`${key}:${side}`)
+                                          ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                                          : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
+                                      }
+                                      title={side === 'L' ? '좌측' : '우측'}
+                                    >
+                                      {side === 'L' ? '좌' : '우'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
+      </div>
 
       <div className="card">
         <h3 className="font-bold mb-3">
@@ -1340,7 +1411,7 @@ function PostureTab({
       </div>
 
       {/* 호흡 평가 — FMS Breathing Screen */}
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('post.breath') ? undefined : 'none' }}>
         <h3 className="font-bold mb-1">
           호흡 평가 <span className="guideline-tag tag-fms">FMS Breathing Screen</span>
         </h3>
@@ -1471,7 +1542,7 @@ function PostureTab({
       </p>
 
       {/* 평형성 — 눈뜨고 외발서기 */}
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('post.balance') ? undefined : 'none' }}>
         <h3 className="font-bold mb-1">
           평형성 — 눈뜨고 외발서기 <span className="guideline-tag">Balance</span>
         </h3>
@@ -1514,10 +1585,12 @@ function PostureTab({
 }
 
 function MovementTab({
+  tier,
   state,
   update,
   computed,
 }: {
+  tier: TierProps;
   state: FormState;
   update: TabProps['update'];
   computed: any;
@@ -1541,8 +1614,9 @@ function MovementTab({
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">움직임 평가 – 가동성·안정성 (FMS · NASM)</h2>
+      <AdvToggle tier={tier} />
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('mov.fms') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
           FMS 7-Test Screen <span className="guideline-tag tag-fms">FMS</span>
         </h3>
@@ -1602,7 +1676,7 @@ function MovementTab({
         </div>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('mov.clear') ? undefined : 'none' }}>
         <h3 className="font-bold mb-3">
           FMS Clearing Tests <span className="guideline-tag tag-fms">FMS</span>
         </h3>
@@ -1672,7 +1746,7 @@ function MovementTab({
         </div>
       </div>
 
-      <div className="card">
+      <div className="card" style={{ display: tier.vis('mov.sls') ? undefined : 'none' }}>
         <h3 className="font-bold mb-3">
           Single-Leg Squat · Push · Pull <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
@@ -1934,3 +2008,100 @@ function goalLabel(v: string | null | undefined) {
     }[v || ''] || '-'
   );
 }
+
+// ══════════ 기본/심화 접기 (운동목적별 프리셋) ══════════
+interface TierProps {
+  vis: (id: string) => boolean;
+  open: boolean;
+  hiddenNames: string[];
+  toggle: () => void;
+}
+
+function AdvToggle({ tier }: { tier: TierProps }) {
+  if (tier.hiddenNames.length === 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={tier.toggle}
+      className="w-full mb-4 py-3 px-4 rounded-lg text-sm font-semibold text-left"
+      style={{ border: '1.5px dashed #b9b9b9', color: '#555', background: '#fafafa' }}
+    >
+      {tier.open
+        ? '▲ 심화 검사 접기'
+        : `▼ 심화 검사 ${tier.hiddenNames.length}개 펼치기 — ${tier.hiddenNames.join(' · ')}`}
+    </button>
+  );
+}
+
+// ══════════ 목차 — 시작 화면 (누르면 해당 검사로 이동) ══════════
+function TocTab({ goal, goTab }: { goal?: string | null; goTab: (t: Tab) => void }) {
+  const goalKey = goalKeyOf(goal);
+  const goalText = goal && !(goal in GOAL_LABEL) ? goal : GOAL_LABEL[goalKey];
+  const items: { id: Tab; no: string; title: string; desc: string }[] = [
+    { id: 'client', no: '①', title: '기본/PAR-Q+', desc: '측정정보 · 사전문진 · 혈압/심박' },
+    { id: 'composition', no: '②', title: '신체조성', desc: '인바디 · BMI · 둘레' },
+    { id: 'posture', no: '③', title: '자세', desc: '정적자세 · 스케치 · 사진' },
+    { id: 'movement', no: '④', title: '움직임', desc: 'OHSA · FMS' },
+    { id: 'cardio', no: '⑤', title: '심폐지구력', desc: '5분 달리기 · VO₂max' },
+    { id: 'strength', no: '⑥', title: '근력', desc: '악력 · 1RM' },
+    { id: 'endurance', no: '⑦', title: '근지구력', desc: '푸시업 · 스쿼트 · 플랭크' },
+    { id: 'summary', no: '⑧', title: '종합', desc: '요약 · 처방 방향 · 저장' },
+  ];
+  return (
+    <div>
+      <h2 className="text-xl font-bold mb-1">검사 목차</h2>
+      <p className="text-sm text-slate-500 mb-4">
+        항목을 누르면 해당 검사로 이동합니다. 운동목적 <b>{goalText}</b> 기준으로 핵심 검사만
+        기본 표시되고, 나머지는 각 탭의 &lsquo;심화 검사 펼치기&rsquo;에 접혀 있습니다.
+      </p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {items.map((it) => (
+          <button
+            key={it.id}
+            type="button"
+            onClick={() => goTab(it.id)}
+            className="card text-left transition hover:shadow-md"
+            style={{ marginBottom: 0, minHeight: 118 }}
+          >
+            <div className="text-lg font-black" style={{ color: '#111' }}>{it.no}</div>
+            <div className="font-bold mt-0.5">{it.title}</div>
+            <div className="text-xs text-slate-500 mt-1 leading-snug">{it.desc}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════ 자세 관찰 매트릭스 상수 ══════════
+const POSTURE_COLS = [
+  { key: 'foot', label: '발·발목' },
+  { key: 'knee', label: '무릎' },
+  { key: 'lphc', label: '골반·요추 (LPHC)' },
+  { key: 'spine', label: '척추' },
+  { key: 'shoulder', label: '어깨·견갑' },
+  { key: 'head', label: '머리·경추' },
+] as const;
+
+function postureColOf(head: string): (typeof POSTURE_COLS)[number]['key'] {
+  if (head.includes('발')) return 'foot';
+  if (head.includes('무릎')) return 'knee';
+  if (head.includes('LPHC')) return 'lphc';
+  if (head.includes('척추')) return 'spine';
+  if (head.includes('어깨') || head.includes('견갑')) return 'shoulder';
+  return 'head';
+}
+
+const pmTh: React.CSSProperties = {
+  border: '1px solid #e3e3e3',
+  padding: '6px 8px',
+  background: '#f0f0f0',
+  fontSize: 12,
+  fontWeight: 700,
+  textAlign: 'left',
+};
+const pmTd: React.CSSProperties = {
+  border: '1px solid #e3e3e3',
+  padding: '8px',
+  minWidth: 148,
+};

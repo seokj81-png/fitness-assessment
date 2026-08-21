@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import DobInput from '@/components/ui/DobInput';
+import GoalInput from '@/components/ui/GoalInput';
 import { useEffect, useState } from 'react';
 import { BRANCHES } from '@/lib/branches';
 
@@ -37,6 +38,8 @@ export default function NewClientPage() {
       branch: fd.get('branch') || null,
       trainer: fd.get('trainer') || null,
       smoking: fd.get('smoking') || null,
+      drinking: fd.get('drinking') || null,
+      drinkingAmt: fd.get('drinkingAmt') || null,
       experience: fd.get('experience') || null,
       goal: fd.get('goal') || null,
       medical: fd.get('medical') || null,
@@ -119,13 +122,7 @@ export default function NewClientPage() {
           </div>
           <div>
             <label className="label">운동 목적 Goal</label>
-            <select name="goal" className="input">
-              <option value="health">일반 건강 General Health</option>
-              <option value="weight">체중 관리 Weight Management</option>
-              <option value="strength">근력/근비대 Strength/Hypertrophy</option>
-              <option value="performance">경기력 Performance</option>
-              <option value="rehab">재활 Rehabilitation</option>
-            </select>
+            <GoalInput />
           </div>
           <div>
             <label className="label">흡연 Smoking</label>
@@ -134,6 +131,19 @@ export default function NewClientPage() {
               <option value="ex">과거 흡연</option>
               <option value="yes">현재 흡연</option>
             </select>
+          </div>
+          <div>
+            <label className="label">음주 Drinking</label>
+            <select name="drinking" className="input">
+              <option value="none">안 함</option>
+              <option value="monthly">월 1~2회</option>
+              <option value="weekly">주 1~2회</option>
+              <option value="often">주 3회 이상</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">1회 음주량</label>
+            <input name="drinkingAmt" className="input" placeholder="예) 소주 1병, 맥주 500cc 2잔" />
           </div>
         </div>
         <div>

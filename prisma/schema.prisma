@@ -19,6 +19,8 @@ model Client {
   weight      Float?   // kg (현재 체중)
   occupation  String?
   smoking     String?  // "no" | "ex" | "yes"
+  drinking    String?  // 음주 빈도: "none" | "monthly" | "weekly" | "often"(주3회+)
+  drinkingAmt String?  // 1회 음주량 자유 기재 (예: 소주 1병)
   experience  String?  // "none" | "beginner" | "intermediate" | "advanced"
   goal        String?  // "health" | "weight" | "strength" | "performance" | "rehab"
   medical     String?  // 의료 이력, 복용 약물, 통증 부위 등
