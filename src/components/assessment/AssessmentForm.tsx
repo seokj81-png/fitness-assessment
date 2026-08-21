@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { printPage } from '@/lib/browser';
 import {
   bmi,
   classifyBMI_AsiaPacific,
@@ -114,6 +115,27 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     [client.dob]
   );
   const [tab, setTab] = useState<Tab>('client');
+
+  // 탭 전환 시 항상 최상단으로 — 이전 탭의 스크롤 위치(최하단)가 유지되는 문제 방지 (트레이너 피드백)
+  const tabMounted = useRef(false);
+  useEffect(() => {
+    if (!tabMounted.current) { tabMounted.current = true; return; }
+    window.scrollTo({ top: 0 });
+  }, [tab]);
+
+  // 모바일: 입력란 포커스 시 상단 고정 헤더·하단 바에 가려지지 않게 화면 중앙으로 (트레이너 피드백)
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      if (!el || !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      const t = (el as HTMLInputElement).type;
+      if (t === 'checkbox' || t === 'radio' || t === 'file') return;
+      if (window.innerWidth >= 768) return;
+      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250);
+    };
+    document.addEventListener('focusin', onFocus);
+    return () => document.removeEventListener('focusin', onFocus);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | undefined>(existing?.id);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -878,7 +900,7 @@ function StrengthTab({
     <div>
       <h2 className="text-xl font-bold mb-4">근력 평가 (NSCA)</h2>
       <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 text-sm p-3 mb-4">
-        ⚠ 1RM 직접 검사 전 NSCA 권장 준비운동(5-10→3-5→2-3 세트) 프로토콜 준수.
+        ⚠ 1RM 직접 검사 전 NSCA 권장 준비운동 프로토콜 준수 — 부하를 올려가며 <b>세트당 5-10회 → 3-5회 → 2-3회</b> 수행 후 1RM 시도 (시도 간 휴식 2-4분).
       </div>
 
       <div className="card">
@@ -914,7 +936,8 @@ function StrengthTab({
           다중반복 1RM 추정 <span className="guideline-tag tag-nsca">NSCA</span>
         </h3>
         <p className="text-xs text-slate-500 mb-3">
-          10RM 이하의 무게로 실패까지 수행 (초급·고위험군에 적합)
+          10RM 이하의 무게로 실패까지 수행 (초급·고위험군에 적합) — <b>벤치프레스·스쿼트 등 실시한 종목 기준</b>의
+          1RM 추정치입니다. 어떤 종목으로 측정했는지 특이사항 메모에 남겨 주세요.
         </p>
         <div className="grid md:grid-cols-2 gap-4 mb-3">
           <Num label="중량 (kg)" value={state.est1rmW} onChange={(v) => update('est1rmW', v)} step="0.5" />
@@ -1187,30 +1210,41 @@ function PostureTab({
               >
                 📷
                 <span className="mt-1">촬영·추가</span>
+                {/* capture 속성 없음 — 기기가 촬영/앨범 선택지를 모두 제공 (capture 강제 시
+                    카톡 인앱브라우저 등에서 무반응 + 앨범 불러오기 불가: 트레이너 피드백) */}
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
+                  multiple
                   className="hidden"
                   onChange={async (e) => {
-                    const file = e.target.files?.[0];
+                    const files = Array.from(e.target.files ?? []);
                     e.target.value = '';
-                    if (!file) return;
-                    // 캔버스 압축: 최대 900px, JPEG 0.72 (~100-200KB)
-                    const url = await new Promise<string>((resolve, reject) => {
-                      const img = new Image();
-                      img.onload = () => {
-                        const scale = Math.min(1, 900 / Math.max(img.width, img.height));
-                        const c = document.createElement('canvas');
-                        c.width = Math.round(img.width * scale);
-                        c.height = Math.round(img.height * scale);
-                        c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-                        resolve(c.toDataURL('image/jpeg', 0.72));
-                      };
-                      img.onerror = reject;
-                      img.src = URL.createObjectURL(file);
-                    }).catch(() => null as unknown as string);
-                    if (url) update('posturePhotos', [...(state.posturePhotos ?? []), url]);
+                    if (!files.length) return;
+                    const room = 4 - (state.posturePhotos ?? []).length;
+                    const added: string[] = [];
+                    for (const file of files.slice(0, room)) {
+                      // 캔버스 압축: 최대 900px, JPEG 0.72 (~100-200KB)
+                      const url = await new Promise<string>((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => {
+                          const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+                          const c = document.createElement('canvas');
+                          c.width = Math.round(img.width * scale);
+                          c.height = Math.round(img.height * scale);
+                          c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+                          resolve(c.toDataURL('image/jpeg', 0.72));
+                        };
+                        img.onerror = reject;
+                        img.src = URL.createObjectURL(file);
+                      }).catch(() => '');
+                      if (url) added.push(url);
+                    }
+                    if (added.length) {
+                      update('posturePhotos', [...(state.posturePhotos ?? []), ...added]);
+                    } else {
+                      alert('사진을 불러오지 못했습니다. 다른 사진으로 다시 시도해 주세요.');
+                    }
                   }}
                 />
               </label>
@@ -1812,7 +1846,7 @@ function SummaryTab({
       </div>
 
       <div className="flex gap-2 flex-wrap no-print">
-        <button onClick={() => window.print()} className="btn-secondary">
+        <button onClick={printPage} className="btn-secondary">
           🖨️ 인쇄 / PDF 저장
         </button>
       </div>

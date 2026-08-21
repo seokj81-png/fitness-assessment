@@ -417,7 +417,7 @@ export default async function AssessmentViewPage({
       )}
 
       {/* Hero summary */}
-      <div className="text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
+      <div className="hero-summary text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
         <h3 className="font-bold mb-3">회원님 요약</h3>
         {/* 측정 흐름 순서: 기본정보 → ①생체지표 → ②신체조성 → ③자세 → ④움직임 → ⑤심폐 → ⑥근력 → ⑦근지구력 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">

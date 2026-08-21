@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
+import DobInput from '@/components/ui/DobInput';
 import { useEffect, useState } from 'react';
 import { BRANCHES } from '@/lib/branches';
 
@@ -86,7 +87,7 @@ export default function EditClientPage() {
           </div>
           <div>
             <label className="label">생년월일</label>
-            <input name="dob" type="date" defaultValue={data.dob || ''} className="input" />
+            <DobInput defaultValue={data.dob || ''} />
           </div>
           <div>
             <label className="label">직업</label>

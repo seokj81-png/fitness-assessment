@@ -86,7 +86,10 @@ interface MiniItem {
 // 카테고리별 하위 요인 미니 레이더 + 실측값 목록
 function MiniRadar({ title, items, note }: { title: string; items: MiniItem[]; note?: string }) {
   return (
-    <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid #e3e3e3' }}>
+    <div
+      className="rounded-xl p-3"
+      style={{ background: '#fff', border: '1px solid #e3e3e3', breakInside: 'avoid' }}
+    >
       <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-700 pb-1 mb-1">
         {title}
       </div>
@@ -241,13 +244,16 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
         boxShadow: '0 0 0 1px #e3e3e3',
       }}
     >
-      {/* Header */}
-      <div className="px-5 pt-4 pb-2 border-b border-slate-700/50">
+      {/* Header — 인쇄 시 제목만 앞 페이지에 남는 끊김 방지 */}
+      <div className="px-5 pt-4 pb-2 border-b border-slate-700/50" style={{ breakAfter: 'avoid' }}>
         <h3 className="text-sm font-bold text-slate-300 tracking-wider uppercase">체력요인 결과</h3>
       </div>
 
       {/* 종합 점수 + 카테고리 6각 레이더 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center px-5 py-5 border-b border-slate-700/40">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center px-5 py-5 border-b border-slate-700/40"
+        style={{ breakInside: 'avoid' }}
+      >
         <div className="flex justify-center">
           <OverallCircle score={overallScore} />
         </div>

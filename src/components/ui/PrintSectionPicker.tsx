@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { printPage } from '@/lib/browser';
 
 // 결과 페이지의 [data-print-section] 섹션을 수집해
 // 체크된 항목만 인쇄되도록 print-exclude 클래스를 토글한다.
@@ -64,7 +65,7 @@ export default function PrintSectionPicker() {
             })}
           </div>
           <div className="flex gap-2 mt-3">
-            <button onClick={() => window.print()} className="btn-primary text-sm">
+            <button onClick={printPage} className="btn-primary text-sm">
               선택 항목 인쇄
             </button>
             {excluded.size > 0 && (

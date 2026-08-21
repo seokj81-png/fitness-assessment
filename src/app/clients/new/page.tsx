@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import DobInput from '@/components/ui/DobInput';
 import { useEffect, useState } from 'react';
 import { BRANCHES } from '@/lib/branches';
 
@@ -75,7 +76,7 @@ export default function NewClientPage() {
           </div>
           <div>
             <label className="label">생년월일 DOB</label>
-            <input name="dob" type="date" className="input" />
+            <DobInput />
           </div>
           <div>
             <label className="label">지점 Branch</label>

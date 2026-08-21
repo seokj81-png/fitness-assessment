@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toPng } from 'html-to-image';
 import { allVo2Estimates, calcFMS } from '@/lib/calculations';
+import { printPage } from '@/lib/browser';
 import type { Sex } from '@/lib/types';
 
 // ══════════════════════════════════════════════════════
@@ -311,7 +312,7 @@ export default function ReportBuilder({
           <button onClick={saveImage} disabled={busy} className="btn-primary">
             {busy ? '이미지 생성 중…' : '🖼️ 이미지 저장 (카톡 전송)'}
           </button>
-          <button onClick={() => window.print()} className="btn-secondary">
+          <button onClick={printPage} className="btn-secondary">
             🖨️ 인쇄/PDF
           </button>
         </div>
