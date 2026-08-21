@@ -6,7 +6,7 @@ import ReportBuilder, { type ReportAssessment } from './ReportBuilder';
 
 export const dynamic = 'force-dynamic';
 
-// P0-3 진척 리포트 — 회원 전달용 1페이지 (비교 회차 선택 + 코멘트/4주 목표 → 인쇄·이미지 저장)
+// 체력 평가 리포트 (P0-3) — 회원 전달용 1페이지 (비교 회차 선택 + 코멘트/4주 목표 → 인쇄·이미지 저장)
 export default async function ReportPage({ params }: { params: { id: string } }) {
   const client = await prisma.client.findUnique({
     where: { id: params.id },

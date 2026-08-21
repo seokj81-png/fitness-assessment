@@ -8,9 +8,9 @@ import { printPage } from '@/lib/browser';
 import type { Sex } from '@/lib/types';
 
 // ══════════════════════════════════════════════════════
-// P0-3 진척 리포트 빌더 — 회원 전달용 1페이지
+// 체력 평가 리포트 빌더 (P0-3) — 회원 전달용 1페이지
 // 시트는 앱 모노크롬 리매핑의 영향을 받지 않도록 전부 인라인 스타일.
-// 브랜드 톤: 남색 #1F3864 (회원이 받는 문서 — 따뜻하고 깔끔하게)
+// 톤: 앱과 동일한 블랙&화이트 (회원 전달용 — 깔끔하게)
 // ══════════════════════════════════════════════════════
 
 export interface ReportAssessment {
@@ -60,14 +60,14 @@ interface ClientInfo {
   weight: number | null;
 }
 
-// 브랜드 팔레트
-const NAVY = '#1F3864';
-const NAVY_SOFT = '#3E5C94';
+// 팔레트 — 앱 전체와 동일한 블랙&화이트 모노크롬 (개선/악화 기능색만 예외)
+const NAVY = '#111111'; // 헤더 밴드·표 헤더·강조 (변수명은 호환 유지)
+const NAVY_SOFT = '#4a4a4a';
 const PAPER = '#ffffff';
-const WARM = '#F7F4EE'; // 따뜻한 섹션 배경
+const WARM = '#f5f5f5'; // 섹션 배경 (라이트 그레이)
 const INK = '#2b2b2b';
 const MUTED = '#7a7a7a';
-const LINE = '#E5E0D6';
+const LINE = '#e3e3e3';
 const GREEN = '#1E7B45';
 const RED = '#C03A2B';
 
@@ -256,13 +256,13 @@ export default function ReportBuilder({
       await toPng(node, opts);
       const dataUrl = await toPng(node, opts);
       const ymd = new Date(target.date).toISOString().slice(0, 10);
-      const fileName = `PAFGYM_진척리포트_${client.name}_${ymd}.png`;
+      const fileName = `PAFGYM_체력평가리포트_${client.name}_${ymd}.png`;
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], fileName, { type: 'image/png' });
       // 모바일: OS 공유 시트(카톡 바로 전송/사진 저장) → 미지원 시 파일 다운로드
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], title: `${client.name}님 체력 진척 리포트` });
+          await navigator.share({ files: [file], title: `${client.name}님 체력 평가 리포트` });
           return;
         } catch (e) {
           if ((e as DOMException)?.name === 'AbortError') return; // 사용자가 시트 닫음
@@ -311,7 +311,7 @@ export default function ReportBuilder({
           <Link href={`/clients/${client.id}`} className="text-xs text-slate-600 hover:underline">
             ← {client.name} 상세
           </Link>
-          <h2 className="text-2xl font-bold text-slate-100 mt-1">진척 리포트 만들기</h2>
+          <h2 className="text-2xl font-bold text-slate-100 mt-1">체력 평가 리포트 만들기</h2>
           <p className="text-sm text-slate-500 mt-1">
             회원님께 전달하는 1페이지 리포트 — 이미지 저장 후 카톡으로 보내거나 A4로 인쇄하세요.
           </p>
@@ -433,10 +433,10 @@ export default function ReportBuilder({
                   />
                   <div>
                     <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
-                      체력 진척 리포트
+                      체력 평가 리포트
                     </div>
                     <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: '0.06em' }}>
-                      PAFGYM PHYSICAL PROGRESS REPORT
+                      PAFGYM PHYSICAL ASSESSMENT REPORT
                     </div>
                   </div>
                 </div>
@@ -497,19 +497,19 @@ export default function ReportBuilder({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                 <thead>
                   <tr style={{ background: NAVY, color: '#fff' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 12px', fontWeight: 700, borderRadius: '6px 0 0 0' }}>
+                    <th style={{ textAlign: 'left', padding: '5px 10px', fontWeight: 700, borderRadius: '6px 0 0 0' }}>
                       항목
                     </th>
                     {!single && (
-                      <th style={{ textAlign: 'right', padding: '6px 12px', fontWeight: 700 }}>
+                      <th style={{ textAlign: 'right', padding: '5px 10px', fontWeight: 700 }}>
                         이전 ({fmtShort(base.date)})
                       </th>
                     )}
-                    <th style={{ textAlign: 'right', padding: '6px 12px', fontWeight: 700 }}>
+                    <th style={{ textAlign: 'right', padding: '5px 10px', fontWeight: 700 }}>
                       {single ? `측정값 (${fmtShort(target.date)})` : `최근 (${fmtShort(target.date)})`}
                     </th>
                     {!single && (
-                      <th style={{ textAlign: 'right', padding: '6px 12px', fontWeight: 700, borderRadius: '0 6px 0 0' }}>
+                      <th style={{ textAlign: 'right', padding: '5px 10px', fontWeight: 700, borderRadius: '0 6px 0 0' }}>
                         변화
                       </th>
                     )}
@@ -529,19 +529,19 @@ export default function ReportBuilder({
                           : RED;
                     return (
                       <tr key={r.m.key} style={{ background: i % 2 ? WARM : '#fff' }}>
-                        <td style={{ padding: '5px 12px', borderBottom: `1px solid ${LINE}`, fontWeight: 600 }}>
+                        <td style={{ padding: '4px 10px', borderBottom: `1px solid ${LINE}`, fontWeight: 600 }}>
                           {r.m.label}
                         </td>
                         {!single && (
-                          <td style={{ padding: '5px 12px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', color: MUTED }}>
+                          <td style={{ padding: '4px 10px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', color: MUTED }}>
                             {r.prev == null ? '—' : `${fmtN(r.prev)}${r.m.unit && ` ${r.m.unit}`}`}
                           </td>
                         )}
-                        <td style={{ padding: '5px 12px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '4px 10px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', fontWeight: 700 }}>
                           {fmtN(r.cur as number)}{r.m.unit && ` ${r.m.unit}`}
                         </td>
                         {!single && (
-                          <td style={{ padding: '5px 12px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', fontWeight: 700, color }}>
+                          <td style={{ padding: '4px 10px', borderBottom: `1px solid ${LINE}`, textAlign: 'right', fontWeight: 700, color }}>
                             {r.prev == null
                               ? '신규'
                               : d == null || d === 0
