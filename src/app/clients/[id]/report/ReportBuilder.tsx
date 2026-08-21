@@ -304,14 +304,15 @@ export default function ReportBuilder({
       vo2Level,
       oneRm,
       fmsTested: (fmsRes?.tested ?? 0) > 0,
-      fmsTotal: fmsRes?.total,
+      // 14점 컷오프는 7개 검사 완료 시에만 유효 — 부분 합계로 허위 경고 방지
+      fmsTotal: fmsRes && fmsRes.tested === 7 ? fmsRes.total : null,
       fmsZeros: fmsRes?.zeros,
       postureCount,
       balanceLowSec,
       breathRed,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, client.age, client.sex, client.goal, client.experience]);
+  }, [target, client.age, client.sex, client.goal, client.experience, client.weight]);
 
   // ── 모바일 미리보기 축소 (시트는 794px 고정, 래퍼에 zoom) ──
   const outerRef = useRef<HTMLDivElement>(null);
@@ -333,10 +334,21 @@ export default function ReportBuilder({
     if (!node || busy) return;
     setBusy(true);
     try {
-      const opts = { pixelRatio: 3, backgroundColor: '#ffffff', cacheBust: true };
+      // iOS Safari 캔버스 면적 한계(16.7MP) — 시트가 길어지면 배율을 자동 하향 (무음 빈 이미지 방지)
+      const area = node.offsetWidth * node.offsetHeight;
+      const pixelRatio = Math.min(3, Math.sqrt(16_000_000 / area));
+      const opts = { pixelRatio, backgroundColor: '#ffffff', cacheBust: true };
       // iOS Safari에서 첫 렌더에 이미지가 빠지는 알려진 문제 — 한 번 워밍업 후 재렌더
       await toPng(node, opts);
       const dataUrl = await toPng(node, opts);
+      // 빈/투명 이미지 무음 실패 검증 — 실패 시 안내 경로로
+      const ok = await new Promise<boolean>((resolve) => {
+        const im = new Image();
+        im.onload = () => resolve(im.naturalWidth > 100 && im.naturalHeight > 100);
+        im.onerror = () => resolve(false);
+        im.src = dataUrl;
+      });
+      if (!ok) throw new Error('empty image');
       const ymd = new Date(target.date).toISOString().slice(0, 10);
       const fileName = `PAFGYM_체력평가리포트_${client.name}_${ymd}.png`;
       const blob = await (await fetch(dataUrl)).blob();
@@ -381,8 +393,17 @@ export default function ReportBuilder({
           main { padding: 0 !important; max-width: none !important; }
           .report-controls, .report-topbar { display: none !important; }
           .report-zoomwrap { zoom: 1 !important; }
-          .report-sheet { width: 100% !important; box-shadow: none !important; }
-          .fitt-section { break-before: page; padding-top: 4mm; }
+          .report-sheet {
+            width: 100% !important;
+            box-shadow: none !important;
+            /* 인쇄 대화상자 '배경 그래픽' 꺼짐이 기본 — 검정 헤더·표 헤더가 흰 글자만 남지 않게 강제 */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            /* overflow:hidden 박스는 페이지 분할이 안 됨 — 인쇄에서만 해제 */
+            overflow: visible !important;
+            border-radius: 0 !important;
+          }
+          .fitt-section { break-before: page; page-break-before: always; padding-top: 4mm; }
         }
       `,
         }}

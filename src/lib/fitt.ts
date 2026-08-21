@@ -4,6 +4,8 @@
 // 회원 전달용 리포트에 표시 — 트레이너 검토·조정 하에 적용하는 권장안.
 // ══════════════════════════════════════════════════════
 
+import { trainingZones, vVO2max } from './calculations';
+
 export interface FittInput {
   age: number | null;
   sex: 'M' | 'F';
@@ -69,12 +71,6 @@ function thr(age: number, rhr: number, pLo: number, pHi: number): [number, numbe
   return [lo, hi];
 }
 
-// %HRmax 환산 (안정시 심박 없을 때): 중강도 64–76%, 고강도 77–95%
-function hrMaxRange(age: number, pLo: number, pHi: number): [number, number] {
-  const hrMax = 220 - age;
-  return [Math.round(hrMax * pLo), Math.round(hrMax * pHi)];
-}
-
 const r25 = (x: number) => Math.round(x / 2.5) * 2.5; // 플레이트 단위 반올림
 
 export function buildFittProgram(i: FittInput): FittProgram {
@@ -88,16 +84,42 @@ export function buildFittProgram(i: FittInput): FittProgram {
   const vigPct: [number, number] = [0.6, cl === 'high' ? 0.89 : 0.75];
   let modHr = '';
   let vigHr = '';
-  if (i.rhr && i.rhr > 30 && i.rhr < 120) {
-    const [ml, mh] = thr(age, i.rhr, modPct[0], modPct[1]);
-    const [vl, vh] = thr(age, i.rhr, vigPct[0], vigPct[1]);
-    modHr = ` (심박 ${ml}–${mh}bpm)`;
-    vigHr = ` (심박 ${vl}–${vh}bpm)`;
-  } else {
-    const [ml, mh] = hrMaxRange(age, 0.64, 0.76);
-    const [vl, vh] = hrMaxRange(age, 0.77, 0.95);
-    modHr = ` (심박 약 ${ml}–${mh}bpm)`;
-    vigHr = ` (심박 약 ${vl}–${vh}bpm)`;
+  if (i.age != null) {
+    // 나이를 모르면 bpm을 지어내지 않는다 (%HRR·RPE 문구만 표기)
+    if (i.rhr && i.rhr > 30 && i.rhr < 120) {
+      const [ml, mh] = thr(age, i.rhr, modPct[0], modPct[1]);
+      const [vl, vh] = thr(age, i.rhr, vigPct[0], vigPct[1]);
+      modHr = ` (심박 ${ml}–${mh}bpm)`;
+      vigHr = ` (심박 ${vl}–${vh}bpm)`;
+    } else {
+      // 안정시 심박 미측정 — 가정치(70bpm)로 같은 %HRR 밴드를 환산해 문구와 bpm이 늘 같은 강도를 가리키게
+      const [ml, mh] = thr(age, 70, modPct[0], modPct[1]);
+      const [vl, vh] = thr(age, 70, vigPct[0], vigPct[1]);
+      modHr = ` (심박 약 ${ml}–${mh}bpm)`;
+      vigHr = ` (심박 약 ${vl}–${vh}bpm)`;
+    }
+  }
+
+  // ── 심폐 테스트 결과 기반 달리기 속도·페이스 (결과 페이지 훈련 존과 동일한 vVO2max 기준) ──
+  let modPace = '';
+  let vigPace = '';
+  if (i.vo2 && i.vo2 > 10) {
+    const zones = trainingZones(vVO2max(i.vo2));
+    const rec = zones[0]; // < 60% vVO2max (회복)
+    const fit = zones[1]; // 61–80% (체력 강화)
+    const hi = zones[2]; // ≥ 81% (고강도)
+    const p = (v: string | null) => (v ? v.replace('/km', '') : '');
+    if (cl === 'low') {
+      modPace = rec.speedHighKmh
+        ? ` · 달리기 환산 ${rec.speedHighKmh.toFixed(1)}km/h 이하 (걷기~느린 조깅)`
+        : '';
+      vigPace = ` · 속도 ${fit.speedLowKmh.toFixed(1)}km/h 내외 (페이스 ${p(fit.paceLow)}/km)`;
+    } else {
+      modPace = fit.speedHighKmh
+        ? ` · 속도 ${fit.speedLowKmh.toFixed(1)}–${fit.speedHighKmh.toFixed(1)}km/h (페이스 ${p(fit.paceLow)}–${p(fit.paceHigh)}/km)`
+        : '';
+      vigPace = ` · 속도 ${hi.speedLowKmh.toFixed(1)}km/h 이상 (페이스 ${p(hi.paceLow)}/km 이하)`;
+    }
   }
 
   const aerobic: FittDomain =
@@ -105,7 +127,7 @@ export function buildFittProgram(i: FittInput): FittProgram {
       ? {
           domain: '유산소',
           F: '주 3–5회',
-          I: `중강도 — 여유심박수 ${Math.round(modPct[0] * 100)}–${Math.round(modPct[1] * 100)}%${modHr} · RPE 11–13 (대화 가능한 속도)`,
+          I: `경강도–중강도 — 여유심박수 ${Math.round(modPct[0] * 100)}–${Math.round(modPct[1] * 100)}%${modHr}${modPace} · RPE 11–13 (대화 가능한 속도)`,
           T: '1회 20–30분 — 주 90–150분에서 시작',
           type: '빠르게 걷기 · 고정 자전거 · 수영 등 대근육 지속 운동',
           V: '주 500 MET-min 목표(일 5,400보 이상)로 시작',
@@ -115,7 +137,7 @@ export function buildFittProgram(i: FittInput): FittProgram {
         ? {
             domain: '유산소',
             F: '주 3–5회',
-            I: `중강도 40–59% HRR${modHr} · RPE 12–13, 주 1회 고강도 60–75%${vigHr} 혼합`,
+            I: `중강도 40–59% HRR${modHr}${modPace} · RPE 12–13, 주 1회 고강도 60–75%${vigHr}${vigPace} 혼합`,
             T: '1회 30–45분 — 주 150분 이상',
             type: '조깅 · 자전거 · 로잉 등 + 주 1회 인터벌',
             V: '주 500–1,000 MET-min (일 7,000보 이상)',
@@ -124,14 +146,20 @@ export function buildFittProgram(i: FittInput): FittProgram {
         : {
             domain: '유산소',
             F: '주 3–5회 (고강도는 주 3회까지)',
-            I: `중강도 40–59%${modHr} + 고강도 60–89% HRR${vigHr} · RPE 14–17 혼합`,
+            I: `중강도 40–59%${modHr}${modPace} + 고강도 60–89% HRR${vigHr}${vigPace} · RPE 14–17 혼합`,
             T: '고강도 20–30분 또는 중강도 45–60분',
             type: '러닝 · 인터벌(예: 4분 고강도 × 4회, 회복 3분) · 사이클',
             V: '주 1,000 MET-min 내외 (주 75분 고강도 또는 150–300분 중강도)',
             P: '인터벌 반복 수·속도 상향 중심, 고강도는 48시간 간격',
           };
+  // 고혈압 2기 이상 — 경고만 하지 않고 처방 강도 자체를 제한 (ACSM 고혈압 FITT)
+  const htn2 = (i.sbp ?? 0) >= 140 || (i.dbp ?? 0) >= 90;
+  if (htn2) {
+    aerobic.I = `중강도 40–59% HRR${modHr}${modPace} · RPE 12–13 — 혈압 조절 확인 전 고강도 제외`;
+    aerobic.P = '혈압 안정·의학적 확인 후 강도 상향';
+  }
   if (goal === 'weight') {
-    aerobic.V = '체중 관리 목표 — 주 250–300분(≥2,000 MET-min)까지 확대 권장';
+    aerobic.V = '체중 관리 목표 — 중강도 주 250–300분(약 1,200–1,800 MET-min)까지 확대 권장';
   }
 
   // ── 저항운동 ──
@@ -176,6 +204,10 @@ export function buildFittProgram(i: FittInput): FittProgram {
               P: '주기화 — 축적(고볼륨) → 강화(고강도) → 디로드 반복',
             };
 
+  if (htn2 && goal !== 'rehab') {
+    resistance.I = '1RM의 60–70% · 세트당 8–12회 — 호흡 유지(발살바 금지)';
+  }
+
   // ── 유연성·교정 ──
   const needCorrective =
     (i.fmsTested && ((i.fmsTotal ?? 21) <= 14 || (i.fmsZeros ?? 0) > 0)) || (i.postureCount ?? 0) >= 3;
@@ -193,8 +225,8 @@ export function buildFittProgram(i: FittInput): FittProgram {
 
   // ── 평형 (신경운동) — 평형 저하·고령·재활 시에만 ──
   const domains: FittDomain[] = [aerobic, resistance, flexibility];
-  const balanceLow = i.balanceLowSec != null && i.balanceLowSec < (age >= 60 ? 20 : 30);
-  if (balanceLow || age >= 65 || goal === 'rehab') {
+  const balanceLow = i.balanceLowSec != null && i.balanceLowSec < (i.age != null && i.age >= 60 ? 20 : 30);
+  if (balanceLow || (i.age != null && i.age >= 65) || goal === 'rehab') {
     domains.push({
       domain: '평형 (신경운동)',
       F: '주 2–3회',
@@ -207,8 +239,20 @@ export function buildFittProgram(i: FittInput): FittProgram {
   }
 
   // ── 1RM 기반 권장 훈련 중량 ──
-  const pct: [number, number] =
-    goal === 'rehab' ? [0.4, 0.6] : sl === 'low' ? [0.6, 0.7] : sl === 'mid' ? [0.65, 0.8] : [0.75, 0.85];
+  // 강도 행(I) 문구와 동일한 %를 사용 — 표와 중량 박스가 다른 숫자를 말하지 않게
+  const pct: [number, number] = htn2
+    ? [0.6, 0.7]
+    : goal === 'rehab'
+      ? [0.4, 0.6]
+      : sl === 'low'
+        ? [0.6, 0.7]
+        : sl === 'mid'
+          ? goal === 'strength'
+            ? [0.7, 0.85]
+            : [0.65, 0.8]
+          : goal === 'strength' || goal === 'performance'
+            ? [0.8, 0.9]
+            : [0.7, 0.85];
   const loads = i.oneRm
     .filter((r) => r.kg > 0)
     .map(
@@ -218,13 +262,17 @@ export function buildFittProgram(i: FittInput): FittProgram {
 
   // ── 안전 유의 ──
   const cautions: string[] = [];
-  if (i.sbp != null && i.dbp != null) {
-    if (i.sbp >= 180 || i.dbp >= 120) {
-      cautions.push('혈압이 위기 수준입니다 — 운동 시작 전 의료 평가가 필요하며, 그 전까지 프로그램을 보류하세요.');
-    } else if (i.sbp >= 140 || i.dbp >= 90) {
+  {
+    // 한쪽 값만 측정돼도 독립적으로 평가 (null은 임계값에 걸리지 않음)
+    const sbp = i.sbp ?? 0;
+    const dbp = i.dbp ?? 0;
+    if (sbp >= 180 || dbp >= 110) {
+      // ACSM 운동 보류 기준: SBP ≥180 또는 DBP ≥110
+      cautions.push('혈압이 높습니다(SBP ≥180 또는 DBP ≥110) — 운동 시작 전 의료 평가가 필요하며, 혈압이 조절될 때까지 프로그램을 보류하세요.');
+    } else if (sbp >= 140 || dbp >= 90) {
       cautions.push('고혈압 2기 — 숨 참기(발살바) 금지 · 고중량 저항운동 제한 · 매 운동 전 혈압 확인.');
-    } else if (i.sbp >= 130 || i.dbp >= 80) {
-      cautions.push('혈압 상승 단계 — 유산소 중심으로 시작하고 저항운동 시 호흡을 유지하세요.');
+    } else if (sbp >= 130 || dbp >= 80) {
+      cautions.push('고혈압 1기 — 유산소 중심으로 시작하고 저항운동 시 호흡을 유지하며, 정기적으로 혈압을 확인하세요.');
     }
   }
   if (i.rhr != null && i.rhr > 100) {
