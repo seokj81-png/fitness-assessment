@@ -172,7 +172,7 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                           contentStyle={{ background: '#fff', border: '1px solid #d6d6d6', borderRadius: 8, fontSize: 12 }}
                           formatter={(v) => [`${v} ${m.unit}`, m.label]}
                         />
-                        <Line type="monotone" dataKey="v" stroke="#111" strokeWidth={2} dot={{ r: 3, fill: '#111' }} />
+                        <Line type="monotone" dataKey="v" stroke="#111" strokeWidth={2} dot={{ r: 3, fill: '#111' }} isAnimationActive={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

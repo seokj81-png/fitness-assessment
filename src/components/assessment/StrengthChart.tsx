@@ -44,7 +44,7 @@ export default function StrengthChart({ lifts }: { lifts: LiftBar[] }) {
             contentStyle={{ background: '#fff', border: '1px solid #d6d6d6', borderRadius: 8, fontSize: 12 }}
             formatter={(v) => [`체중 × ${v}`, '1RM 체중비']}
           />
-          <Bar dataKey="ratio" radius={[4, 4, 0, 0]} maxBarSize={56}>
+          <Bar dataKey="ratio" radius={[4, 4, 0, 0]} maxBarSize={56} isAnimationActive={false}>
             <LabelList dataKey="ratio" position="top" style={{ fontSize: 11, fill: '#111', fontWeight: 600 }} />
             {lifts.map((l, i) => (
               <Cell

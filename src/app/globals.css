@@ -236,6 +236,27 @@ hr, .divide-slate-200 > * + * {
   /* 회원님 요약 다크 박스 → 인쇄용 라이트 (토너 절약·가독성) */
   .hero-summary { background: #fff !important; color: #111 !important; box-shadow: inset 0 0 0 1px #d6d6d6; }
   .hero-summary .grid > * { background: #f5f5f5 !important; color: #111 !important; }
+
+  /* ── 인쇄 밀도 개선 (트레이너 피드백: 1열 낭비·빈 여백) ──
+     A4 인쇄 폭(~700px)이 md 브레이크포인트(768px)보다 좁아 모든 반응형
+     그리드가 1열로 풀리던 것을 데스크톱과 같은 다열 배치로 강제 */
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  /* 미니 레이더 카드는 차트 가독성을 위해 인쇄에서 2열 */
+  .lg\:grid-cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* 좁아진 칸에 맞춰 차트는 비율 유지하며 축소.
+     recharts v3는 컨테이너 내부에 0폭 div를 두므로(width:100% 보정 필요)
+     그대로 max-width만 걸면 차트가 0폭으로 사라진다 */
+  .recharts-responsive-container { max-width: 100% !important; height: auto !important; }
+  .recharts-responsive-container > div { width: 100% !important; }
+  .recharts-wrapper { max-width: 100% !important; height: auto !important; }
+  .recharts-wrapper svg { max-width: 100% !important; height: auto !important; }
+
+  /* 카드 여백 압축 — 같은 내용을 더 적은 페이지에 */
+  .card { padding: 12px 16px !important; margin-bottom: 12px !important; }
+  @page { margin: 10mm; }
 }
 
 /* 결과 기반 운동 가이드 박스 */

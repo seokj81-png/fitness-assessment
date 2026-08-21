@@ -290,7 +290,7 @@ function SingleChart({
             />
           )}
 
-          <Line
+          <Line isAnimationActive={false}
             type="monotone"
             dataKey={key}
             stroke={color}

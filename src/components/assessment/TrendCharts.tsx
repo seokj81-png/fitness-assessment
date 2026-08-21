@@ -154,7 +154,7 @@ function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoi
           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
           {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
           {config.lines.map((l) => (
-            <Line
+            <Line isAnimationActive={false}
               key={l.key}
               type="monotone"
               dataKey={l.key}

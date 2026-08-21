@@ -98,7 +98,7 @@ function MiniRadar({ title, items, note }: { title: string; items: MiniItem[]; n
           <PolarGrid stroke="#e9e9e9" />
           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#555555' }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 8, fill: '#c4c4c4' }} />
-          <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.14} strokeWidth={2} />
+          <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.14} strokeWidth={2} isAnimationActive={false} />
         </RadarChart>
       </ResponsiveContainer>
       <div className="mt-1 space-y-0.5">
@@ -263,7 +263,7 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
               <PolarGrid stroke="#e9e9e9" />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#555555' }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 9, fill: '#8a8a8a' }} />
-              <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.15} strokeWidth={2} />
+              <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
             </RadarChart>
           </ResponsiveContainer>
           <p className="text-[10px] text-center" style={{ color: '#9a9a9a' }}>
