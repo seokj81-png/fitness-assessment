@@ -50,7 +50,10 @@ export interface ReportAssessment {
   curlupReps: number | null;
   squatReps: number | null;
   plankFront: number | null;
+  plankR: number | null;
+  plankL: number | null;
   sorensen: number | null;
+  ohsaFlags: string | null;
   balanceR: number | null;
   balanceL: number | null;
   fms: string | null;
@@ -264,11 +267,17 @@ export default function ReportBuilder({
     } catch {
       /* 손상된 JSON — 호흡 판정 생략 */
     }
-    let postureCount = 0;
+    let postureFlagKeys: string[] = [];
     try {
-      postureCount = target.postureFlags
-        ? (JSON.parse(target.postureFlags) as string[]).filter((k) => !k.includes(':')).length
-        : 0;
+      postureFlagKeys = target.postureFlags
+        ? (JSON.parse(target.postureFlags) as string[]).filter((k) => !k.includes(':'))
+        : [];
+    } catch {
+      /* ignore */
+    }
+    let ohsaFlags: string[] = [];
+    try {
+      ohsaFlags = target.ohsaFlags ? (JSON.parse(target.ohsaFlags) as string[]) : [];
     } catch {
       /* ignore */
     }
@@ -279,15 +288,15 @@ export default function ReportBuilder({
         : null;
     const oneRm = (
       [
-        ['벤치프레스', target.bp1rm],
-        ['스쿼트', target.sq1rm],
-        ['데드리프트', target.dl1rm],
-        ['오버헤드프레스', target.ohp1rm],
-        ['레그프레스', target.lp1rm],
-      ] as [string, number | null][]
+        ['bp', '벤치프레스', target.bp1rm],
+        ['sq', '스쿼트', target.sq1rm],
+        ['dl', '데드리프트', target.dl1rm],
+        ['ohp', '오버헤드프레스', target.ohp1rm],
+        ['lp', '레그프레스', target.lp1rm],
+      ] as ['bp' | 'sq' | 'dl' | 'ohp' | 'lp', string, number | null][]
     )
-      .filter((x): x is [string, number] => x[1] != null)
-      .map(([name, kg]) => ({ name, kg }));
+      .filter((x): x is ['bp' | 'sq' | 'dl' | 'ohp' | 'lp', string, number] => x[2] != null)
+      .map(([key, name, kg]) => ({ key, name, kg }));
     const balanceLowSec =
       target.balanceR != null && target.balanceL != null
         ? Math.min(target.balanceR, target.balanceL)
@@ -303,11 +312,24 @@ export default function ReportBuilder({
       vo2,
       vo2Level,
       oneRm,
+      weightKg: target.weight ?? client.weight,
+      gripSumKg: target.gripR != null && target.gripL != null ? target.gripR + target.gripL : null,
+      pushupReps: target.pushupReps,
+      curlupReps: target.curlupReps,
+      squatEndReps: target.squatReps,
+      pullupReps: target.pullupReps,
+      plankFront: target.plankFront,
+      plankR: target.plankR,
+      plankL: target.plankL,
+      sorensen: target.sorensen,
+      fmsPerTest: fmsRes?.perTest ?? null,
+      postureFlagKeys,
+      ohsaFlags,
       fmsTested: (fmsRes?.tested ?? 0) > 0,
       // 14점 컷오프는 7개 검사 완료 시에만 유효 — 부분 합계로 허위 경고 방지
       fmsTotal: fmsRes && fmsRes.tested === 7 ? fmsRes.total : null,
       fmsZeros: fmsRes?.zeros,
-      postureCount,
+      postureCount: postureFlagKeys.length,
       balanceLowSec,
       breathRed,
     });
@@ -381,6 +403,36 @@ export default function ReportBuilder({
   };
   const roundNo = (id: string) => assessments.findIndex((a) => a.id === id) + 1;
 
+  // 푸터 — 프로그램 포함 시엔 프로그램 섹션 안에 넣어 인쇄에서 함께 배치 (빈 3쪽 방지)
+  const sheetFooter = (
+    <div
+      style={{
+        marginTop: 13,
+        paddingTop: 10,
+        borderTop: `1px solid ${LINE}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 800, color: NAVY }}>
+        📅 다음 재평가 예정:{' '}
+        {nextDate
+          ? new Date(`${nextDate}T00:00:00`).toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : '트레이너와 상담 후 결정'}
+      </div>
+      <div style={{ fontSize: 10.5, color: MUTED, textAlign: 'right' }}>
+        PAFGYM 체력 평가 시스템 · 발행일 {fmtDate(target.date)}
+        <br />
+        본 리포트는 운동 프로그램 참고용이며 의학적 진단이 아닙니다.
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {/* 리포트 페이지 전용 인쇄 규칙 — 시트만 A4 1장으로 (">"가 SSR에서 이스케이프되므로 innerHTML로) */}
@@ -404,6 +456,9 @@ export default function ReportBuilder({
             border-radius: 0 !important;
           }
           .fitt-section { break-before: page; page-break-before: always; padding-top: 4mm; }
+          /* 프로그램 페이지가 꽉 차 푸터가 3쪽으로 밀리지 않게 인쇄에서만 표 압축 */
+          .fitt-section table { font-size: 9.5px !important; }
+          .fitt-section td, .fitt-section th { padding: 3px 6px !important; }
         }
       `,
         }}
@@ -769,7 +824,12 @@ export default function ReportBuilder({
                           {program.domains.map((d) => (
                             <td
                               key={d.domain}
-                              style={{ padding: '5px 8px', borderBottom: `1px solid ${LINE}`, lineHeight: 1.5 }}
+                              style={{
+                                padding: '5px 8px',
+                                borderBottom: `1px solid ${LINE}`,
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-line', // 개별화 항목의 줄바꿈 표시
+                              }}
                             >
                               {d[k]}
                             </td>
@@ -813,36 +873,12 @@ export default function ReportBuilder({
                       </ul>
                     </div>
                   )}
+                  {sheetFooter}
                 </div>
               )}
 
-              {/* 푸터 */}
-              <div
-                style={{
-                  marginTop: 13,
-                  paddingTop: 10,
-                  borderTop: `1px solid ${LINE}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ fontSize: 13, fontWeight: 800, color: NAVY }}>
-                  📅 다음 재평가 예정:{' '}
-                  {nextDate
-                    ? new Date(`${nextDate}T00:00:00`).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })
-                    : '트레이너와 상담 후 결정'}
-                </div>
-                <div style={{ fontSize: 10.5, color: MUTED, textAlign: 'right' }}>
-                  PAFGYM 체력 평가 시스템 · 발행일 {fmtDate(target.date)}
-                  <br />
-                  본 리포트는 운동 프로그램 참고용이며 의학적 진단이 아닙니다.
-                </div>
-              </div>
+              {/* 푸터 — 프로그램 미포함 시 여기(1쪽 끝), 포함 시 프로그램 섹션 안 */}
+              {!includeProgram && sheetFooter}
             </div>
           </div>
         </div>

@@ -4,7 +4,23 @@
 // 회원 전달용 리포트에 표시 — 트레이너 검토·조정 하에 적용하는 권장안.
 // ══════════════════════════════════════════════════════
 
-import { trainingZones, vVO2max } from './calculations';
+import {
+  trainingZones,
+  vVO2max,
+  matchPostureSyndromes,
+  analyzePlank,
+  classifyBPRatio,
+  classifySQRatio,
+  classifyDLRatio,
+  classifyOHPRatio,
+  classifyLPRatio,
+  classifyGrip,
+  classifyPushup,
+  classifyCurlup,
+  classifySquatEndurance,
+  classifyPullup,
+} from './calculations';
+import { MOVEMENT_COMPENSATIONS } from './norms';
 
 export interface FittInput {
   age: number | null;
@@ -16,7 +32,22 @@ export interface FittInput {
   dbp?: number | null;
   vo2?: number | null; // 최고 추정 VO2max
   vo2Level?: string | null; // excellent | good | average | below | poor
-  oneRm: { name: string; kg: number }[]; // 실측 1RM (있는 것만)
+  oneRm: { key?: 'bp' | 'sq' | 'dl' | 'ohp' | 'lp'; name: string; kg: number }[]; // 실측 1RM
+  weightKg?: number | null; // 체중비 등급 산출용
+  gripSumKg?: number | null; // 악력 좌+우
+  // 근지구력 실측 — 있으면 세트 목표를 기록 기반으로 개별화
+  pushupReps?: number | null;
+  curlupReps?: number | null;
+  squatEndReps?: number | null;
+  pullupReps?: number | null;
+  plankFront?: number | null;
+  plankR?: number | null;
+  plankL?: number | null;
+  sorensen?: number | null;
+  // 움직임·자세 상세 — 교정 대상 개별화
+  fmsPerTest?: Record<string, number> | null;
+  postureFlagKeys?: string[] | null;
+  ohsaFlags?: string[] | null;
   fmsTested: boolean;
   fmsTotal?: number | null;
   fmsZeros?: number | null;
@@ -208,29 +239,167 @@ export function buildFittProgram(i: FittInput): FittProgram {
     resistance.I = '1RM의 60–70% · 세트당 8–12회 — 호흡 유지(발살바 금지)';
   }
 
-  // ── 유연성·교정 ──
-  const needCorrective =
-    (i.fmsTested && ((i.fmsTotal ?? 21) <= 14 || (i.fmsZeros ?? 0) > 0)) || (i.postureCount ?? 0) >= 3;
-  const flexibility: FittDomain = {
-    domain: '유연성 · 교정',
-    F: '주 2–3회 이상 (매일 가능)',
-    I: '당기는 느낌·경미한 불편감 지점까지 (통증 금지)',
-    T: '부위당 정적 15–30초 × 2–4회 (부위당 총 60초)',
-    type: needCorrective
-      ? 'NASM 교정 순서 — SMR(폼롤러) → 정적 스트레칭(단축근) → 활성화 → 통합 동작'
-      : '운동 후 전신 주요 근군 정적 스트레칭 + 운동 전 동적 스트레칭',
-    V: '회당 10분 내외 (체온 상승 상태에서)',
-    P: '가동범위 확대에 맞춰 유지 시간·범위 점진 확대',
+  // ── 근력 테스트 결과 개별화: 체중비 등급이 낮은 리프트를 우선 보강 ──
+  const isWeak = (c: { classification: string } | null | undefined) =>
+    !!c && (c.classification === 'below' || c.classification === 'poor');
+  const weakLifts: string[] = [];
+  if (i.weightKg && i.age != null) {
+    const w = i.weightKg;
+    for (const r of i.oneRm) {
+      if (!(r.kg > 0)) continue;
+      const c =
+        r.key === 'bp'
+          ? classifyBPRatio(r.kg, w, i.age, i.sex)
+          : r.key === 'sq'
+            ? classifySQRatio(r.kg, w, i.age, i.sex)
+            : r.key === 'dl'
+              ? classifyDLRatio(r.kg, w, i.age, i.sex)
+              : r.key === 'ohp'
+                ? classifyOHPRatio(r.kg, w, i.age, i.sex)
+                : r.key === 'lp'
+                  ? classifyLPRatio(r.kg, w, i.age, i.sex)
+                  : null;
+      if (isWeak(c)) weakLifts.push(`${r.name}(체중비 ${(r.kg / w).toFixed(2)})`);
+    }
+    if (i.gripSumKg != null && isWeak(classifyGrip(i.gripSumKg, i.age, i.sex))) {
+      weakLifts.push(`악력(${i.gripSumKg}kg)`);
+    }
+  }
+  if (weakLifts.length) {
+    resistance.type = `우선 보강 — ${weakLifts.join(' · ')}\n${resistance.type}`;
+    resistance.V = `${resistance.V} · 약한 리프트 부위는 주 +2–4세트`;
+  }
+
+  // ── 근지구력 — 실측 기록 기반 세트 목표 개별화 ──
+  const endTargets: string[] = [];
+  const weakEnd: string[] = [];
+  const repTarget = (max: number) =>
+    `${Math.max(1, Math.round(max * 0.5))}–${Math.max(2, Math.round(max * 0.7))}회`;
+  if (i.pushupReps != null) {
+    endTargets.push(
+      i.pushupReps === 0
+        ? '푸시업 — 인클라인·무릎 푸시업 5–8회부터'
+        : `푸시업 세트당 ${repTarget(i.pushupReps)} (최대 ${i.pushupReps}회의 50–70%)`
+    );
+    if (i.age != null && isWeak(classifyPushup(i.pushupReps, i.age, i.sex))) weakEnd.push('상체 밀기(푸시업)');
+  }
+  if (i.pullupReps != null) {
+    endTargets.push(
+      i.pullupReps <= 1
+        ? '풀업 — 밴드 보조·네거티브 3–5회부터'
+        : `풀업 세트당 ${repTarget(i.pullupReps)} (최대 ${i.pullupReps}회의 50–70%)`
+    );
+    if (i.age != null && isWeak(classifyPullup(i.pullupReps, i.age, i.sex))) weakEnd.push('상체 당기기(풀업)');
+  }
+  if (i.curlupReps != null) {
+    endTargets.push(`컬업 세트당 ${repTarget(i.curlupReps)} (최대 ${i.curlupReps}회의 50–70%)`);
+    if (i.age != null && isWeak(classifyCurlup(i.curlupReps, i.age, i.sex))) weakEnd.push('몸통 굴곡(컬업)');
+  }
+  if (i.squatEndReps != null) {
+    endTargets.push(`스쿼트 세트당 ${repTarget(i.squatEndReps)} (최대 ${i.squatEndReps}회의 50–70%)`);
+    if (i.age != null && isWeak(classifySquatEndurance(i.squatEndReps, i.age, i.sex))) weakEnd.push('하체(스쿼트)');
+  }
+  const plankInfo =
+    i.plankFront != null
+      ? analyzePlank(i.plankFront, i.plankR ?? undefined, i.plankL ?? undefined, i.sorensen ?? undefined, i.sex)
+      : null;
+  if (i.plankFront != null) {
+    endTargets.push(
+      `플랭크 세트당 ${Math.max(10, Math.round(i.plankFront * 0.6))}–${Math.max(15, Math.round(i.plankFront * 0.7))}초 (최대 ${i.plankFront}초의 60–70%)`
+    );
+    if (isWeak(plankInfo?.frontClass)) weakEnd.push('코어 지구력(플랭크)');
+  }
+  const mcgillNeeded = !!(plankInfo && plankInfo.warnings.length > 0);
+  const endMeasured = endTargets.length > 0;
+  const muscularEndurance: FittDomain = endMeasured
+    ? {
+        domain: '근지구력',
+        F: '주 2–3회 (저항운동과 같은 날 — 본 운동 마지막에)',
+        I: endTargets.join('\n'),
+        T: '10–15분 · 동작당 2–3세트 · 세트 간 휴식 30–60초',
+        type:
+          (weakEnd.length ? `우선 보강 — ${weakEnd.join(' · ')}\n` : '') +
+          (mcgillNeeded
+            ? 'McGill 빅3(컬업 · 사이드 브릿지 · 버드독) — 코어 좌우/전후 지구력 비율 교정'
+            : '자체중량 서킷 — 푸시업 · 플랭크 · 스쿼트 · 로우'),
+        V: '동작당 주 4–6세트',
+        P: '2주마다 세트당 +2회(플랭크는 +10초) → 4주마다 최대 기록 재측정',
+      }
+    : {
+        domain: '근지구력',
+        F: '주 2–3회',
+        I: '세트당 15–25회 반복 가능한 자체중량 강도 (RPE 12–14)',
+        T: '10–15분 · 동작당 2–3세트 · 세트 간 휴식 30–60초',
+        type: '자체중량 서킷 — 푸시업 · 플랭크 · 스쿼트 (다음 평가에서 기록 측정 → 개별 목표 제공)',
+        V: '동작당 주 4–6세트',
+        P: '2주마다 세트당 +2회',
+      };
+
+  // ── 유연성·교정 — 자세 증후군·OHSA 보상·FMS 저점을 실제 소견으로 개별화 ──
+  const FMS_KR: Record<string, string> = {
+    dsq: '딥스쿼트',
+    hs: '허들스텝',
+    lu: '인라인 런지',
+    sm: '숄더 모빌리티',
+    aslr: '액티브 SLR',
+    tsp: '체간 푸시업',
+    rs: '로터리 스태빌리티',
   };
+  // 근육명 영문 병기 제거 — 회원 전달용 셀 공간 절약 (한글 괄호는 유지)
+  const stripEn = (t: string) => t.replace(/\s*\([A-Za-z][A-Za-z ,.·\-/&;'’]*\)/g, '').trim();
+  const correctiveNotes: string[] = [];
+  const syndromes = i.postureFlagKeys?.length ? matchPostureSyndromes(i.postureFlagKeys) : [];
+  for (const sd of syndromes.slice(0, 2)) {
+    // 증후군 이름은 한글 괄호 안 표기 우선 (예: "Upper Crossed Syndrome (상부 교차 증후군)" → "상부 교차 증후군")
+    const krName = sd.name.match(/\(([가-힣·\s]+)\)/)?.[1] ?? sd.name;
+    correctiveNotes.push(`자세 · ${krName} — 이완: ${stripEn(sd.overactive)} / 강화: ${stripEn(sd.underactive)}`);
+  }
+  const comps = i.ohsaFlags?.length
+    ? MOVEMENT_COMPENSATIONS.filter((c) => i.ohsaFlags!.includes(c.key)).slice(0, 2)
+    : [];
+  for (const c of comps) {
+    correctiveNotes.push(`움직임 · ${c.label} — 이완: ${stripEn(c.overactive)} / 강화: ${stripEn(c.underactive)}`);
+  }
+  const fmsLow = i.fmsPerTest
+    ? Object.entries(i.fmsPerTest)
+        .filter(([, v]) => v <= 1)
+        .map(([k]) => FMS_KR[k] ?? k)
+    : [];
+  if (fmsLow.length) correctiveNotes.push(`FMS 저점 패턴 재학습 — ${fmsLow.join(' · ')}`);
+  if (!correctiveNotes.length && i.fmsTested && (i.fmsTotal ?? 21) <= 14) {
+    correctiveNotes.push('FMS 총점 낮음 — 저점 항목(1점) 패턴 교정을 프로그램 앞에 배치');
+  }
+  const flexibility: FittDomain = correctiveNotes.length
+    ? {
+        domain: '유연성 · 교정',
+        F: '주 3회 이상 — 매 세션 워밍업으로 배치',
+        I: 'SMR 압통점 30초 유지 · 정적 스트레칭은 당기는 지점까지 (통증 금지)',
+        T: 'NASM 4단계 — SMR 30초 → 정적 30초 → 활성화 12–15회 × 1–2세트 → 통합 10–15회',
+        type: correctiveNotes.join('\n'),
+        V: '회당 15–20분',
+        P: '2–4주 후 자세 사진·OHSA 재평가로 개선 확인 → 다음 우선 부위로',
+      }
+    : {
+        domain: '유연성 · 교정',
+        F: '주 2–3회 이상 (매일 가능)',
+        I: '당기는 느낌·경미한 불편감 지점까지 (통증 금지)',
+        T: '부위당 정적 15–30초 × 2–4회 (부위당 총 60초)',
+        type: '운동 후 전신 주요 근군 정적 스트레칭 + 운동 전 동적 스트레칭',
+        V: '회당 10분 내외 (체온 상승 상태에서)',
+        P: '가동범위 확대에 맞춰 유지 시간·범위 점진 확대',
+      };
 
   // ── 평형 (신경운동) — 평형 저하·고령·재활 시에만 ──
-  const domains: FittDomain[] = [aerobic, resistance, flexibility];
+  const domains: FittDomain[] = [aerobic, resistance, muscularEndurance, flexibility];
   const balanceLow = i.balanceLowSec != null && i.balanceLowSec < (i.age != null && i.age >= 60 ? 20 : 30);
   if (balanceLow || (i.age != null && i.age >= 65) || goal === 'rehab') {
     domains.push({
       domain: '평형 (신경운동)',
       F: '주 2–3회',
-      I: '지지물을 잡을 수 있는 안전한 환경에서 — 흔들림이 느껴지는 난이도',
+      I:
+        i.balanceLowSec != null
+          ? `현재 ${i.balanceLowSec}초(낮은 쪽) → 1차 목표 30초 — 지지물 옆 안전 확보`
+          : '지지물을 잡을 수 있는 안전한 환경에서 — 흔들림이 느껴지는 난이도',
       T: '회당 10–15분',
       type: '외발서기 · 탠덤 스탠스 · 불안정면 스탠스 → 동적 밸런스',
       V: '자세당 30초 × 3–5회 (좌우 번갈아)',
@@ -295,6 +464,6 @@ export function buildFittProgram(i: FittInput): FittProgram {
     loads,
     cautions,
     basis:
-      'ACSM 운동처방 지침(11판) FITT-VP · NSCA 저항운동 기준 — 이번 평가 결과를 반영한 권장안입니다. 담당 트레이너의 조정 하에 적용하세요.',
+      'ACSM 운동처방 지침(11판) FITT-VP · NSCA 저항운동 · NASM CES 교정 기준 — 이번 평가 결과를 반영한 권장안입니다. 담당 트레이너의 조정 하에 적용하세요.',
   };
 }
