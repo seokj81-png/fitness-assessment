@@ -632,7 +632,7 @@ export default async function AssessmentViewPage({
           자세 <span className="guideline-tag tag-nasm">NASM</span>
         </h3>
         {postureCount === 0 ? (
-          <p className="text-sm text-slate-500">관찰된 자세 이상 소견 없음.</p>
+          <p className="text-sm text-slate-500">정적 자세 — 관찰된 이상 소견 없음.</p>
         ) : (
           <>
             <p className="text-sm text-slate-600 mb-2">
@@ -684,37 +684,37 @@ export default async function AssessmentViewPage({
                 ))}
               </div>
             )}
-            {(a.ohsaFlags || []).length > 0 && (
-              <div className="mt-4">
-                <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
-                  동적 움직임 보상 — 교정 대상 근육 (NASM CES)
-                </div>
-                <div className="space-y-3">
-                  {MOVEMENT_COMPENSATIONS.filter((c) =>
-                    (a.ohsaFlags || []).includes(c.key)
-                  ).map((c) => (
-                    <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
-                      <div className="font-semibold text-sm text-slate-100">{c.label}</div>
-                      <div className="text-xs mt-1" style={{ color: '#b42318' }}>
-                        <b>과활성(이완):</b> {c.overactive}
-                      </div>
-                      <div className="text-xs" style={{ color: '#175cd3' }}>
-                        <b>저활성(강화):</b> {c.underactive}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {(a.ohsaFlags || []).some(
-                  (k) => !MOVEMENT_COMPENSATIONS.find((c) => c.key === k)
-                ) && (
-                  <p className="text-xs text-slate-500 mt-2">
-                    기타 보상 패턴 {(a.ohsaFlags || []).filter((k) => !MOVEMENT_COMPENSATIONS.find((c) => c.key === k)).length}건 관찰
-                    (푸시/풀 등)
-                  </p>
-                )}
-              </div>
-            )}
           </>
+        )}
+
+        {/* 동적 움직임 보상 — 정적 자세 이상이 없어도 OHSA 보상이 있으면 표시 (인체도 근거) */}
+        {(a.ohsaFlags || []).length > 0 && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
+              동적 움직임 보상 — 교정 대상 근육 (NASM CES)
+            </div>
+            <div className="space-y-3">
+              {matchedComps.map((c) => (
+                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
+                  <div className="font-semibold text-sm text-slate-100">{c.label}</div>
+                  <div className="text-xs mt-1" style={{ color: '#b42318' }}>
+                    <b>과활성(이완):</b> {c.overactive}
+                  </div>
+                  <div className="text-xs" style={{ color: '#175cd3' }}>
+                    <b>저활성(강화):</b> {c.underactive}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(a.ohsaFlags || []).some(
+              (k) => !MOVEMENT_COMPENSATIONS.find((c) => c.key === k)
+            ) && (
+              <p className="text-xs text-slate-500 mt-2">
+                기타 보상 패턴 {(a.ohsaFlags || []).filter((k) => !MOVEMENT_COMPENSATIONS.find((c) => c.key === k)).length}건 관찰
+                (푸시/풀 등)
+              </p>
+            )}
+          </div>
         )}
 
         {/* 인체도 교정부위 색표시 — 회원 설명용 (트레이너 피드백) */}

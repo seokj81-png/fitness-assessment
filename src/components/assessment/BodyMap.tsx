@@ -1,157 +1,231 @@
 import type { ReactNode } from 'react';
 
 // 인체 모형 교정 부위 색표시 — 회원 설명용 (트레이너 피드백: "근육 명칭보다 부위로")
-// 자세 증후군·움직임 보상의 과활성/저활성 근육 문자열을 부위로 변환해
-// 앞·뒤 실루엣에 빨강(이완·스트레칭)/파랑(활성화·강화)으로 칠한다.
+// 이완(빨강)과 강화(파랑)를 별도 패널로 분리해 각각 앞·뒤 그림에 단색으로 표시한다.
+// 부위 배치는 표준 전신 근육 차트(전면/후면) 기준.
 
 const OVER_COLOR = '#b42318'; // 과활성 = 이완·스트레칭 (기능색 예외 — 빨강)
 const UNDER_COLOR = '#175cd3'; // 저활성 = 활성화·강화 (기능색 예외 — 파랑)
+const BODY_FILL = '#e8e8ec';
 
 type RegionId =
-  | 'neck-front' | 'shoulder-front' | 'chest' | 'ribs-side' | 'abs'
-  | 'hip-front' | 'thigh-front' | 'thigh-inner' | 'shin'
+  | 'neck-front' | 'neck-deep' | 'shoulder-front' | 'chest' | 'ribs-side' | 'abs'
+  | 'hip-front' | 'thigh-front' | 'thigh-front-inner' | 'thigh-front-outer'
+  | 'thigh-inner' | 'shin'
   | 'neck-back' | 'shoulder-back' | 'upper-back' | 'lats' | 'low-back'
-  | 'glutes' | 'hip-side' | 'thigh-back' | 'thigh-outer' | 'calf';
+  | 'glutes' | 'glute-deep' | 'hip-side'
+  | 'thigh-back' | 'thigh-back-inner' | 'thigh-outer'
+  | 'calf' | 'calf-inner' | 'calf-outer';
 
 const REGION_LABELS: Record<RegionId, string> = {
   'neck-front': '목 앞·옆',
+  'neck-deep': '목 앞 깊은 근육',
   'shoulder-front': '어깨 앞',
   chest: '가슴',
-  'ribs-side': '옆갈비',
+  'ribs-side': '옆갈비(겨드랑이 아래)',
   abs: '복부(코어)',
-  'hip-front': '고관절 앞',
+  'hip-front': '고관절 앞(사타구니)',
   'thigh-front': '허벅지 앞',
+  'thigh-front-inner': '무릎 위 안쪽',
+  'thigh-front-outer': '허벅지 앞 바깥',
   'thigh-inner': '허벅지 안쪽',
   shin: '정강이',
   'neck-back': '목 뒤·어깨 위',
   'shoulder-back': '어깨 뒤',
   'upper-back': '등 상부(날개뼈 사이)',
-  lats: '등 옆(겨드랑이 아래)',
-  'low-back': '허리',
+  lats: '등 옆(광배근)',
+  'low-back': '허리(척추 옆)',
   glutes: '엉덩이',
+  'glute-deep': '엉덩이 깊은 근육',
   'hip-side': '골반 옆',
   'thigh-back': '허벅지 뒤',
-  'thigh-outer': '허벅지 바깥',
+  'thigh-back-inner': '허벅지 뒤 안쪽',
+  'thigh-outer': '허벅지 바깥(IT밴드)',
   calf: '종아리',
+  'calf-inner': '종아리 안쪽',
+  'calf-outer': '종아리 바깥',
 };
 
-// 근육명 키워드 → 부위. norms.ts의 한글 근육 표기(문장 통째)를 substring으로 매칭.
+// 근육 토큰 → 부위. 원문을 쉼표·가운뎃점 등으로 토큰화한 뒤,
+// 각 토큰마다 "가장 먼저 일치하는 규칙 1개"만 적용 (구체적 규칙을 앞에 배치).
 const MUSCLE_REGION_RULES: Array<{ kw: string[]; region: RegionId }> = [
-  { kw: ['비복근', '가자미근', '후경골근', '슬와근', '비골근'], region: 'calf' },
+  { kw: ['내측 비복근'], region: 'calf-inner' },
+  { kw: ['외측 비복근'], region: 'calf-outer' },
+  { kw: ['후경골근'], region: 'calf-inner' },
   { kw: ['전경골근'], region: 'shin' },
+  { kw: ['비골근'], region: 'calf-outer' },
+  { kw: ['비복근', '가자미근', '슬와근'], region: 'calf' },
+  { kw: ['내측 햄스트링'], region: 'thigh-back-inner' },
+  { kw: ['햄스트링', '대퇴이두', '반건양근', '반막양근'], region: 'thigh-back' },
+  { kw: ['내측광근', 'VMO'], region: 'thigh-front-inner' },
+  { kw: ['외측광근'], region: 'thigh-front-outer' },
+  { kw: ['대퇴직근', '봉공근', '사두'], region: 'thigh-front' },
   { kw: ['내전근', '박근'], region: 'thigh-inner' },
   { kw: ['장경인대', 'IT band', 'IT밴드'], region: 'thigh-outer' },
-  { kw: ['햄스트링', '대퇴이두'], region: 'thigh-back' },
-  { kw: ['대퇴직근', '내측광근', '외측광근', 'VMO', '봉공근', '사두'], region: 'thigh-front' },
   { kw: ['장요근', '고관절 굴곡근'], region: 'hip-front' },
-  { kw: ['TFL', '소둔근'], region: 'hip-side' },
-  { kw: ['대둔근', '중둔근', '이상근'], region: 'glutes' },
-  { kw: ['척추기립근', '요방형근'], region: 'low-back' },
+  { kw: ['TFL', '소둔근', '중둔근'], region: 'hip-side' },
+  { kw: ['이상근'], region: 'glute-deep' },
+  { kw: ['대둔근', '둔근'], region: 'glutes' },
+  { kw: ['척추기립근', '기립근', '요방형근'], region: 'low-back' },
   { kw: ['광배근'], region: 'lats' },
-  { kw: ['복횡근', '복직근', '복사근', '복근군', '심부 코어', 'TvA'], region: 'abs' },
+  { kw: ['복횡근', '복직근', '복사근', '복근', '심부 코어', 'TvA'], region: 'abs' },
   { kw: ['상부승모근', '상부 승모근', '견갑거근'], region: 'neck-back' },
-  { kw: ['흉쇄유돌근', '사각근', '심부경부굴곡근', '심부 경부'], region: 'neck-front' },
-  { kw: ['흉근'], region: 'chest' }, // 대흉근·소흉근·대·소흉근 모두 매칭
+  { kw: ['심부경부굴곡근', '심부 경부'], region: 'neck-deep' },
+  { kw: ['흉쇄유돌근', '사각근', 'SCM'], region: 'neck-front' },
+  { kw: ['흉근'], region: 'chest' }, // 대흉근·소흉근
   { kw: ['전거근'], region: 'ribs-side' },
-  { kw: ['능형근', '중·하부승모근', '중·하부 승모근', '중부승모근', '하부승모근', '중부 승모근', '하부 승모근'], region: 'upper-back' },
-  { kw: ['회전근개', '후면 삼각근', '대원근'], region: 'shoulder-back' },
+  { kw: ['능형근', '하부승모근', '중부승모근', '하부 승모근', '중부 승모근', '승모근'], region: 'upper-back' },
+  { kw: ['회전근개', '후면 삼각근', '대원근', '극하근', '소원근'], region: 'shoulder-back' },
   { kw: ['오훼완근'], region: 'shoulder-front' },
 ];
 
 function mapToRegions(texts: string[]): Set<RegionId> {
   const out = new Set<RegionId>();
-  const joined = texts.join(' / ');
-  for (const rule of MUSCLE_REGION_RULES) {
-    if (rule.kw.some((k) => joined.includes(k))) out.add(rule.region);
+  const tokens = texts
+    .join(',')
+    .split(/[,·/()]/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  for (const token of tokens) {
+    const rule = MUSCLE_REGION_RULES.find((r) => r.kw.some((k) => token.includes(k)));
+    if (rule) out.add(rule.region);
   }
   return out;
 }
 
-// ── SVG 도형 정의 (좌표는 figure 중심 cx 기준 상대값) ──
+// ── 표시 도형 (figure 중심 x=0 기준 좌표) ──
 
-type Shape = { cx: number; cy: number; rx: number; ry: number };
-/** 부위별 표시 도형 — mirror true면 좌우 한 쌍 */
-const REGION_SHAPES: Record<RegionId, { view: 'front' | 'back'; mirror: boolean; s: Shape }> = {
-  'neck-front': { view: 'front', mirror: false, s: { cx: 0, cy: 62, rx: 11, ry: 9 } },
-  'shoulder-front': { view: 'front', mirror: true, s: { cx: 38, cy: 82, rx: 11, ry: 8 } },
-  chest: { view: 'front', mirror: true, s: { cx: 17, cy: 97, rx: 15, ry: 11 } },
-  'ribs-side': { view: 'front', mirror: true, s: { cx: 31, cy: 127, rx: 6, ry: 14 } },
-  abs: { view: 'front', mirror: false, s: { cx: 0, cy: 150, rx: 15, ry: 26 } },
-  'hip-front': { view: 'front', mirror: true, s: { cx: 17, cy: 199, rx: 11, ry: 10 } },
-  'thigh-front': { view: 'front', mirror: true, s: { cx: 18, cy: 262, rx: 11, ry: 34 } },
-  'thigh-inner': { view: 'front', mirror: true, s: { cx: 6, cy: 256, rx: 5, ry: 30 } },
-  shin: { view: 'front', mirror: true, s: { cx: 17, cy: 368, rx: 7, ry: 32 } },
-  'neck-back': { view: 'back', mirror: false, s: { cx: 0, cy: 68, rx: 22, ry: 9 } },
-  'shoulder-back': { view: 'back', mirror: true, s: { cx: 38, cy: 84, rx: 11, ry: 8 } },
-  'upper-back': { view: 'back', mirror: false, s: { cx: 0, cy: 106, rx: 21, ry: 16 } },
-  lats: { view: 'back', mirror: true, s: { cx: 21, cy: 140, rx: 11, ry: 19 } },
-  'low-back': { view: 'back', mirror: false, s: { cx: 0, cy: 176, rx: 15, ry: 13 } },
-  glutes: { view: 'back', mirror: true, s: { cx: 15, cy: 211, rx: 13, ry: 12 } },
-  'hip-side': { view: 'back', mirror: true, s: { cx: 33, cy: 199, rx: 7, ry: 12 } },
-  'thigh-back': { view: 'back', mirror: true, s: { cx: 18, cy: 262, rx: 11, ry: 34 } },
-  'thigh-outer': { view: 'back', mirror: true, s: { cx: 30, cy: 258, rx: 5, ry: 30 } },
-  calf: { view: 'back', mirror: true, s: { cx: 17, cy: 366, rx: 8, ry: 30 } },
+type Mark =
+  | { kind: 'e'; x: number; y: number; rx: number; ry: number; rot?: number }
+  | { kind: 'p'; d: string };
+
+/** 좌우 대칭 타원 한 쌍 */
+const pair = (x: number, y: number, rx: number, ry: number, rot = 0): Mark[] => [
+  { kind: 'e', x, y, rx, ry, rot },
+  { kind: 'e', x: -x, y, rx, ry, rot: -rot },
+];
+
+const REGION_MARKS: Record<RegionId, { view: 'front' | 'back'; marks: Mark[] }> = {
+  // ── 앞 ──
+  'neck-front': { view: 'front', marks: pair(7, 55, 4.5, 8, 18) },
+  'neck-deep': { view: 'front', marks: [{ kind: 'e', x: 0, y: 58, rx: 5, ry: 7 }] },
+  'shoulder-front': { view: 'front', marks: pair(39, 81, 8.5, 9.5) },
+  chest: { view: 'front', marks: pair(18, 93, 15, 12, 10) },
+  'ribs-side': { view: 'front', marks: pair(32, 120, 5.5, 12, -10) },
+  abs: { view: 'front', marks: [{ kind: 'e', x: 0, y: 146, rx: 13, ry: 30 }] },
+  'hip-front': { view: 'front', marks: pair(13, 200, 8, 11, 25) },
+  'thigh-front': { view: 'front', marks: pair(20, 260, 10, 36) },
+  'thigh-front-inner': { view: 'front', marks: pair(13, 278, 5.5, 22) },
+  'thigh-front-outer': { view: 'front', marks: pair(27, 255, 5.5, 30) },
+  'thigh-inner': { view: 'front', marks: pair(8, 246, 5.5, 26) },
+  shin: { view: 'front', marks: pair(18, 352, 5.5, 30) },
+  // ── 뒤 ──
+  'neck-back': {
+    view: 'back',
+    // 상부승모근 — 목에서 양쪽 어깨로 퍼지는 쐐기
+    marks: [{ kind: 'p', d: 'M-8 49 Q0 45 8 49 L36 78 Q18 69 0 67 Q-18 69 -36 78 Z' }],
+  },
+  'shoulder-back': { view: 'back', marks: pair(39, 83, 9, 10) },
+  'upper-back': { view: 'back', marks: [{ kind: 'e', x: 0, y: 102, rx: 13, ry: 22 }] },
+  lats: { view: 'back', marks: pair(20, 134, 11, 21, 14) },
+  'low-back': { view: 'back', marks: pair(7, 172, 5.5, 17) }, // 기립근 두 기둥
+  'hip-side': { view: 'back', marks: pair(32, 196, 7, 11) },
+  glutes: { view: 'back', marks: pair(16, 211, 14, 13) },
+  'glute-deep': { view: 'back', marks: pair(14, 207, 7, 4.5, -20) },
+  'thigh-back': { view: 'back', marks: pair(19, 262, 10, 36) },
+  'thigh-back-inner': { view: 'back', marks: pair(12, 262, 5.5, 32) },
+  'thigh-outer': { view: 'back', marks: pair(31, 258, 3.5, 32) },
+  calf: { view: 'back', marks: pair(17, 342, 8.5, 26) },
+  'calf-inner': { view: 'back', marks: pair(13.5, 342, 4, 24) },
+  'calf-outer': { view: 'back', marks: pair(22, 342, 4.5, 24) },
 };
 
-/** 밑그림 실루엣 — cx 중심 */
-function Silhouette({ cx }: { cx: number }) {
-  const fill = '#ececec';
-  const stroke = '#c8c8c8';
-  const p = (d: string) => <path d={d} fill={fill} stroke={stroke} strokeWidth={1.2} strokeLinejoin="round" />;
+/** 실루엣 — 윤곽선 없이 같은 색 도형을 겹쳐 매끈한 단일 실루엣으로 합성 */
+function Silhouette() {
   return (
-    <g transform={`translate(${cx}, 0)`}>
-      <circle cx={0} cy={36} r={19} fill={fill} stroke={stroke} strokeWidth={1.2} />
-      <rect x={-7} y={53} width={14} height={13} rx={4} fill={fill} stroke={stroke} strokeWidth={1.2} />
-      {/* 몸통 */}
-      {p('M-42 74 L42 74 L30 165 L36 208 L-36 208 L-30 165 Z')}
-      {/* 팔 */}
-      {p('M-42 76 L-30 82 L-46 208 L-58 205 Z')}
-      {p('M42 76 L30 82 L46 208 L58 205 Z')}
+    <g fill={BODY_FILL}>
+      {/* 머리·목 */}
+      <ellipse cx={0} cy={30} rx={16} ry={19} />
+      <rect x={-8} y={42} width={16} height={26} rx={6} />
+      {/* 몸통 — 어깨→가슴→허리→골반 */}
+      <path d="M-44 72 C-47 77 -47 84 -46 92 C-44 114 -36 130 -32 146 C-29 160 -30 172 -34 184 C-38 196 -40 206 -38 216 C-36 222 -24 227 0 227 C24 227 36 222 38 216 C40 206 38 196 34 184 C30 172 29 160 32 146 C36 130 44 114 46 92 C47 84 47 77 44 72 C28 62 -28 62 -44 72 Z" />
+      {/* 어깨 둥글림 */}
+      <circle cx={-38} cy={76} r={10} />
+      <circle cx={38} cy={76} r={10} />
+      {/* 팔 — 어깨에서 손목까지 완만히 벌어지는 밴드 */}
+      <path d="M-44 70 C-52 74 -55 86 -56 102 L-60 186 C-60 196 -59 202 -58 208 L-47 208 C-47 200 -47 193 -48 186 L-45 104 C-44 92 -42 80 -38 73 Z" />
+      <path d="M44 70 C52 74 55 86 56 102 L60 186 C60 196 59 202 58 208 L47 208 C47 200 47 193 48 186 L45 104 C44 92 42 80 38 73 Z" />
+      <ellipse cx={-54} cy={216} rx={6.5} ry={9} />
+      <ellipse cx={54} cy={216} rx={6.5} ry={9} />
       {/* 다리 */}
-      {p('M-34 208 L-4 208 L-8 330 L-10 424 L-27 424 L-31 330 Z')}
-      {p('M34 208 L4 208 L8 330 L10 424 L27 424 L31 330 Z')}
+      <path d="M-38 212 C-36 248 -32 276 -29 300 C-30 322 -28 342 -25 362 C-23 378 -22 390 -21 400 L-9 400 C-9 388 -10 374 -11 360 C-13 336 -13 314 -12 298 C-10 272 -7 248 -4 226 C-14 221 -28 218 -38 212 Z" />
+      <path d="M38 212 C36 248 32 276 29 300 C30 322 28 342 25 362 C23 378 22 390 21 400 L9 400 C9 388 10 374 11 360 C13 336 13 314 12 298 C10 272 7 248 4 226 C14 221 28 218 38 212 Z" />
       {/* 발 */}
-      <ellipse cx={-19} cy={430} rx={12} ry={5.5} fill={fill} stroke={stroke} strokeWidth={1.2} />
-      <ellipse cx={19} cy={430} rx={12} ry={5.5} fill={fill} stroke={stroke} strokeWidth={1.2} />
+      <ellipse cx={-16} cy={408} rx={12.5} ry={6.5} />
+      <ellipse cx={16} cy={408} rx={12.5} ry={6.5} />
     </g>
   );
 }
 
-function RegionMarks({
-  cx,
-  view,
-  over,
-  under,
-}: {
-  cx: number;
-  view: 'front' | 'back';
-  over: Set<RegionId>;
-  under: Set<RegionId>;
-}) {
+function Marks({ view, regions, color }: { view: 'front' | 'back'; regions: Set<RegionId>; color: string }) {
   const nodes: ReactNode[] = [];
-  (Object.keys(REGION_SHAPES) as RegionId[]).forEach((id) => {
-    const def = REGION_SHAPES[id];
-    if (def.view !== view) return;
-    const isOver = over.has(id);
-    const isUnder = under.has(id);
-    if (!isOver && !isUnder) return;
-    const fill = isOver && isUnder ? 'url(#bm-split)' : isOver ? OVER_COLOR : UNDER_COLOR;
-    const xs = def.mirror ? [def.s.cx, -def.s.cx] : [def.s.cx];
-    xs.forEach((x, i) => {
-      nodes.push(
-        <ellipse
-          key={`${id}-${i}`}
-          cx={cx + x}
-          cy={def.s.cy}
-          rx={def.s.rx}
-          ry={def.s.ry}
-          fill={fill}
-          opacity={0.6}
-        />
-      );
+  (Object.keys(REGION_MARKS) as RegionId[]).forEach((id) => {
+    const def = REGION_MARKS[id];
+    if (def.view !== view || !regions.has(id)) return;
+    def.marks.forEach((m, i) => {
+      // 흰 테두리 — 세부 부위가 겹칠 때 각 타원이 구분돼 보이도록
+      if (m.kind === 'p') {
+        nodes.push(<path key={`${id}-${i}`} d={m.d} fill={color} fillOpacity={0.72} stroke="#fff" strokeWidth={1.2} />);
+      } else {
+        nodes.push(
+          <ellipse
+            key={`${id}-${i}`}
+            cx={m.x}
+            cy={m.y}
+            rx={m.rx}
+            ry={m.ry}
+            fill={color}
+            fillOpacity={0.72}
+            stroke="#fff"
+            strokeWidth={1.2}
+            transform={m.rot ? `rotate(${m.rot} ${m.x} ${m.y})` : undefined}
+          />
+        );
+      }
     });
   });
   return <>{nodes}</>;
+}
+
+/** 앞·뒤 인체 한 쌍에 단색 마킹 — 패널 1개 */
+function FigurePanel({ regions, color, title, subtitle }: { regions: Set<RegionId>; color: string; title: string; subtitle: string }) {
+  const labels = (Object.keys(REGION_LABELS) as RegionId[])
+    .filter((id) => regions.has(id))
+    .map((id) => REGION_LABELS[id]);
+  return (
+    <div className="rounded-xl p-3" style={{ border: '1px solid #e3e3e3', background: '#fff' }}>
+      <div className="text-sm font-bold" style={{ color }}>
+        <span className="inline-block w-3 h-3 rounded-sm align-[-1px] mr-1.5" style={{ background: color, opacity: 0.8 }} />
+        {title}
+      </div>
+      <div className="text-[11px] mb-1" style={{ color: '#8a8a8a' }}>{subtitle}</div>
+      <svg viewBox="0 0 360 468" role="img" aria-label={`${title} 부위 인체도`} style={{ width: '100%', maxWidth: 330, display: 'block', margin: '0 auto' }}>
+        <g transform="translate(95, 4)">
+          <Silhouette />
+          <Marks view="front" regions={regions} color={color} />
+        </g>
+        <g transform="translate(265, 4)">
+          <Silhouette />
+          <Marks view="back" regions={regions} color={color} />
+        </g>
+        <text x={95} y={448} textAnchor="middle" fontSize={14} fill="#8a8a8a">앞</text>
+        <text x={265} y={448} textAnchor="middle" fontSize={14} fill="#8a8a8a">뒤</text>
+      </svg>
+      <p className="text-xs mt-1.5" style={{ color: '#333' }}>
+        <b style={{ color }}>{labels.join(' · ')}</b>
+      </p>
+    </div>
+  );
 }
 
 export default function BodyMap({
@@ -167,53 +241,32 @@ export default function BodyMap({
   const under = mapToRegions(underactive);
   if (over.size === 0 && under.size === 0) return null;
 
-  const label = (ids: Set<RegionId>) =>
-    (Object.keys(REGION_LABELS) as RegionId[])
-      .filter((id) => ids.has(id))
-      .map((id) => REGION_LABELS[id])
-      .join(' · ');
-
   return (
     <div className="mt-4">
-      <div className="text-sm font-semibold mb-1" style={{ color: '#111' }}>
+      <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
         교정 부위 한눈에 보기 <span className="text-xs font-normal" style={{ color: '#8a8a8a' }}>— 회원 설명용</span>
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-2">
-        <span>
-          <span className="inline-block w-3 h-3 rounded-sm align-[-2px] mr-1" style={{ background: OVER_COLOR, opacity: 0.75 }} />
-          <b style={{ color: OVER_COLOR }}>이완·스트레칭</b> <span style={{ color: '#555' }}>(뭉치고 짧아진 부위)</span>
-        </span>
-        <span>
-          <span className="inline-block w-3 h-3 rounded-sm align-[-2px] mr-1" style={{ background: UNDER_COLOR, opacity: 0.75 }} />
-          <b style={{ color: UNDER_COLOR }}>활성화·강화</b> <span style={{ color: '#555' }}>(약해진 부위)</span>
-        </span>
-      </div>
-      <div className="rounded-xl p-2" style={{ border: '1px solid #e3e3e3', background: '#fcfcfc' }}>
-        <svg viewBox="0 0 400 470" role="img" aria-label="교정 부위 인체도 — 앞·뒤" style={{ width: '100%', maxWidth: 420, display: 'block', margin: '0 auto' }}>
-          <defs>
-            {/* 이완+강화 모두 해당 시 대각 이분할 */}
-            <linearGradient id="bm-split" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="50%" stopColor={OVER_COLOR} />
-              <stop offset="50%" stopColor={UNDER_COLOR} />
-            </linearGradient>
-          </defs>
-          <Silhouette cx={100} />
-          <Silhouette cx={300} />
-          <RegionMarks cx={100} view="front" over={over} under={under} />
-          <RegionMarks cx={300} view="back" over={over} under={under} />
-          <text x={100} y={460} textAnchor="middle" fontSize={13} fill="#8a8a8a">앞</text>
-          <text x={300} y={460} textAnchor="middle" fontSize={13} fill="#8a8a8a">뒤</text>
-        </svg>
-      </div>
-      <div className="text-xs mt-2 space-y-0.5">
+      <div className="grid md:grid-cols-2 gap-3">
         {over.size > 0 && (
-          <p><b style={{ color: OVER_COLOR }}>이완·스트레칭:</b> <span style={{ color: '#333' }}>{label(over)}</span></p>
+          <FigurePanel
+            regions={over}
+            color={OVER_COLOR}
+            title="이완·스트레칭 (풀어주기)"
+            subtitle="뭉치고 짧아져 있는 부위 — 폼롤러·스트레칭으로 풀어주세요"
+          />
         )}
         {under.size > 0 && (
-          <p><b style={{ color: UNDER_COLOR }}>활성화·강화:</b> <span style={{ color: '#333' }}>{label(under)}</span></p>
+          <FigurePanel
+            regions={under}
+            color={UNDER_COLOR}
+            title="활성화·강화 (키워주기)"
+            subtitle="제 역할을 못 하고 있는 부위 — 운동으로 깨워주세요"
+          />
         )}
-        <p style={{ color: '#9a9a9a' }}>표시는 대표 부위 기준의 개략도입니다 — 정확한 근육은 위 목록 참고.</p>
       </div>
+      <p className="text-[11px] mt-1.5" style={{ color: '#9a9a9a' }}>
+        표시는 대표 부위 기준의 개략도입니다 — 정확한 근육 목록은 위 자세·움직임 분석 참고.
+      </p>
     </div>
   );
 }
