@@ -55,6 +55,7 @@ import { MOVEMENT_COMPENSATIONS, POSTURE_ITEM_LABELS } from '@/lib/norms';
 import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthChart';
 import FitnessScoreCard from '@/components/assessment/FitnessScoreCard';
 import NormsTable from '@/components/assessment/NormsTable';
+import BodyMap from '@/components/assessment/BodyMap';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
@@ -193,6 +194,12 @@ export default async function AssessmentViewPage({
     flex: a.clearFlex || 'neg',
   });
   const syndromes = matchPostureSyndromes(a.postureFlags || []);
+  // 인체도 색표시용 — 증후군 + 움직임 보상의 이완/강화 근육 원문 (BodyMap이 부위로 변환)
+  const matchedComps = MOVEMENT_COMPENSATIONS.filter((c) =>
+    (a.ohsaFlags || []).includes(c.key)
+  );
+  const bodyMapOver = [...syndromes.map((s) => s.overactive), ...matchedComps.map((c) => c.overactive)];
+  const bodyMapUnder = [...syndromes.map((s) => s.underactive), ...matchedComps.map((c) => c.underactive)];
 
   // ===== Recommendations =====
   const recs = buildRecommendations({
@@ -710,6 +717,11 @@ export default async function AssessmentViewPage({
           </>
         )}
 
+        {/* 인체도 교정부위 색표시 — 회원 설명용 (트레이너 피드백) */}
+        {(bodyMapOver.length > 0 || bodyMapUnder.length > 0) && (
+          <BodyMap overactive={bodyMapOver} underactive={bodyMapUnder} />
+        )}
+
         {/* 평형성 — 눈뜨고 외발서기 */}
         {balance && (
           <div className="mt-4">
@@ -730,14 +742,16 @@ export default async function AssessmentViewPage({
         {a.postureDrawing && (
           <div className="mt-4">
             <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
+            {/* 스케치가 컨테이너 높이를 결정 — 구버전(그림 영역만)·신버전(하단 여백 포함) 모두
+                배경 그림과 상단 정렬로 정확히 겹침 */}
             <div
               className="rounded-xl overflow-hidden"
-              style={{ position: 'relative', aspectRatio: '1900 / 1076', border: '1px solid #e3e3e3', background: '#f5f5f5' }}
+              style={{ position: 'relative', border: '1px solid #e3e3e3', background: '#fcfcfc' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: 'auto', background: '#f5f5f5' }} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={a.postureDrawing} alt="트레이너 스케치" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src={a.postureDrawing} alt="트레이너 스케치" style={{ position: 'relative', display: 'block', width: '100%', height: 'auto' }} />
             </div>
           </div>
         )}
@@ -818,6 +832,13 @@ export default async function AssessmentViewPage({
               />
             )}
           </div>
+          {/* 채점 기준 병기 — "최고점 1점이 왜 Yellow인지" 설명 (트레이너 피드백) */}
+          <p className="text-[11px] mt-3 pt-2" style={{ color: '#8a8a8a', borderTop: '1px solid #f0f0f0' }}>
+            채점 기준 — 설문: 4문항 중 <b style={{ color: '#555' }}>가장 높은 응답 1개</b>로 판정,
+            0점 Green(징후 없음) · 1점 Yellow(가벼운 징후 — 호흡 재훈련 병행) · 2–3점 Red(기능부전 의심)
+            · FRC: &gt;35초 Green / 26–35초 Yellow / ≤25초 Red · TLC: &gt;60초 Green / 36–60초 Yellow / ≤35초 Red
+            · 종합 = 세 항목 중 가장 나쁜 등급
+          </p>
         </div>
       )}
 
@@ -1119,9 +1140,31 @@ export default async function AssessmentViewPage({
         </div>
       )}
 
-      {/* 연령별 등급 기준표 — 회원 설명용 */}
+      {/* 연령별 등급 기준표 — 회원 설명용, 본인 기록 위치 반전 표시 */}
       <div data-print-section="연령별 기준표">
-        <NormsTable age={age} sex={sex} />
+        <NormsTable
+          age={age}
+          sex={sex}
+          values={{
+            vo2max: vo2 ?? undefined,
+            grip: a.gripR != null && a.gripL != null ? sumGrip : undefined,
+            bp: a.bp1rm != null && w ? a.bp1rm / w : undefined,
+            sq: a.sq1rm != null && w ? a.sq1rm / w : undefined,
+            dl: a.dl1rm != null && w ? a.dl1rm / w : undefined,
+            ohp: a.ohp1rm != null && w ? a.ohp1rm / w : undefined,
+            pc: a.pc1rm != null && w ? a.pc1rm / w : undefined,
+            lp: a.lp1rm != null && w ? a.lp1rm / w : undefined,
+            pushup: a.pushupReps ?? undefined,
+            ymcaBp: a.ymcaBpReps ?? undefined,
+            curlup: a.curlupReps ?? undefined,
+            squatEnd: a.squatReps ?? undefined,
+            pullup: a.pullupReps ?? undefined,
+            balance:
+              a.balanceR != null || a.balanceL != null
+                ? Math.min(...([a.balanceR, a.balanceL].filter((v) => v != null) as number[]))
+                : undefined,
+          }}
+        />
       </div>
 
       {/* Recommendations */}

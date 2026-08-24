@@ -1525,6 +1525,11 @@ function PostureTab({
             <span className="guideline-tag" style={{ marginLeft: 0 }}>심리생리 Psychophysiological</span>
           </div>
           <div className="label mb-2">④ 호흡 설문 (각 0–3)</div>
+          <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
+            채점: 4문항 중 <b style={{ color: '#555' }}>가장 높은 응답 1개</b> 기준 —
+            0점 🟢 Green(징후 없음) · 1점 🟡 Yellow(가벼운 징후 — 호흡 재훈련 병행 권장) ·
+            2–3점 🔴 Red(기능부전 의심)
+          </p>
           <div className="space-y-2">
             {BREATH_QUESTIONS.map((qText, qi) => {
               const answers = state.breathQ ?? [];
