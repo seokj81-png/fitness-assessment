@@ -359,7 +359,14 @@ export default function ReportBuilder({
       // iOS Safari 캔버스 면적 한계(16.7MP) — 시트가 길어지면 배율을 자동 하향 (무음 빈 이미지 방지)
       const area = node.offsetWidth * node.offsetHeight;
       const pixelRatio = Math.min(3, Math.sqrt(16_000_000 / area));
-      const opts = { pixelRatio, backgroundColor: '#ffffff', cacheBust: true };
+      const opts = {
+        pixelRatio,
+        backgroundColor: '#ffffff',
+        cacheBust: true,
+        // 시트의 margin: 0 auto(중앙 정렬)가 캡처 캔버스 안에 포함돼 넓은 화면에서
+        // 내용이 우측으로 밀리고 잘리던 문제 — 클론에서는 여백 제거
+        style: { margin: '0' },
+      };
       // iOS Safari에서 첫 렌더에 이미지가 빠지는 알려진 문제 — 한 번 워밍업 후 재렌더
       await toPng(node, opts);
       const dataUrl = await toPng(node, opts);
