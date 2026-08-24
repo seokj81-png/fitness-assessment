@@ -2081,16 +2081,50 @@ interface TierProps {
 
 function AdvToggle({ tier }: { tier: TierProps }) {
   if (tier.hiddenNames.length === 0) return null;
+  // 펼친 상태 — 이미 내용이 보이므로 차분하게
+  if (tier.open) {
+    return (
+      <button
+        type="button"
+        onClick={tier.toggle}
+        className="w-full mb-4 py-2.5 px-4 rounded-lg text-sm font-semibold text-left transition"
+        style={{ border: '1.5px solid #d6d6d6', color: '#555', background: '#fafafa' }}
+      >
+        ▲ 심화 검사 접기
+      </button>
+    );
+  }
+  // 접힌 상태 — 숨은 검사가 있음을 놓치지 않도록 강조 (트레이너 피드백: 눈에 안 띔)
   return (
     <button
       type="button"
       onClick={tier.toggle}
-      className="w-full mb-4 py-3 px-4 rounded-lg text-sm font-semibold text-left"
-      style={{ border: '1.5px dashed #b9b9b9', color: '#555', background: '#fafafa' }}
+      className="w-full mb-4 py-3 px-4 rounded-xl text-left transition flex flex-wrap items-center gap-2 active:scale-[0.99]"
+      style={{ border: '1.5px solid #111', background: '#fff', boxShadow: '0 1px 5px rgba(0,0,0,0.10)' }}
     >
-      {tier.open
-        ? '▲ 심화 검사 접기'
-        : `▼ 심화 검사 ${tier.hiddenNames.length}개 펼치기 — ${tier.hiddenNames.join(' · ')}`}
+      <span
+        className="inline-flex items-center justify-center rounded-full text-xs font-bold shrink-0"
+        style={{ background: '#111', color: '#fff', minWidth: 26, height: 26, padding: '0 7px' }}
+      >
+        +{tier.hiddenNames.length}
+      </span>
+      <span className="text-sm font-bold shrink-0" style={{ color: '#111' }}>
+        심화 검사 펼치기
+      </span>
+      <span className="flex flex-wrap gap-1.5">
+        {tier.hiddenNames.map((n) => (
+          <span
+            key={n}
+            className="text-[11px] px-2 py-0.5 rounded-full"
+            style={{ background: '#f2f2f2', border: '1px solid #d6d6d6', color: '#333' }}
+          >
+            {n}
+          </span>
+        ))}
+      </span>
+      <span className="ml-auto text-sm font-bold shrink-0" style={{ color: '#111' }}>
+        ▼
+      </span>
     </button>
   );
 }
