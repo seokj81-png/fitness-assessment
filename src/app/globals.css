@@ -226,7 +226,19 @@ hr, .divide-slate-200 > * + * {
 
 @media print {
   html, body { background: white !important; color: black !important; }
-  .card { background: white !important; border-color: #d6d6d6 !important; box-shadow: none; page-break-inside: avoid; }
+  /* 카드는 페이지 사이에서 나뉠 수 있게(카드 통째로 넘기면 반쪽 빈 페이지가 생김) —
+     대신 카드 안의 블록(제목+그림 묶음·표·차트·카드 행)은 잘리지 않게, 카드 제목은 다음 블록과 붙여 둠 */
+  .card { background: white !important; border-color: #d6d6d6 !important; box-shadow: none; break-inside: auto; page-break-inside: auto; }
+  .card > h3 { break-after: avoid; page-break-after: avoid; }
+  /* 격자는 행 사이에서 나뉠 수 있지만 지표 칸·가이드 박스·소견 블록은 통째로 */
+  .card .grid > *, .card .guide-box, .card .space-y-3 > * { break-inside: avoid; page-break-inside: avoid; }
+
+  /* 통째로 유지해야 하는 큰 블록(인체도·스케치·기준표)은 인쇄에서 축소 —
+     남은 공간에 들어가도록 해 반쪽 빈 페이지를 줄임 */
+  .bodymap-panel svg { max-width: 250px !important; }
+  .sketch-print > div:nth-of-type(2) { max-width: 78%; margin-left: auto; margin-right: auto; }
+  .norms-table td, .norms-table th { padding-top: 2px !important; padding-bottom: 2px !important; }
+  .norms-table .mine-label { display: inline !important; margin-left: 6px; }
   nav, .no-print, .action-bar { display: none !important; }
   .print-exclude { display: none !important; } /* 인쇄 항목 선택에서 제외된 섹션 */
 

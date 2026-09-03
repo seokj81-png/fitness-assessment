@@ -247,7 +247,7 @@ function FigurePanel({
     .filter((id) => regions.has(id))
     .map((id) => REGION_LABELS[id] + (both.has(id) ? '※' : ''));
   return (
-    <div className="rounded-xl p-3" style={{ border: '1px solid #e3e3e3', background: '#fff', breakInside: 'avoid' }}>
+    <div className="bodymap-panel rounded-xl p-3" style={{ border: '1px solid #e3e3e3', background: '#fff', breakInside: 'avoid' }}>
       <div className="text-sm font-bold" style={{ color }}>
         <span className="inline-block w-3 h-3 rounded-sm align-[-1px] mr-1.5" style={{ background: color, opacity: 0.8 }} />
         {title}
@@ -292,7 +292,8 @@ export default function BodyMap({
   const both = new Set<RegionId>([...over].filter((id) => under.has(id)));
 
   return (
-    <div className="mt-4">
+    // 인쇄: 제목과 두 패널이 페이지 경계에서 떨어지지 않게 한 덩어리로
+    <div className="mt-4" style={{ breakInside: 'avoid' }}>
       <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
         교정 부위 한눈에 보기 <span className="text-xs font-normal" style={{ color: '#8a8a8a' }}>— 회원 설명용</span>
       </div>

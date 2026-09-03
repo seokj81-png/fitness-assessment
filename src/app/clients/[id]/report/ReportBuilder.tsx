@@ -336,6 +336,32 @@ export default function ReportBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, client.age, client.sex, client.goal, client.experience, client.weight]);
 
+  // ── 측정하지 않은 영역은 리포트에서 제외 (대표 지시) — 근거 측정이 있는 도메인만 표시 ──
+  const measuredDomain = useMemo(() => {
+    const has = (...vals: (number | null | undefined)[]) => vals.some((v) => v != null);
+    const jsonLen = (s: string | null) => {
+      try {
+        const v = s ? (JSON.parse(s) as unknown) : null;
+        return Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0;
+      } catch {
+        return 0;
+      }
+    };
+    return {
+      '유산소': vo2Of(target) != null,
+      '저항 (근력)':
+        has(target.bp1rm, target.sq1rm, target.dl1rm, target.ohp1rm, target.pc1rm, target.lp1rm) ||
+        (target.gripR != null && target.gripL != null),
+      '근지구력': has(target.pushupReps, target.pullupReps, target.curlupReps, target.squatReps, target.plankFront, target.sorensen),
+      '유연성 · 교정': jsonLen(target.postureFlags) > 0 || jsonLen(target.ohsaFlags) > 0 || jsonLen(target.fms) > 0,
+      '평형 (신경운동)': has(target.balanceR, target.balanceL),
+    } as Record<string, boolean>;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, client.age, client.sex, client.weight]);
+  const visibleDomains = program.domains.filter((d) => measuredDomain[d.domain] !== false);
+  const hiddenDomains = program.domains.filter((d) => measuredDomain[d.domain] === false).map((d) => d.domain);
+  const showProgram = includeProgram && visibleDomains.length > 0;
+
   // ── 모바일 미리보기 축소 (시트는 794px 고정, 래퍼에 zoom) ──
   const outerRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -463,9 +489,11 @@ export default function ReportBuilder({
             border-radius: 0 !important;
           }
           .fitt-section { break-before: page; page-break-before: always; padding-top: 4mm; }
-          /* 프로그램 페이지가 꽉 차 푸터가 3쪽으로 밀리지 않게 인쇄에서만 표 압축 */
-          .fitt-section table { font-size: 9.5px !important; }
-          .fitt-section td, .fitt-section th { padding: 3px 6px !important; }
+          /* 프로그램 페이지가 꽉 차 푸터가 3쪽으로 밀리지 않게 인쇄에서만 표 압축
+             (증후군 3개 + OHSA 3개처럼 소견이 많은 회원도 A4 1쪽에 들어가도록) */
+          .fitt-section table { font-size: 9px !important; }
+          .fitt-section td, .fitt-section th { padding: 2px 5px !important; line-height: 1.3 !important; }
+          .fitt-section > div:nth-child(2) { margin-bottom: 3px !important; }
         }
       `,
         }}
@@ -786,17 +814,20 @@ export default function ReportBuilder({
               )}
 
               {/* 권장 운동 프로그램 — FITT-VP (평가 결과 기반 자동 생성) */}
-              {includeProgram && (
+              {showProgram && (
                 <div className="fitt-section" style={{ marginTop: 14 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 800, color: NAVY, marginBottom: 2 }}>
                     권장 운동 프로그램 — FITT-VP
                   </div>
-                  <div style={{ fontSize: 10.5, color: MUTED, marginBottom: 6 }}>{program.basis}</div>
+                  <div style={{ fontSize: 10.5, color: MUTED, marginBottom: 6 }}>
+                    {program.basis}
+                    {hiddenDomains.length > 0 && ` · 미측정 영역(${hiddenDomains.join(', ')})은 표시하지 않음`}
+                  </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, tableLayout: 'fixed' }}>
                     <thead>
                       <tr style={{ background: NAVY, color: '#fff' }}>
                         <th style={{ width: 44, padding: '5px 6px', textAlign: 'left', fontWeight: 700 }}>구분</th>
-                        {program.domains.map((d) => (
+                        {visibleDomains.map((d) => (
                           <th key={d.domain} style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 700 }}>
                             {d.domain}
                           </th>
@@ -828,7 +859,7 @@ export default function ReportBuilder({
                           >
                             {label}
                           </th>
-                          {program.domains.map((d) => (
+                          {visibleDomains.map((d) => (
                             <td
                               key={d.domain}
                               style={{
@@ -884,8 +915,8 @@ export default function ReportBuilder({
                 </div>
               )}
 
-              {/* 푸터 — 프로그램 미포함 시 여기(1쪽 끝), 포함 시 프로그램 섹션 안 */}
-              {!includeProgram && sheetFooter}
+              {/* 푸터 — 프로그램 미포함(또는 표시할 영역 없음) 시 여기(1쪽 끝), 포함 시 프로그램 섹션 안 */}
+              {!showProgram && sheetFooter}
             </div>
           </div>
         </div>

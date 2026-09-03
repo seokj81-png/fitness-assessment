@@ -73,7 +73,8 @@ export default function NormsTable({
   const hasValues = values && Object.values(values).some((v) => v != null);
 
   return (
-    <div className="card">
+    // 인쇄: 제목·설명·표가 한 페이지에 함께 (표 하나가 A4 반 페이지 정도라 통째로 유지 가능)
+    <div className="card" style={{ breakInside: 'avoid' }}>
       <h3 className="font-bold mb-1">
         연령별 등급 기준표{' '}
         <span className="text-sm font-normal" style={{ color: '#8a8a8a' }}>
@@ -97,11 +98,11 @@ export default function NormsTable({
         )}
       </p>
       {/* 모바일: 표가 화면보다 넓어 가로 스크롤됨을 안내 */}
-      <p className="md:hidden text-xs mb-1" style={{ color: '#6e6e6e' }}>
+      <p className="md:hidden print:hidden text-xs mb-1" style={{ color: '#6e6e6e' }}>
         ↔ 표를 옆으로 밀면 전체 등급이 보입니다
       </p>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm" style={{ borderCollapse: 'collapse', minWidth: 560 }}>
+        <table className="norms-table w-full text-sm" style={{ borderCollapse: 'collapse', minWidth: 560 }}>
           <thead>
             <tr className="text-left text-xs" style={{ color: '#8a8a8a', borderBottom: '1.5px solid #d6d6d6' }}>
               <th className="py-1.5 pr-3">검사</th>
@@ -129,7 +130,7 @@ export default function NormsTable({
                   <td className="py-1.5 pr-3 font-semibold" style={{ color: '#111' }}>
                     {t.name} <span className="text-[10px] font-normal" style={{ color: '#9a9a9a' }}>({t.unit})</span>
                     {mine != null && (
-                      <span className="block text-xs font-bold" style={{ color: '#111' }}>
+                      <span className="mine-label block text-xs font-bold" style={{ color: '#111' }}>
                         ▸ 본인 {fMine(mine, t.digits)}
                       </span>
                     )}

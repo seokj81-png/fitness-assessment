@@ -724,7 +724,7 @@ export default async function AssessmentViewPage({
 
         {/* 평형성 — 눈뜨고 외발서기 */}
         {balance && (
-          <div className="mt-4">
+          <div className="mt-4" style={{ breakInside: 'avoid' }}>
             <ResultRow
               label={`평형성 — 외발서기 (우 ${a.balanceR ?? '-'}초 / 좌 ${a.balanceL ?? '-'}초)`}
               result={balance.cls}
@@ -740,7 +740,7 @@ export default async function AssessmentViewPage({
 
         {/* 질적 평가 — 체형 스케치 & 메모 */}
         {a.postureDrawing && (
-          <div className="mt-4">
+          <div className="mt-4 sketch-print" style={{ breakInside: 'avoid' }}>
             <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
             {/* 스케치가 컨테이너 높이를 결정 — 구버전(그림 영역만)·신버전(하단 여백 포함) 모두
                 배경 그림과 상단 정렬로 정확히 겹침 */}
