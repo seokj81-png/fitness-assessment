@@ -746,7 +746,7 @@ export default async function AssessmentViewPage({
                 배경 그림과 상단 정렬로 정확히 겹침 */}
             <div
               className="rounded-xl overflow-hidden"
-              style={{ position: 'relative', border: '1px solid #e3e3e3', background: '#fcfcfc' }}
+              style={{ position: 'relative', border: '1px solid #e3e3e3', background: '#fcfcfc', breakInside: 'avoid' }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/body-posture.png" alt="신체 자세 그림" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: 'auto', background: '#f5f5f5' }} />
@@ -833,8 +833,8 @@ export default async function AssessmentViewPage({
             )}
           </div>
           {/* 채점 기준 병기 — "최고점 1점이 왜 Yellow인지" 설명 (트레이너 피드백) */}
-          <p className="text-[11px] mt-3 pt-2" style={{ color: '#8a8a8a', borderTop: '1px solid #f0f0f0' }}>
-            채점 기준 — 설문: 4문항 중 <b style={{ color: '#555' }}>가장 높은 응답 1개</b>로 판정,
+          <p className="text-xs mt-3 pt-2" style={{ color: '#6e6e6e', borderTop: '1px solid #f0f0f0' }}>
+            채점 기준 — 설문: 4문항 중 <b style={{ color: '#333' }}>가장 높은 응답 1개</b>로 판정,
             0점 Green(징후 없음) · 1점 Yellow(가벼운 징후 — 호흡 재훈련 병행) · 2–3점 Red(기능부전 의심)
             · FRC: &gt;35초 Green / 26–35초 Yellow / ≤25초 Red · TLC: &gt;60초 Green / 36–60초 Yellow / ≤35초 Red
             · 종합 = 세 항목 중 가장 나쁜 등급

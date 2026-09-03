@@ -41,6 +41,8 @@ export default function PostureSketch({ value, onChange }: Props) {
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const panStartRef = useRef<{ clientX: number; clientY: number; panX: number; panY: number } | null>(null);
+  /** 진행 중인 포인터 — 두 번째 손가락(핀치 등)은 무시해 선이 튀거나 팬이 떨리지 않게 */
+  const activePointerRef = useRef<number | null>(null);
   const initialValueRef = useRef(value);
   const [tool, setTool] = useState<Tool>('pen');
   const [canUndo, setCanUndo] = useState(false);
@@ -138,6 +140,8 @@ export default function PostureSketch({ value, onChange }: Props) {
     const ctx = getCtx();
     if (!canvas || !ctx) return;
     e.preventDefault();
+    if (activePointerRef.current != null) return; // 이미 한 손가락이 진행 중
+    activePointerRef.current = e.pointerId;
     canvas.setPointerCapture(e.pointerId);
 
     if (tool === 'pan') {
@@ -165,6 +169,7 @@ export default function PostureSketch({ value, onChange }: Props) {
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerId !== activePointerRef.current) return;
     if (tool === 'pan') {
       const start = panStartRef.current;
       if (!start) return;
@@ -190,6 +195,8 @@ export default function PostureSketch({ value, onChange }: Props) {
   };
 
   const endStroke = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerId !== activePointerRef.current) return;
+    activePointerRef.current = null;
     const canvas = canvasRef.current;
     if (canvas && canvas.hasPointerCapture(e.pointerId)) {
       canvas.releasePointerCapture(e.pointerId);
@@ -231,7 +238,7 @@ export default function PostureSketch({ value, onChange }: Props) {
     opacity: disabled ? 0.4 : 1,
   });
 
-  const buttonClass = 'rounded-md px-3 py-2 text-sm';
+  const buttonClass = 'rounded-md px-3 py-2 text-sm whitespace-nowrap';
 
   return (
     <div>

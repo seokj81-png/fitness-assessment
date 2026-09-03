@@ -1525,8 +1525,8 @@ function PostureTab({
             <span className="guideline-tag" style={{ marginLeft: 0 }}>심리생리 Psychophysiological</span>
           </div>
           <div className="label mb-2">④ 호흡 설문 (각 0–3)</div>
-          <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
-            채점: 4문항 중 <b style={{ color: '#555' }}>가장 높은 응답 1개</b> 기준 —
+          <p className="text-xs mb-2" style={{ color: '#6e6e6e' }}>
+            채점: 4문항 중 <b style={{ color: '#333' }}>가장 높은 응답 1개</b> 기준 —
             0점 🟢 Green(징후 없음) · 1점 🟡 Yellow(가벼운 징후 — 호흡 재훈련 병행 권장) ·
             2–3점 🔴 Red(기능부전 의심)
           </p>
@@ -2087,6 +2087,7 @@ function AdvToggle({ tier }: { tier: TierProps }) {
       <button
         type="button"
         onClick={tier.toggle}
+        aria-expanded={true}
         className="w-full mb-4 py-2.5 px-4 rounded-lg text-sm font-semibold text-left transition"
         style={{ border: '1.5px solid #d6d6d6', color: '#555', background: '#fafafa' }}
       >
@@ -2095,11 +2096,13 @@ function AdvToggle({ tier }: { tier: TierProps }) {
     );
   }
   // 접힌 상태 — 숨은 검사가 있음을 놓치지 않도록 강조 (트레이너 피드백: 눈에 안 띔)
+  // 1행: 배지·제목·▼ / 2행: 검사명 칩 — 좁은 폭에서 ▼가 홀로 밀려나지 않게 행을 고정
   return (
     <button
       type="button"
       onClick={tier.toggle}
-      className="w-full mb-4 py-3 px-4 rounded-xl text-left transition flex flex-wrap items-center gap-2 active:scale-[0.99]"
+      aria-expanded={false}
+      className="w-full mb-4 py-3 px-4 rounded-xl text-left transition flex flex-wrap items-center gap-x-2 gap-y-1.5 active:scale-[0.99]"
       style={{ border: '1.5px solid #111', background: '#fff', boxShadow: '0 1px 5px rgba(0,0,0,0.10)' }}
     >
       <span
@@ -2111,19 +2114,19 @@ function AdvToggle({ tier }: { tier: TierProps }) {
       <span className="text-sm font-bold shrink-0" style={{ color: '#111' }}>
         심화 검사 펼치기
       </span>
-      <span className="flex flex-wrap gap-1.5">
+      <span className="ml-auto text-sm font-bold shrink-0" style={{ color: '#111' }} aria-hidden="true">
+        ▼
+      </span>
+      <span className="basis-full flex flex-wrap gap-1.5">
         {tier.hiddenNames.map((n) => (
           <span
             key={n}
-            className="text-[11px] px-2 py-0.5 rounded-full"
+            className="text-xs px-2 py-0.5 rounded-full"
             style={{ background: '#f2f2f2', border: '1px solid #d6d6d6', color: '#333' }}
           >
             {n}
           </span>
         ))}
-      </span>
-      <span className="ml-auto text-sm font-bold shrink-0" style={{ color: '#111' }}>
-        ▼
       </span>
     </button>
   );
