@@ -65,8 +65,11 @@ export default function NormsTable({
   values?: Partial<Record<NormTestKey, number>>;
 }) {
   const g = ag(age);
-  // 정수 자리 항목도 반올림 — 본인 값이 43.2857… 로 찍히지 않게
   const f = (v: number, d: number) => (d ? v.toFixed(d) : String(Math.round(v)));
+  // 본인 값: 정수면 그대로, 소수면 1자리(43.3) — 반전 칸은 원값으로 판정하므로
+  // 46.3을 '46'으로 반올림하면 '~46' 칸 대신 '~50' 칸이 반전돼 모순처럼 보임
+  const fMine = (v: number, d: number) =>
+    d ? v.toFixed(d) : Number.isInteger(v) ? String(v) : v.toFixed(1);
   const hasValues = values && Object.values(values).some((v) => v != null);
 
   return (
@@ -94,7 +97,7 @@ export default function NormsTable({
         )}
       </p>
       {/* 모바일: 표가 화면보다 넓어 가로 스크롤됨을 안내 */}
-      <p className="md:hidden text-xs mb-1" style={{ color: '#8a8a8a' }}>
+      <p className="md:hidden text-xs mb-1" style={{ color: '#6e6e6e' }}>
         ↔ 표를 옆으로 밀면 전체 등급이 보입니다
       </p>
       <div className="overflow-x-auto">
@@ -127,7 +130,7 @@ export default function NormsTable({
                     {t.name} <span className="text-[10px] font-normal" style={{ color: '#9a9a9a' }}>({t.unit})</span>
                     {mine != null && (
                       <span className="block text-xs font-bold" style={{ color: '#111' }}>
-                        ▸ 본인 {f(mine, t.digits)}
+                        ▸ 본인 {fMine(mine, t.digits)}
                       </span>
                     )}
                   </td>

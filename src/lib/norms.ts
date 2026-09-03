@@ -299,7 +299,7 @@ export const MOVEMENT_COMPENSATIONS: MovementCompensation[] = [
   {
     key: 'oh_pelvis_ant', label: 'OHSA 골반 전방 경사',
     overactive: '고관절 굴곡근군, 척추기립근',
-    underactive: '대둔근, 햄스트링, 복근군(심부 코어)',
+    underactive: '대둔근, 햄스트링, 심부 코어 안정근',
   },
   {
     key: 'oh_pelvis_post', label: 'OHSA 골반 후방 경사',

@@ -43,6 +43,8 @@ export default function PostureSketch({ value, onChange }: Props) {
   const panStartRef = useRef<{ clientX: number; clientY: number; panX: number; panY: number } | null>(null);
   /** 진행 중인 포인터 — 두 번째 손가락(핀치 등)은 무시해 선이 튀거나 팬이 떨리지 않게 */
   const activePointerRef = useRef<number | null>(null);
+  /** 제스처 시작 시점의 도구 — 스트로크 도중 다른 손가락으로 도구를 바꿔도 이 스트로크는 일관되게 처리 */
+  const gestureToolRef = useRef<Tool>('pen');
   const initialValueRef = useRef(value);
   const [tool, setTool] = useState<Tool>('pen');
   const [canUndo, setCanUndo] = useState(false);
@@ -140,9 +142,19 @@ export default function PostureSketch({ value, onChange }: Props) {
     const ctx = getCtx();
     if (!canvas || !ctx) return;
     e.preventDefault();
-    if (activePointerRef.current != null) return; // 이미 한 손가락이 진행 중
+    // 이미 한 손가락이 진행 중이면 무시. 단, 종료 이벤트 누락으로 캡처가 풀린 stale 상태면
+    // 새 제스처가 이어받아 영구 잠김을 막는다
+    if (activePointerRef.current != null && canvas.hasPointerCapture(activePointerRef.current)) return;
     activePointerRef.current = e.pointerId;
-    canvas.setPointerCapture(e.pointerId);
+    gestureToolRef.current = tool;
+    drawingRef.current = false;
+    lastPointRef.current = null;
+    panStartRef.current = null;
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      /* 무효 pointerId — 캡처 없이 진행 */
+    }
 
     if (tool === 'pan') {
       panStartRef.current = { clientX: e.clientX, clientY: e.clientY, panX: pan.x, panY: pan.y };
@@ -170,7 +182,7 @@ export default function PostureSketch({ value, onChange }: Props) {
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     if (e.pointerId !== activePointerRef.current) return;
-    if (tool === 'pan') {
+    if (gestureToolRef.current === 'pan') {
       const start = panStartRef.current;
       if (!start) return;
       setPan(
@@ -201,7 +213,7 @@ export default function PostureSketch({ value, onChange }: Props) {
     if (canvas && canvas.hasPointerCapture(e.pointerId)) {
       canvas.releasePointerCapture(e.pointerId);
     }
-    if (tool === 'pan') {
+    if (gestureToolRef.current === 'pan') {
       panStartRef.current = null;
       return;
     }
@@ -274,7 +286,7 @@ export default function PostureSketch({ value, onChange }: Props) {
           🗑️ 전체 지우기
         </button>
         {/* 확대·이동 — 세밀한 표시용 (트레이너 피드백) */}
-        <span className="inline-flex items-center gap-1.5 ml-auto">
+        <span className="flex flex-wrap items-center gap-1.5 ml-auto">
           <button
             type="button"
             className={buttonClass}

@@ -115,7 +115,7 @@ const pair = (x: number, y: number, rx: number, ry: number, rot = 0): Mark[] => 
 
 const REGION_MARKS: Record<RegionId, { view: 'front' | 'back'; marks: Mark[] }> = {
   // ── 앞 ──
-  'neck-front': { view: 'front', marks: pair(6, 55, 3.5, 8, 15) },
+  'neck-front': { view: 'front', marks: pair(5.5, 55, 3.2, 7.5, 10) },
   'neck-deep': { view: 'front', marks: [{ kind: 'e', x: 0, y: 58, rx: 4.5, ry: 7 }] },
   'shoulder-front': { view: 'front', marks: pair(39, 81, 8.5, 9.5) },
   chest: { view: 'front', marks: pair(18, 93, 15, 12, 10) },
@@ -125,15 +125,15 @@ const REGION_MARKS: Record<RegionId, { view: 'front' | 'back'; marks: Mark[] }> 
   'hip-front': { view: 'front', marks: pair(13, 200, 8, 11, 25) },
   'hip-front-outer': { view: 'front', marks: pair(31, 197, 6, 11) },
   'thigh-front': { view: 'front', marks: pair(20, 260, 10, 36) },
-  'thigh-front-inner': { view: 'front', marks: pair(14, 278, 4.5, 21) },
+  'thigh-front-inner': { view: 'front', marks: pair(14.5, 278, 4, 21) },
   'thigh-front-outer': { view: 'front', marks: pair(27, 255, 5.5, 30) },
-  'thigh-inner': { view: 'front', marks: pair(10, 248, 4.5, 25) },
+  'thigh-inner': { view: 'front', marks: pair(11, 250, 4, 22) },
   shin: { view: 'front', marks: pair(18, 352, 5.5, 30) },
   // ── 뒤 ──
   'neck-back': {
     view: 'back',
     // 상부승모근 — 목에서 양쪽 어깨로 퍼지는 쐐기 (실루엣의 목→어깨 경사 위에 놓임)
-    marks: [{ kind: 'p', d: 'M-8 51 Q0 47 8 51 L36 78 Q18 70 0 68 Q-18 70 -36 78 Z' }],
+    marks: [{ kind: 'p', d: 'M-9 56 Q0 52 9 56 L36 78 Q18 70 0 68 Q-18 70 -36 78 Z' }],
   },
   'shoulder-back': { view: 'back', marks: pair(39, 83, 9, 10) },
   'upper-back': { view: 'back', marks: [{ kind: 'e', x: 0, y: 102, rx: 13, ry: 22 }] },
@@ -143,11 +143,11 @@ const REGION_MARKS: Record<RegionId, { view: 'front' | 'back'; marks: Mark[] }> 
   glutes: { view: 'back', marks: pair(16, 211, 14, 13) },
   'glute-deep': { view: 'back', marks: pair(14, 207, 7, 4.5, -20) },
   'thigh-back': { view: 'back', marks: pair(19, 262, 10, 36) },
-  'thigh-back-inner': { view: 'back', marks: pair(13, 262, 4.5, 30) },
+  'thigh-back-inner': { view: 'back', marks: pair(13.5, 262, 4, 30) },
   'thigh-outer': { view: 'back', marks: pair(30, 256, 3, 28) },
-  'knee-back': { view: 'back', marks: pair(17, 302, 6.5, 6) },
-  calf: { view: 'back', marks: pair(18, 342, 7, 26) },
-  'calf-inner': { view: 'back', marks: pair(15, 342, 3.5, 23) },
+  'knee-back': { view: 'back', marks: pair(18.5, 302, 5.5, 5.5) },
+  calf: { view: 'back', marks: pair(19, 342, 6.5, 26) },
+  'calf-inner': { view: 'back', marks: pair(16, 342, 3.2, 23) },
   'calf-outer': { view: 'back', marks: pair(22, 342, 4.5, 24) },
 };
 

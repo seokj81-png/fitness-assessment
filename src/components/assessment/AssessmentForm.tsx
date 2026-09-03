@@ -2091,7 +2091,7 @@ function AdvToggle({ tier }: { tier: TierProps }) {
         className="w-full mb-4 py-2.5 px-4 rounded-lg text-sm font-semibold text-left transition"
         style={{ border: '1.5px solid #d6d6d6', color: '#555', background: '#fafafa' }}
       >
-        ▲ 심화 검사 접기
+        <span aria-hidden="true">▲</span> 심화 검사 접기
       </button>
     );
   }
