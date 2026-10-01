@@ -43,6 +43,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  await prisma.assessment.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await prisma.assessment.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    const code = (e as { code?: string } | null)?.code;
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[DELETE /api/assessments]', code, msg);
+    if (code === 'P2025') {
+      return NextResponse.json({ error: '이미 삭제된 평가입니다.', code }, { status: 404 });
+    }
+    return NextResponse.json({ error: msg, code }, { status: 500 });
+  }
 }
