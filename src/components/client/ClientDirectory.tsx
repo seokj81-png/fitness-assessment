@@ -93,7 +93,7 @@ export default function ClientDirectory({ rows }: { rows: ClientRow[] }) {
           </div>
         )}
         <div className="text-xs mt-2" style={{ color: '#8a8a8a' }}>
-          {filtered.length}명 / 전체 {rows.length}명
+          {filtered.length}명 / 전체 {rows.length}명 · 최근 측정순 (평가 기록 없는 회원은 뒤)
         </div>
       </div>
 

@@ -26,6 +26,15 @@ export default async function HomePage() {
     lastDate: c.assessments[0] ? c.assessments[0].date.toISOString() : null,
   }));
 
+  // 최근 측정순 (대표 요청) — 측정일이 최신인 회원이 앞, 평가가 없는 회원은 뒤.
+  // 같은 날짜·미측정끼리는 DB 순서(회원 정보 최근 수정순)를 유지 (안정 정렬).
+  rows.sort((a, b) => {
+    if (a.lastDate && b.lastDate) return a.lastDate < b.lastDate ? 1 : a.lastDate > b.lastDate ? -1 : 0;
+    if (a.lastDate) return -1;
+    if (b.lastDate) return 1;
+    return 0;
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
