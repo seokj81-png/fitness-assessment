@@ -1,12 +1,24 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import FontSizeToggle from '@/components/ui/FontSizeToggle';
+import AppInstall from '@/components/ui/AppInstall';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: '파프짐 체력 평가 시스템 | Comprehensive Fitness Assessment',
   description:
     '운동 프로그램 설계를 위한 사전 평가 — ACSM · NSCA · NASM · FMS 가이드라인 기반',
+  // 앱 설치(PWA): 크롬 '앱 설치'·안드로이드 홈 화면·아이폰 '홈 화면에 추가'
+  applicationName: '파프짐 체력평가',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, title: '파프짐 체력평가', statusBarStyle: 'black' },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
+  },
 };
 
 // 모바일 핀치 축소 허용 (최소 50%) — 플로어에서 화면 전체 보기용
@@ -16,6 +28,7 @@ export const viewport: Viewport = {
   minimumScale: 0.5,
   maximumScale: 5,
   userScalable: true,
+  themeColor: '#101010', // 설치된 앱의 창 제목 표시줄·안드로이드 상단바 색 (헤더와 동일)
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img
                 src="/pafgym-logo.png"
                 alt="PAFGYM 로고"
+                width={44}
+                height={44}
                 className="w-10 h-10 md:w-11 md:h-11 rounded"
                 style={{ border: '1px solid rgba(255,255,255,0.25)' }}
               />
@@ -39,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </Link>
             <nav className="flex gap-2 text-sm no-print items-center flex-wrap">
+              <AppInstall />
               <FontSizeToggle />
               <Link href="/" className="px-3.5 py-2 rounded-md border border-white/30 hover:border-white text-white">
                 회원님 목록
