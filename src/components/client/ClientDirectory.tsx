@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { hangulIncludes } from '@/lib/hangul';
 
 export interface ClientRow {
   id: string;
@@ -43,11 +44,8 @@ export default function ClientDirectory({ rows }: { rows: ClientRow[] }) {
       if (branch === '미지정' && r.branch) return false;
       if (branch !== '전체' && branch !== '미지정' && r.branch !== branch) return false;
       if (trainer !== '전체' && r.trainer !== trainer) return false;
-      if (q) {
-        const needle = q.toLowerCase();
-        const hay = `${r.name} ${r.trainer ?? ''}`.toLowerCase();
-        if (!hay.includes(needle)) return false;
-      }
+      // 이름·트레이너 검색 — 초성(ㅈㅂㅈ → 정범진)·섞어 쓰기(정ㅂㅈ)·입력 중 글자(정버)도 맞춤
+      if (q && !hangulIncludes(`${r.name} ${r.trainer ?? ''}`, q)) return false;
       return true;
     });
   }, [rows, q, branch, trainer]);
@@ -59,7 +57,7 @@ export default function ClientDirectory({ rows }: { rows: ClientRow[] }) {
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           <input
             className="input md:max-w-xs"
-            placeholder="🔍 이름·트레이너 검색"
+            placeholder="🔍 이름·트레이너 검색 (초성 가능)"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
