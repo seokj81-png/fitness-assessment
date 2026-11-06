@@ -56,6 +56,8 @@ import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthCha
 import FitnessScoreCard from '@/components/assessment/FitnessScoreCard';
 import NormsTable from '@/components/assessment/NormsTable';
 import BodyMap from '@/components/assessment/BodyMap';
+import SeniorResults from '@/components/assessment/SeniorResults';
+import { hasSenior } from '@/lib/senior';
 import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
@@ -1137,6 +1139,24 @@ export default async function AssessmentViewPage({
               <ul>{enGuide.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 시니어 평가 — SFT 7종 정상 범위 비교 + 근육 건강 선별 (근감소증 진료지침 기준값 비교) */}
+      {hasSenior(a.senior) && (
+        <div className="card" data-print-section="시니어 평가" id="sec-senior">
+          <h3 className="font-bold mb-3">
+            시니어 평가 <span className="guideline-tag tag-acsm">SFT · 근감소증 진료지침</span>
+          </h3>
+          <SeniorResults
+            senior={a.senior}
+            age={age}
+            sex={sex}
+            heightCm={h}
+            weightKg={w}
+            gripR={a.gripR}
+            gripL={a.gripL}
+          />
         </div>
       )}
 

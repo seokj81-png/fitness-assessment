@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import { niceDomain } from '@/lib/chart-domain';
 
 export interface InbodyRow {
   id: string;
@@ -165,6 +166,8 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                   .filter((e) => e[m.key] != null)
                   .map((e) => ({ d: fmtDate(e.date), v: e[m.key] as number }));
                 if (data.length < 2) return null;
+                // 세로축은 측정값 범위에 맞춤 (체중 0.1kg 같은 작은 차이는 과장하지 않게 최소 폭 보장)
+                const nd = niceDomain(data.map((x) => x.v), { lower: 0 });
                 return (
                   <div key={m.key} className="rounded-lg p-3" style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}>
                     <div className="text-xs font-semibold mb-1" style={{ color: '#111' }}>{m.label} ({m.unit})</div>
@@ -172,7 +175,7 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                       <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
                         <CartesianGrid stroke="#e9e9e9" strokeDasharray="3 3" />
                         <XAxis dataKey="d" tick={{ fontSize: 10, fill: '#8a8a8a' }} stroke="#c4c4c4" />
-                        <YAxis tick={{ fontSize: 10, fill: '#8a8a8a' }} stroke="#c4c4c4" domain={['auto', 'auto']} />
+                        <YAxis tick={{ fontSize: 10, fill: '#8a8a8a' }} stroke="#c4c4c4" domain={nd ? nd.domain : ['auto', 'auto']} ticks={nd?.ticks} allowDataOverflow />
                         <Tooltip
                           contentStyle={{ background: '#fff', border: '1px solid #d6d6d6', borderRadius: 8, fontSize: 12 }}
                           formatter={(v) => [`${v} ${m.unit}`, m.label]}

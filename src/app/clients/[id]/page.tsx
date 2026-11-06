@@ -186,6 +186,8 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 function FmsBadge({ raw }: { raw: string }) {
   try {
     const fms = JSON.parse(raw) as Record<string, number>;
+    // FMS 미실시(빈 {})를 '0/21'로 보이지 않게 — 입력된 점수가 하나도 없으면 배지 생략
+    if (!fms || Object.values(fms).every((v) => v == null)) return null;
     const bilateral = ['hs', 'lu', 'sm', 'aslr', 'rs'];
     const total =
       (fms['dsq'] ?? 0) +

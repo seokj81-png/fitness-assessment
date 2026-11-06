@@ -20,6 +20,7 @@ import {
   PUSHUP_NORMS,
 } from '@/lib/norms';
 import { ageGroup } from '@/lib/calculations';
+import { niceDomain } from '@/lib/chart-domain';
 
 interface AssessmentRow {
   id: string;
@@ -46,6 +47,8 @@ function calcFmsTotal(raw: string | null): number | null {
   if (!raw) return null;
   try {
     const fms = JSON.parse(raw) as Record<string, number>;
+    // FMS 미실시(빈 {})는 0점이 아니라 '없음' — 그래프에 0이 찍히지 않게
+    if (!fms || Object.values(fms).every((v) => v == null)) return null;
     const clamp = (v: number | undefined) =>
       v !== undefined ? Math.max(0, Math.min(3, Math.round(v))) : undefined;
     const nonBilateral = ['dsq', 'tsp'];
@@ -110,7 +113,7 @@ interface ChartConfig {
   label: string;
   color: string;
   unit: string;
-  domain?: [number | 'auto', number | 'auto'];
+  bounds?: [number | undefined, number | undefined]; // 축 하한·상한(점수형 지표) — 세로축은 측정값에 맞춰 자동
   refLine?: { value: number; label: string; color: string }[];
   dir?: 'up' | 'down' | 'neutral'; // 개선 방향 (up=클수록 좋음) — 변화 배지 색상용
 }
@@ -123,7 +126,17 @@ function SingleChart({
   config: ChartConfig;
   data: DataPoint[];
 }) {
-  const { key, label, color, unit, domain, refLine, dir } = config;
+  const { key, label, color, unit, bounds, refLine, dir } = config;
+  // 세로축: 측정값 범위에 맞춰 좁힘. 기준선은 범위 안에 들어올 때만 선으로, 밖이면 아래 글자로 (축이 넓어져 변화가 묻히지 않게)
+  const nd = niceDomain(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data.map((d) => (d as any)[key] as number | null),
+    { lower: bounds?.[0] ?? 0, upper: bounds?.[1] }
+  );
+  const domain: [number | 'auto', number | 'auto'] = nd ? nd.domain : ['auto', 'auto'];
+  const inRange = (v: number) => !nd || (v >= nd.domain[0] && v <= nd.domain[1]);
+  const refsIn = (refLine ?? []).filter((r) => inRange(r.value));
+  const refsOut = (refLine ?? []).filter((r) => !inRange(r.value));
   const [activeY, setActiveY] = useState<number | null>(null);
 
   // 첫 측정 → 최근 측정 변화량·변화율
@@ -204,6 +217,8 @@ function SingleChart({
           />
           <YAxis
             domain={domain}
+            ticks={nd?.ticks}
+            allowDataOverflow
             tick={{ fontSize: 11, fill: '#555' }}
             tickLine={false}
             axisLine={false}
@@ -220,14 +235,14 @@ function SingleChart({
           />
 
           {/* Static reference lines */}
-          {refLine?.map((r) => (
+          {refsIn.map((r) => (
             <ReferenceLine
               key={r.value}
               y={r.value}
               stroke={r.color}
               strokeDasharray="4 4"
               strokeWidth={1}
-              ifOverflow="extendDomain"
+              ifOverflow="discard"
               label={{
                 value: r.label,
                 position: 'insideTopRight',
@@ -301,6 +316,14 @@ function SingleChart({
           />
         </LineChart>
       </ResponsiveContainer>
+      {refsOut.length > 0 && nd && (
+        <div className="text-[10px] mt-1 tabular-nums" style={{ color: '#8a8a8a' }}>
+          기준선(그래프 범위 밖):{' '}
+          {refsOut
+            .map((r) => `${r.label} ${r.value > nd.domain[1] ? '↑' : '↓'}`)
+            .join(' · ')}
+        </div>
+      )}
     </div>
   );
 }
@@ -361,7 +384,6 @@ export default function TrendCharts({
       label: '① 안정시 심박수 (bpm)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: [
         { value: 60, label: '정상 하한 60', color: GRAY },
         { value: 100, label: '정상 상한 100', color: GRAY },
@@ -373,12 +395,12 @@ export default function TrendCharts({
       label: '② BMI',
       color: '#111',
       unit: '',
-      domain: [14, 38] as [number, number],
+      bounds: [10, 50],
       refLine: [
-        { value: 18.5, label: '저체중', color: '#9a9a9a' },
-        { value: 23, label: '정상', color: '#9a9a9a' },
-        { value: 25, label: '과체중', color: '#9a9a9a' },
-        { value: 30, label: '비만', color: '#9a9a9a' },
+        { value: 18.5, label: '저체중 경계 18.5', color: '#9a9a9a' },
+        { value: 23, label: '과체중 시작 23', color: '#9a9a9a' },
+        { value: 25, label: '비만 시작 25', color: '#9a9a9a' },
+        { value: 30, label: '비만 2단계 30', color: '#9a9a9a' },
       ],
       dir: 'neutral' as const,
     },
@@ -387,7 +409,6 @@ export default function TrendCharts({
       label: '② 체지방률 (%)',
       color: '#111',
       unit: '%',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: sex === 'M'
         ? [
             { value: 19, label: '양호 상한 19', color: GRAY },
@@ -404,8 +425,8 @@ export default function TrendCharts({
       label: '④ FMS 총점 (/21)',
       color: '#111',
       unit: '',
-      domain: [0, 21] as [number, number],
-      refLine: [{ value: 14, label: '부상위험', color: '#9a9a9a' }],
+      bounds: [0, 21],
+      refLine: [{ value: 14, label: '부상위험 14', color: '#9a9a9a' }],
       dir: 'up' as const,
     },
     data.some((d) => d.vo2max != null) && {
@@ -413,7 +434,6 @@ export default function TrendCharts({
       label: '⑤ VO₂max (mL/kg/min)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: [
         { value: vo2Row[1], label: `평균 하한 ${vo2Row[1]}`, color: GRAY },
         { value: vo2Row[3], label: `우수 진입 ${vo2Row[3]}`, color: GRAY },
@@ -425,7 +445,6 @@ export default function TrendCharts({
       label: '⑥ 악력 평균 (kg)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: [
         { value: Math.round(gripRow[1] / 2), label: `평균 하한 ${Math.round(gripRow[1] / 2)}`, color: GRAY },
         { value: Math.round(gripRow[3] / 2), label: `우수 진입 ${Math.round(gripRow[3] / 2)}`, color: GRAY },
@@ -437,7 +456,6 @@ export default function TrendCharts({
       label: '⑥ 벤치프레스 1RM (kg)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: weight
         ? [
             { value: Math.round(bpRow[1] * weight), label: `평균 하한 ${Math.round(bpRow[1] * weight)}`, color: GRAY },
@@ -451,7 +469,6 @@ export default function TrendCharts({
       label: '⑥ 스쿼트 1RM (kg)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: weight
         ? [
             { value: Math.round(sqRow[1] * weight), label: `평균 하한 ${Math.round(sqRow[1] * weight)}`, color: GRAY },
@@ -465,7 +482,6 @@ export default function TrendCharts({
       label: '⑦ 푸시업 (회)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: [
         { value: puRow[1], label: `평균 하한 ${puRow[1]}`, color: GRAY },
         { value: puRow[3], label: `우수 진입 ${puRow[3]}`, color: GRAY },
@@ -477,7 +493,6 @@ export default function TrendCharts({
       label: '⑦ 플랭크 (초)',
       color: '#111',
       unit: '',
-      domain: ['auto', 'auto'] as ['auto', 'auto'],
       refLine: [{ value: sex === 'M' ? 72 : 40, label: `McGill 기준 ${sex === 'M' ? 72 : 40}`, color: GRAY }],
       dir: 'up' as const,
     },

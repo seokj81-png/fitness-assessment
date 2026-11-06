@@ -58,6 +58,7 @@ import PostureSketch from './PostureSketch';
 import TrendCharts from './TrendCharts';
 import FitnessScoreCard from './FitnessScoreCard';
 import NormsTable from './NormsTable';
+import SeniorTab from './SeniorTab';
 
 interface ClientInfo {
   id: string;
@@ -87,6 +88,7 @@ type Tab =
   | 'endurance'
   | 'posture'
   | 'movement'
+  | 'senior'
   | 'summary';
 
 const TABS: { id: Tab; label: string }[] = [
@@ -98,7 +100,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'cardio', label: '⑤ 심폐지구력' },
   { id: 'strength', label: '⑥ 근력' },
   { id: 'endurance', label: '⑦ 근지구력' },
-  { id: 'summary', label: '⑧ 종합' },
+  { id: 'senior', label: '⑧ 시니어' },
+  { id: 'summary', label: '⑨ 종합' },
 ];
 
 type FormState = Partial<AssessmentInput> & {
@@ -186,6 +189,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     fmsComments: (existing as any)?.fmsComments ?? {},
     ohsaFlags: existing?.ohsaFlags ?? [],
     rom: existing?.rom ?? {},
+    senior: existing?.senior ?? {},
   }));
 
   // 계산에 쓰는 신장·체중은 폼 입력값 우선(없으면 회원 프로필)
@@ -237,7 +241,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
       'postureFlags','postureMemo','postureDrawing','posturePhotos','balanceR','balanceL','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
-      'notes',
+      'senior','notes',
     ]);
     const payload: Record<string, unknown> = { clientId: client.id };
     for (const [k, v] of Object.entries(state)) {
@@ -478,6 +482,19 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       )}
       {tab === 'movement' && (
         <MovementTab state={state} update={update} computed={computed} tier={tierFor('movement')} />
+      )}
+      {tab === 'senior' && (
+        <SeniorTab
+          senior={state.senior ?? {}}
+          onChange={(patch) => update('senior', (prev) => ({ ...(prev ?? {}), ...patch }))}
+          age={age}
+          sex={sex}
+          heightCm={height}
+          weightKg={weight}
+          gripR={state.gripR}
+          gripL={state.gripL}
+          onGrip={(k, v) => update(k, v)}
+        />
       )}
       {tab === 'summary' && (
         <SummaryTab client={client} age={age} state={state} computed={computed} update={update} />
@@ -2144,7 +2161,8 @@ function TocTab({ goal, goTab }: { goal?: string | null; goTab: (t: Tab) => void
     { id: 'cardio', no: '⑤', title: '심폐지구력', desc: '5분 달리기 · VO₂max' },
     { id: 'strength', no: '⑥', title: '근력', desc: '악력 · 1RM' },
     { id: 'endurance', no: '⑦', title: '근지구력', desc: '푸시업 · 스쿼트 · 플랭크' },
-    { id: 'summary', no: '⑧', title: '종합', desc: '요약 · 처방 방향 · 저장' },
+    { id: 'senior', no: '⑧', title: '시니어', desc: '시니어 체력 7종 · 근감소증 선별 (60세+)' },
+    { id: 'summary', no: '⑨', title: '종합', desc: '요약 · 처방 방향 · 저장' },
   ];
   return (
     <div>

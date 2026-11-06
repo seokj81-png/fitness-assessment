@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toPng } from 'html-to-image';
 import { allVo2Estimates, calcFMS, classifyVO2max, breathScreen } from '@/lib/calculations';
+import { parseSenior } from '@/lib/senior';
 import { buildFittProgram } from '@/lib/fitt';
 import { printPage } from '@/lib/browser';
 import type { Sex } from '@/lib/types';
@@ -60,6 +61,7 @@ export interface ReportAssessment {
   clearSh: string | null;
   clearExt: string | null;
   clearFlex: string | null;
+  senior: string | null; // 시니어 평가 JSON (lib/senior.ts)
 }
 
 interface ClientInfo {
@@ -95,6 +97,7 @@ interface MetricDef {
   unit: string;
   dir: Dir;
   pp?: boolean; // 변화를 %p로 표기 (체지방률)
+  noPct?: boolean; // 0을 가로지르는 값(± cm) — 변화율(%) 표시 안 함
   get: (a: ReportAssessment) => number | null;
 }
 
@@ -206,6 +209,17 @@ export default function ReportBuilder({
             : a.balanceR ?? a.balanceL,
       },
       { key: 'fms', label: 'FMS 움직임 점수 (21점)', unit: '점', dir: 'up', get: fmsTotal },
+      // 시니어 평가 — 측정한 회원만 행이 생김
+      { key: 'sChair30', label: '30초 의자 일어서기', unit: '회', dir: 'up', get: (a) => parseSenior(a.senior).chair30 ?? null },
+      { key: 'sArmCurl', label: '30초 덤벨 팔 굽히기', unit: '회', dir: 'up', get: (a) => parseSenior(a.senior).armCurl ?? null },
+      { key: 'sWalk6', label: '6분 걷기', unit: 'm', dir: 'up', get: (a) => parseSenior(a.senior).walk6 ?? null },
+      { key: 'sStep2', label: '2분 제자리 걷기', unit: '회', dir: 'up', get: (a) => parseSenior(a.senior).step2 ?? null },
+      { key: 'sSitReach', label: '의자 앉아 앞으로 굽히기', unit: 'cm', dir: 'up', noPct: true, get: (a) => parseSenior(a.senior).sitReach ?? null },
+      { key: 'sBackScratch', label: '등 뒤에서 손 닿기', unit: 'cm', dir: 'up', noPct: true, get: (a) => parseSenior(a.senior).backScratch ?? null },
+      { key: 'sUpGo', label: '2.44m 일어나 걸어갔다 오기', unit: '초', dir: 'down', get: (a) => parseSenior(a.senior).upGo ?? null },
+      // 보행 속도(m/s)는 표의 소수 첫째 자리 반올림으로 1.0 기준 근처가 뭉개져 결과 페이지에서만 표시
+      { key: 'sChair5', label: '5회 의자 일어서기', unit: '초', dir: 'down', get: (a) => parseSenior(a.senior).chair5 ?? null },
+      { key: 'sCalf', label: '종아리 둘레', unit: 'cm', dir: 'up', get: (a) => parseSenior(a.senior).calf ?? null },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [client.age, client.sex, client.weight]
@@ -228,7 +242,7 @@ export default function ReportBuilder({
       .filter((r) => r.m.dir !== 'neutral' && r.prev != null && r.cur != null)
       .map((r) => {
         const d = (r.cur as number) - (r.prev as number);
-        const pct = r.prev !== 0 ? (d / Math.abs(r.prev as number)) * 100 : null;
+        const pct = r.prev !== 0 && !r.m.noPct ? (d / Math.abs(r.prev as number)) * 100 : null;
         const improved = r.m.dir === 'up' ? d > 0 : d < 0;
         return { r, d, pct, improved };
       })
@@ -749,7 +763,7 @@ export default function ReportBuilder({
                               : d == null || d === 0
                                 ? '—'
                                 : `${d > 0 ? '▲' : '▼'} ${fmtN(Math.abs(d))}${r.m.pp ? '%p' : r.m.unit}` +
-                                  (pct != null && !r.m.pp ? ` (${d > 0 ? '+' : '−'}${Math.abs(pct).toFixed(0)}%)` : '')}
+                                  (pct != null && !r.m.pp && !r.m.noPct ? ` (${d > 0 ? '+' : '−'}${Math.abs(pct).toFixed(0)}%)` : '')}
                           </td>
                         )}
                       </tr>

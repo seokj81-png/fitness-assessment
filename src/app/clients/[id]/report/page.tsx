@@ -73,6 +73,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
     clearSh: a.clearSh,
     clearExt: a.clearExt,
     clearFlex: a.clearFlex,
+    senior: a.senior,
   }));
 
   const age = fullAge(client.dob);

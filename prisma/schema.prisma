@@ -142,6 +142,9 @@ model Assessment {
   // FMS per-test comments (JSON: Record<string,string>)
   fmsComments  String?
 
+  // 시니어 평가 — SFT 7종 + 근감소증 선별 (JSON: SeniorInput, src/lib/senior.ts)
+  senior       String?
+
   // Notes
   notes        String?
 

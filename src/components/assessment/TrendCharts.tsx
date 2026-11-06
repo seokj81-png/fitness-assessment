@@ -16,6 +16,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from 'recharts';
+import { niceDomain } from '@/lib/chart-domain';
 
 type AssessmentRow = {
   id: string;
@@ -89,40 +90,23 @@ const RADAR_COLORS = ['#111', '#555', '#999', '#333', '#6e6e6e'];
 const RADAR_DASHES: (string | undefined)[] = [undefined, '6 3', '2 3', '8 3 2 3', '12 3'];
 
 type LineConfig = { key: string; label: string; color: string; dash?: string };
-type ChartConfig = { title: string; lines: LineConfig[] };
+// bounds: 축 하한·상한(점수형 지표) — 세로축은 측정값 범위에 맞춰 자동으로 좁힌다 (lib/chart-domain)
+type ChartConfig = { title: string; lines: LineConfig[]; lower?: number; upper?: number };
 
 const LINE_CHARTS: ChartConfig[] = [
-  {
-    title: '체성분',
-    lines: [
-      { key: 'bmi',  label: 'BMI',         color: '#111' },
-      { key: 'bf',   label: '체지방률 (%)', color: '#555', dash: '6 3' },
-    ],
-  },
-  {
-    title: '심폐 지구력',
-    lines: [
-      { key: 'vo2max', label: 'VO₂max (ml/kg/min)', color: '#111' },
-      { key: 'rhr',    label: '안정 심박수 (bpm)',   color: '#555', dash: '6 3' },
-    ],
-  },
-  {
-    title: '혈압 (mmHg)',
-    lines: [
-      { key: 'sbp', label: '수축기 (SBP)', color: '#111' },
-      { key: 'dbp', label: '이완기 (DBP)', color: '#555', dash: '6 3' },
-    ],
-  },
-  {
-    title: '근력 – 1RM (kg)',
-    lines: [
-      { key: 'bp1rm', label: '벤치프레스', color: '#111' },
-      { key: 'sq1rm', label: '스쿼트',     color: '#555', dash: '6 3' },
-      { key: 'dl1rm', label: '데드리프트', color: '#999', dash: '2 3' },
-      { key: 'ohp1rm', label: 'OHP',       color: '#333', dash: '8 3 2 3' },
-      { key: 'lp1rm', label: '레그프레스', color: '#6e6e6e', dash: '12 3' },
-    ],
-  },
+  // 단위·크기가 다른 지표를 한 축에 그리면 범위가 넓어져 변화가 묻힌다 → 지표별로 나눔
+  { title: 'BMI', lines: [{ key: 'bmi', label: 'BMI', color: '#111' }], lower: 0 },
+  { title: '체지방률 (%)', lines: [{ key: 'bf', label: '체지방률 (%)', color: '#111' }], lower: 0, upper: 100 },
+  { title: '심폐 지구력 — VO₂max (ml/kg/min)', lines: [{ key: 'vo2max', label: 'VO₂max', color: '#111' }], lower: 0 },
+  { title: '안정 심박수 (bpm)', lines: [{ key: 'rhr', label: '안정 심박수', color: '#111' }], lower: 0 },
+  { title: '수축기 혈압 (mmHg)', lines: [{ key: 'sbp', label: '수축기 (SBP)', color: '#111' }], lower: 0 },
+  { title: '이완기 혈압 (mmHg)', lines: [{ key: 'dbp', label: '이완기 (DBP)', color: '#111' }], lower: 0 },
+  // 종목마다 무게 크기가 달라(벤치 40 vs 데드 100) 한 축이면 변화가 묻힘 → 측정한 종목만 따로 그림
+  { title: '벤치프레스 1RM (kg)', lines: [{ key: 'bp1rm', label: '벤치프레스', color: '#111' }], lower: 0 },
+  { title: '스쿼트 1RM (kg)', lines: [{ key: 'sq1rm', label: '스쿼트', color: '#111' }], lower: 0 },
+  { title: '데드리프트 1RM (kg)', lines: [{ key: 'dl1rm', label: '데드리프트', color: '#111' }], lower: 0 },
+  { title: '오버헤드프레스 1RM (kg)', lines: [{ key: 'ohp1rm', label: 'OHP', color: '#111' }], lower: 0 },
+  { title: '레그프레스 1RM (kg)', lines: [{ key: 'lp1rm', label: '레그프레스', color: '#111' }], lower: 0 },
   {
     title: '악력 (kg)',
     lines: [
@@ -131,24 +115,31 @@ const LINE_CHARTS: ChartConfig[] = [
     ],
   },
   {
-    title: '근지구력',
+    title: '근지구력 (회)',
     lines: [
       { key: 'pushupReps',  label: '푸시업 (회)',  color: '#111' },
       { key: 'curlupReps',  label: '컬업 (회)',    color: '#555', dash: '6 3' },
-      { key: 'plankFront',  label: '플랭크 (초)',  color: '#999', dash: '2 3' },
     ],
+    lower: 0,
   },
+  { title: '플랭크 (초)', lines: [{ key: 'plankFront', label: '플랭크 (초)', color: '#111' }], lower: 0 },
   {
     title: 'FMS 총점',
     lines: [
       { key: 'fmsTotal', label: 'FMS 총점 (/21)', color: '#111' },
     ],
+    lower: 0,
+    upper: 21,
   },
 ];
 
 function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoint[] }) {
   const hasData = data.some((d) => config.lines.some((l) => d[l.key] != null));
   if (!hasData) return null;
+  const nd = niceDomain(
+    data.flatMap((d) => config.lines.map((l) => d[l.key] as number | null)),
+    { lower: config.lower ?? 0, upper: config.upper }
+  );
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4">
       <h4 className="text-sm font-bold text-slate-700 mb-3">{config.title}</h4>
@@ -156,7 +147,14 @@ function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoi
         <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e9e9e9" />
           <XAxis dataKey="date" stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#555' }} />
-          <YAxis stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#555' }} />
+          <YAxis
+            stroke="#8a8a8a"
+            tick={{ fontSize: 11, fill: '#555' }}
+            domain={nd ? nd.domain : ['auto', 'auto']}
+            ticks={nd?.ticks}
+            allowDataOverflow
+            tickFormatter={(v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1))}
+          />
           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
           {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
           {config.lines.map((l) => (

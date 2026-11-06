@@ -106,6 +106,7 @@ export interface AssessmentInput {
   ohsaFlags?: string[];
   rom?: Record<string, number>;
   fmsComments?: Record<string, string>;
+  senior?: import('./senior').SeniorInput; // 시니어 평가 (SFT·근감소증 선별)
   notes?: string;
 }
 
