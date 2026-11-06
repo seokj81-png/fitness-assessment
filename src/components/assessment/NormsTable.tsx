@@ -1,57 +1,9 @@
 import type { CSSProperties } from 'react';
-import {
-  VO2MAX_NORMS,
-  GRIP_NORMS,
-  BP_RATIO_NORMS,
-  SQ_RATIO_NORMS,
-  DL_RATIO_NORMS,
-  OHP_RATIO_NORMS,
-  PC_RATIO_NORMS,
-  LP_RATIO_NORMS,
-  PUSHUP_NORMS,
-  YMCA_BP_NORMS,
-  CURLUP_NORMS,
-  SQUAT_END_NORMS,
-  PULLUP_NORMS,
-  BALANCE_NORMS,
-  type NormTable,
-  type AgeGroup,
-} from '@/lib/norms';
 import type { Sex } from '@/lib/types';
+import { NORM_TESTS as TESTS, normAgeGroup as ag, gradeIndex, type NormTestKey } from '@/lib/norm-tests';
+import { GradeTableButton } from './GradeTable';
 
-function ag(age: number): AgeGroup {
-  return Math.min(60, Math.max(20, Math.floor(age / 10) * 10)) as AgeGroup;
-}
-
-export type NormTestKey =
-  | 'vo2max' | 'grip' | 'bp' | 'sq' | 'dl' | 'ohp' | 'pc' | 'lp'
-  | 'pushup' | 'ymcaBp' | 'curlup' | 'squatEnd' | 'pullup' | 'balance';
-
-const TESTS: Array<{ key: NormTestKey; name: string; table: NormTable; unit: string; digits: number }> = [
-  { key: 'vo2max', name: 'VO₂max', table: VO2MAX_NORMS, unit: 'ml/kg/min', digits: 0 },
-  { key: 'grip', name: '악력 합산', table: GRIP_NORMS, unit: 'kg', digits: 0 },
-  { key: 'bp', name: '벤치프레스', table: BP_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'sq', name: '스쿼트', table: SQ_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'dl', name: '데드리프트', table: DL_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'ohp', name: '오버헤드프레스', table: OHP_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'pc', name: '파워클린', table: PC_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'lp', name: '레그프레스', table: LP_RATIO_NORMS, unit: '체중비', digits: 2 },
-  { key: 'pushup', name: '푸시업', table: PUSHUP_NORMS, unit: '회', digits: 0 },
-  { key: 'ymcaBp', name: 'YMCA 벤치', table: YMCA_BP_NORMS, unit: '회', digits: 0 },
-  { key: 'curlup', name: '컬업', table: CURLUP_NORMS, unit: '회', digits: 0 },
-  { key: 'squatEnd', name: '스쿼트 지구력', table: SQUAT_END_NORMS, unit: '회', digits: 0 },
-  { key: 'pullup', name: '풀업', table: PULLUP_NORMS, unit: '회', digits: 0 },
-  { key: 'balance', name: '외발서기 (눈뜨고)', table: BALANCE_NORMS, unit: '초', digits: 0 },
-];
-
-// 값이 클수록 우수 기준: ≤a / ~b / ~c / ~d / >d → 등급 칸 인덱스 0~4
-function gradeIndex(v: number, [a, b, c, d]: readonly number[]): number {
-  if (v <= a) return 0;
-  if (v <= b) return 1;
-  if (v <= c) return 2;
-  if (v <= d) return 3;
-  return 4;
-}
+export type { NormTestKey };
 
 // 회원 연령대·성별의 5등급 기준 범위표 — 트레이너 설명용.
 // values를 주면 본인 기록이 속한 등급 칸을 반전 표시.
@@ -82,7 +34,7 @@ export default function NormsTable({
         </span>
       </h3>
       <p className="text-xs mb-3" style={{ color: '#8a8a8a' }}>
-        ACSM·NSCA 규준. 값이 클수록 우수 — 각 칸은 해당 등급의 범위입니다. 회원 설명용.
+        ACSM·NSCA 규준. 값이 클수록 우수 — 각 칸은 해당 등급의 범위입니다. 회원 설명용. 검사 이름을 누르면 전 연령대 등급표가 열립니다.
         {hasValues && (
           <>
             {' '}
@@ -128,7 +80,10 @@ export default function NormsTable({
               return (
                 <tr key={t.key} style={{ borderBottom: '1px solid #f0f0f0' }}>
                   <td className="py-1.5 pr-3 font-semibold" style={{ color: '#111' }}>
-                    {t.name} <span className="text-[10px] font-normal" style={{ color: '#9a9a9a' }}>({t.unit})</span>
+                    <GradeTableButton test={t.key} value={mine ?? null} age={age} sex={sex}>
+                      {t.name}
+                    </GradeTableButton>{' '}
+                    <span className="text-[10px] font-normal" style={{ color: '#9a9a9a' }}>({t.unit})</span>
                     {mine != null && (
                       <span className="mine-label block text-xs font-bold" style={{ color: '#111' }}>
                         ▸ 본인 {fMine(mine, t.digits)}

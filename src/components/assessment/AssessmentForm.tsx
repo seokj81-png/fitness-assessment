@@ -58,6 +58,8 @@ import PostureSketch from './PostureSketch';
 import TrendCharts from './TrendCharts';
 import FitnessScoreCard from './FitnessScoreCard';
 import NormsTable from './NormsTable';
+import { GradeWhoProvider } from './GradeTable';
+import type { NormTestKey } from '@/lib/norm-tests';
 import SeniorTab from './SeniorTab';
 
 interface ClientInfo {
@@ -408,7 +410,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
   // ---------------- renders ----------------
 
   return (
-    <>
+    <GradeWhoProvider age={age} sex={sex}>
     <div>
       {/* ── 상단 고정 헤더 (제목 + 탭) ── */}
       <div
@@ -587,7 +589,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
         </div>
       </div>
     </div>
-    </>
+    </GradeWhoProvider>
   );
 }
 
@@ -980,7 +982,7 @@ function CardioTab({
               ))}
             </div>
           )}
-          <ResultBox result={computed.vo2max} unit="ml/kg/min" />
+          <ResultBox result={computed.vo2max} unit="ml/kg/min" norm="vo2max" />
           {computed.bestVo2 && computed.vo2Estimates.length > 1 && (
             <p className="text-xs text-slate-500 mt-2">기준 검사: {computed.bestVo2.label}</p>
           )}
@@ -989,6 +991,10 @@ function CardioTab({
     </div>
   );
 }
+
+const RM_NORM: Record<string, NormTestKey> = {
+  bp1rm: 'bp', sq1rm: 'sq', dl1rm: 'dl', ohp1rm: 'ohp', pc1rm: 'pc', lp1rm: 'lp',
+};
 
 function StrengthTab({
   tier,
@@ -1028,7 +1034,7 @@ function StrengthTab({
             <div key={key}>
               <Num label={label} value={state[key] as number} onChange={(v) => update(key, v)} step="0.5" />
               <div className="text-xs text-slate-500 mt-1">체중비 {ratio(state[key] as number)}</div>
-              {cls && <div className="mt-1"><ResultBox result={cls} /></div>}
+              {cls && <div className="mt-1"><ResultBox result={cls} norm={RM_NORM[key as string]} /></div>}
             </div>
           ))}
         </div>
@@ -1074,7 +1080,7 @@ function StrengthTab({
           <Num label="좌측 Left (kg)" value={state.gripL} onChange={(v) => update('gripL', v)} step="0.1" />
         </div>
         {computed.grip && state.gripR && state.gripL && (
-          <ResultBox result={computed.grip} unit="kg (좌+우)">
+          <ResultBox result={computed.grip} unit="kg (좌+우)" norm="grip">
             <div className="text-xs text-slate-600 mt-2">
               좌우 차이{' '}
               {(
@@ -1114,7 +1120,7 @@ function EnduranceTab({
         <Num label="반복수 Reps" value={state.pushupReps} onChange={(v) => update('pushupReps', v)} />
         {computed.pushup && (
           <div className="mt-3">
-            <ResultBox result={computed.pushup} unit="회" />
+            <ResultBox result={computed.pushup} unit="회" norm="pushup" />
           </div>
         )}
       </div>
@@ -1129,7 +1135,7 @@ function EnduranceTab({
         <Num label="반복수 Reps" value={state.ymcaBpReps} onChange={(v) => update('ymcaBpReps', v)} />
         {computed.ymcaBp && (
           <div className="mt-3">
-            <ResultBox result={computed.ymcaBp} unit="회" />
+            <ResultBox result={computed.ymcaBp} unit="회" norm="ymcaBp" />
           </div>
         )}
       </div>
@@ -1146,7 +1152,7 @@ function EnduranceTab({
         <Num label="반복수 Reps" value={state.pullupReps} onChange={(v) => update('pullupReps', v)} />
         {computed.pullup && (
           <div className="mt-3">
-            <ResultBox result={computed.pullup} unit="회" />
+            <ResultBox result={computed.pullup} unit="회" norm="pullup" />
           </div>
         )}
       </div>
@@ -1161,7 +1167,7 @@ function EnduranceTab({
         <Num label="반복수 Reps" value={state.curlupReps} onChange={(v) => update('curlupReps', v)} />
         {computed.curlup && (
           <div className="mt-3">
-            <ResultBox result={computed.curlup} unit="회" />
+            <ResultBox result={computed.curlup} unit="회" norm="curlup" />
           </div>
         )}
       </div>
@@ -1178,7 +1184,7 @@ function EnduranceTab({
         <Num label="반복수 Reps" value={state.squatReps} onChange={(v) => update('squatReps', v)} />
         {computed.squatEnd && (
           <div className="mt-3">
-            <ResultBox result={computed.squatEnd} unit="회" />
+            <ResultBox result={computed.squatEnd} unit="회" norm="squatEnd" />
           </div>
         )}
       </div>
@@ -1636,13 +1642,13 @@ function PostureTab({
         </div>
         {computed.balanceRow && (
           <p className="text-[11px] mb-2" style={{ color: '#8a8a8a' }}>
-            이 연령대 기준 — 낮음 ≤{computed.balanceRow[0]}초 · 보통 ~{computed.balanceRow[1]}초 ·
-            양호 ~{computed.balanceRow[2]}초 · 우수 ~{computed.balanceRow[3]}초 · 매우우수 &gt;{computed.balanceRow[3]}초
+            이 연령대 기준 — 매우낮음 ≤{computed.balanceRow[0]}초 · 낮음 ~{computed.balanceRow[1]}초 ·
+            평균 ~{computed.balanceRow[2]}초 · 우수 ~{computed.balanceRow[3]}초 · 매우우수 &gt;{computed.balanceRow[3]}초
           </p>
         )}
         {computed.balance && (
           <div className="mt-2">
-            <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" />
+            <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" norm="balance" />
             {computed.balance.asymPct != null && computed.balance.asymPct > 0 && (
               <p className="text-xs mt-1.5" style={{ color: '#555' }}>
                 좌우 차이 {computed.balance.asymPct}%

@@ -55,6 +55,8 @@ import { MOVEMENT_COMPENSATIONS, POSTURE_ITEM_LABELS } from '@/lib/norms';
 import StrengthChart, { type LiftBar } from '@/components/assessment/StrengthChart';
 import FitnessScoreCard from '@/components/assessment/FitnessScoreCard';
 import NormsTable from '@/components/assessment/NormsTable';
+import { GradeTableButton } from '@/components/assessment/GradeTable';
+import type { NormTestKey } from '@/lib/norm-tests';
 import BodyMap from '@/components/assessment/BodyMap';
 import SeniorResults from '@/components/assessment/SeniorResults';
 import { hasSenior } from '@/lib/senior';
@@ -730,6 +732,7 @@ export default async function AssessmentViewPage({
             <ResultRow
               label={`평형성 — 외발서기 (우 ${a.balanceR ?? '-'}초 / 좌 ${a.balanceL ?? '-'}초)`}
               result={balance.cls}
+              grade={{ test: 'balance', age, sex }}
               unit="초 (약한 쪽)"
             />
             {balance.warning && (
@@ -882,7 +885,7 @@ export default async function AssessmentViewPage({
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
             {vo2Class && (
-              <ResultRow label="VO₂max" result={vo2Class} unit="ml/kg/min" />
+              <ResultRow label="VO₂max" result={vo2Class} unit="ml/kg/min" grade={{ test: 'vo2max', age, sex }} />
             )}
             {vo2Estimates.length > 1 && (
               <div className="md:col-span-2 text-sm space-y-1">
@@ -1019,32 +1022,32 @@ export default async function AssessmentViewPage({
           <div className="grid md:grid-cols-2 gap-3">
             {a.bp1rm != null && (
               bpRatioClass
-                ? <ResultRow label="벤치프레스 1RM" result={bpRatioClass} displayValue={`${a.bp1rm} kg`} subLabel={w ? `× 체중비 ${(a.bp1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="벤치프레스 1RM" result={bpRatioClass} grade={{ test: 'bp', age, sex }} displayValue={`${a.bp1rm} kg`} subLabel={w ? `× 체중비 ${(a.bp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="벤치프레스 1RM" value={`${a.bp1rm} kg`} />
             )}
             {a.sq1rm != null && (
               sqRatioClass
-                ? <ResultRow label="스쿼트 1RM" result={sqRatioClass} displayValue={`${a.sq1rm} kg`} subLabel={w ? `× 체중비 ${(a.sq1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="스쿼트 1RM" result={sqRatioClass} grade={{ test: 'sq', age, sex }} displayValue={`${a.sq1rm} kg`} subLabel={w ? `× 체중비 ${(a.sq1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="스쿼트 1RM" value={`${a.sq1rm} kg`} />
             )}
             {a.dl1rm != null && (
               dlRatioClass
-                ? <ResultRow label="데드리프트 1RM" result={dlRatioClass} displayValue={`${a.dl1rm} kg`} subLabel={w ? `× 체중비 ${(a.dl1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="데드리프트 1RM" result={dlRatioClass} grade={{ test: 'dl', age, sex }} displayValue={`${a.dl1rm} kg`} subLabel={w ? `× 체중비 ${(a.dl1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="데드리프트 1RM" value={`${a.dl1rm} kg`} />
             )}
             {a.ohp1rm != null && (
               ohpRatioClass
-                ? <ResultRow label="오버헤드프레스 1RM" result={ohpRatioClass} displayValue={`${a.ohp1rm} kg`} subLabel={w ? `× 체중비 ${(a.ohp1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="오버헤드프레스 1RM" result={ohpRatioClass} grade={{ test: 'ohp', age, sex }} displayValue={`${a.ohp1rm} kg`} subLabel={w ? `× 체중비 ${(a.ohp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="오버헤드프레스 1RM" value={`${a.ohp1rm} kg`} />
             )}
             {a.pc1rm != null && (
               pcRatioClass
-                ? <ResultRow label="파워클린 1RM" result={pcRatioClass} displayValue={`${a.pc1rm} kg`} subLabel={w ? `× 체중비 ${(a.pc1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="파워클린 1RM" result={pcRatioClass} grade={{ test: 'pc', age, sex }} displayValue={`${a.pc1rm} kg`} subLabel={w ? `× 체중비 ${(a.pc1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="파워클린 1RM" value={`${a.pc1rm} kg`} />
             )}
             {a.lp1rm != null && (
               lpRatioClass
-                ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} displayValue={`${a.lp1rm} kg`} subLabel={w ? `× 체중비 ${(a.lp1rm / w).toFixed(2)}` : undefined} />
+                ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} grade={{ test: 'lp', age, sex }} displayValue={`${a.lp1rm} kg`} subLabel={w ? `× 체중비 ${(a.lp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="레그프레스 1RM" value={`${a.lp1rm} kg`} />
             )}
             {est1rm !== null && (
@@ -1058,6 +1061,7 @@ export default async function AssessmentViewPage({
                 label={`악력 합산 (R ${a.gripR ?? '-'} + L ${a.gripL ?? '-'})`}
                 result={gripClass}
                 unit="kg"
+                grade={{ test: 'grip', age, sex }}
               />
             )}
           </div>
@@ -1087,23 +1091,24 @@ export default async function AssessmentViewPage({
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
             {pushupClass && (
-              <ResultRow label="푸시업" result={pushupClass} unit="회" />
+              <ResultRow label="푸시업" result={pushupClass} unit="회" grade={{ test: 'pushup', age, sex }} />
             )}
             {ymcaBpClass && (
               <ResultRow
                 label="YMCA 벤치프레스 (35/20 lb)"
                 result={ymcaBpClass}
                 unit="회"
+                grade={{ test: 'ymcaBp', age, sex }}
               />
             )}
             {pullupClass && (
-              <ResultRow label="풀업 (상체 당기기)" result={pullupClass} unit="회" />
+              <ResultRow label="풀업 (상체 당기기)" result={pullupClass} unit="회" grade={{ test: 'pullup', age, sex }} />
             )}
             {curlupClass && (
-              <ResultRow label="컬업 (1분)" result={curlupClass} unit="회" />
+              <ResultRow label="컬업 (1분)" result={curlupClass} unit="회" grade={{ test: 'curlup', age, sex }} />
             )}
             {squatEndClass && (
-              <ResultRow label="스쿼트 지구력 (하지)" result={squatEndClass} unit="회" />
+              <ResultRow label="스쿼트 지구력 (하지)" result={squatEndClass} unit="회" grade={{ test: 'squatEnd', age, sex }} />
             )}
             {plank && (
               <>
@@ -1349,7 +1354,10 @@ function ResultRow({
   unit,
   displayValue,
   subLabel,
+  grade,
 }: {
+  /** 연령별 등급표가 있는 검사 — 배지 옆 「등급표」 버튼 */
+  grade?: { test: NormTestKey; age: number; sex: 'M' | 'F' };
   label: string;
   result: { value: number; label: string; classification: 'excellent' | 'good' | 'average' | 'below' | 'poor'; note?: string } | null;
   unit?: string;
@@ -1373,6 +1381,7 @@ function ResultRow({
       <div className="flex items-center gap-2 flex-wrap mt-1">
         <span className={pillClass(result.classification)}>{result.label}</span>
         {subLabel && <span className="text-xs text-slate-500">{subLabel}</span>}
+        {grade && <GradeTableButton test={grade.test} value={result.value} age={grade.age} sex={grade.sex} />}
       </div>
       {result.note && (
         <div className="text-xs text-slate-400 mt-1">{result.note}</div>
