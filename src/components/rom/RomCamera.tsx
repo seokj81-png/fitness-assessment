@@ -52,6 +52,7 @@ export default function RomCamera() {
   const rafRef = useRef(0);
   const lastTsRef = useRef(0);
   const lastUiRef = useRef(0);
+  const fpsRef = useRef(0);
   const sideRef = useRef<Side | null>(null);
   const smoothRef = useRef<Angles>({ ...EMPTY_ANGLES });
   const phaseRef = useRef<Phase>('ready');
@@ -65,6 +66,7 @@ export default function RomCamera() {
   const [live, setLive] = useState<Angles>({ ...EMPTY_ANGLES });
   const [view, setView] = useState<ViewState>('none');
   const [side, setSide] = useState<Side | null>(null);
+  const [fps, setFps] = useState(0);
   const [phase, setPhase] = useState<Phase>('ready');
   const [result, setResult] = useState<Peak | null>(null);
   const [snapUrl, setSnapUrl] = useState<string | null>(null);
@@ -117,6 +119,8 @@ export default function RomCamera() {
     peakRef.current = newPeak();
     smoothRef.current = { ...EMPTY_ANGLES };
     sideRef.current = null;
+    lastTsRef.current = 0;
+    fpsRef.current = 0;
     setPhase('ready');
     setResult(null);
     setSnapUrl(null);
@@ -142,7 +146,11 @@ export default function RomCamera() {
 
     let ts = performance.now();
     if (ts <= lastTsRef.current) ts = lastTsRef.current + 1;
+    const dt = lastTsRef.current ? ts - lastTsRef.current : 33;
     lastTsRef.current = ts;
+    fpsRef.current = fpsRef.current ? fpsRef.current * 0.8 + (1000 / dt) * 0.2 : 1000 / dt;
+    // 떨림 줄이기는 시간 기준(약 0.08초)으로 — 인식이 느린 기기에서도 최대값이 깎이지 않게 한다
+    const alpha = Math.max(0.3, 1 - Math.exp(-dt / 80));
 
     let lm: Pt[] | undefined;
     try {
@@ -162,7 +170,7 @@ export default function RomCamera() {
       sideRef.current = s;
       const px = toPixels(lm, W, H);
       state = viewCheck(px, s, W, H);
-      angles = smoothAngles(smoothRef.current, computeAngles(px, s));
+      angles = smoothAngles(smoothRef.current, computeAngles(px, s), alpha);
       smoothRef.current = angles;
       drawOverlay(ctx, px, s, angles, W, H, canvas.clientWidth ? W / canvas.clientWidth : 1);
 
@@ -192,6 +200,7 @@ export default function RomCamera() {
       setLive(angles);
       setView(state);
       setSide(sideRef.current);
+      setFps(fpsRef.current);
     }
   }, []);
 
@@ -445,6 +454,12 @@ export default function RomCamera() {
             <p className="text-sm mt-2 font-semibold" role="status" style={{ color: view === 'ok' ? '#111' : '#b00020' }}>
               {GUIDE[view]}
               {view === 'ok' && side ? ` (${side === 'L' ? '왼쪽' : '오른쪽'} 옆모습)` : ''}
+            </p>
+          )}
+          {running && source !== 'image' && fps > 0 && (
+            <p className="text-xs mt-1" style={{ color: fps < 8 ? '#b00020' : '#6e6e6e' }}>
+              인식 속도 초당 {fps < 10 ? fps.toFixed(1) : Math.round(fps)}장
+              {fps < 8 ? ' — 이 기기에서는 느립니다. 천천히 움직이고, 가장 깊이 앉은 자세에서 1~2초 멈춰 주세요.' : ''}
             </p>
           )}
         </div>
