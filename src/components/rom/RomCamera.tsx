@@ -152,16 +152,18 @@ export default function RomCamera() {
     // 떨림 줄이기는 시간 기준(약 0.08초)으로 — 인식이 느린 기기에서도 최대값이 깎이지 않게 한다
     const alpha = Math.max(0.3, 1 - Math.exp(-dt / 80));
 
-    let lm: Pt[] | undefined;
-    try {
-      lm = pl.detectForVideo(src, ts).landmarks[0];
-    } catch {
-      return;
-    }
-
+    // 화면을 먼저 캔버스에 그리고, 그 캔버스로 자세를 인식한다 —
+    // 인식하는 동안 영상이 앞으로 가도 뼈대 선과 화면이 어긋나지 않는다.
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(src, 0, 0, W, H);
+
+    let lm: Pt[] | undefined;
+    try {
+      lm = pl.detectForVideo(canvas, ts).landmarks[0];
+    } catch {
+      return;
+    }
 
     let state: ViewState = 'none';
     let angles: Angles = { ...EMPTY_ANGLES };
