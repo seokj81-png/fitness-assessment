@@ -20,7 +20,7 @@ export default function ResultBox({ result, unit, children, norm }: Props) {
     );
   }
   return (
-    <div className="p-3 rounded-md" style={{ background: '#f2f2f2', border: '1px solid #111' }}>
+    <div className="p-3 rounded-md" style={{ background: '#f2f2f2', border: '1px solid #2c2c2c' }}>
       <div className="text-2xl font-bold text-slate-100">
         {typeof result.value === 'number' ? result.value.toFixed(1) : result.value} {unit}
       </div>

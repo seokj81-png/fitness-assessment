@@ -100,7 +100,7 @@ function ChartTooltip({
       <p style={{ color, fontWeight: 700, fontSize: 14 }}>
         {payload[0].value.toFixed(1)}
         {unit && <span style={{ fontSize: 11, marginLeft: 2 }}>{unit}</span>}
-        <span style={{ color: '#555', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
+        <span style={{ color: '#5a5a5a', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
           {metricLabel}
         </span>
       </p>
@@ -211,7 +211,7 @@ function SingleChart({
           <CartesianGrid strokeDasharray="3 3" stroke="#e9e9e9" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: '#555' }}
+            tick={{ fontSize: 11, fill: '#5a5a5a' }}
             tickLine={false}
             axisLine={{ stroke: '#8a8a8a' }}
           />
@@ -219,7 +219,7 @@ function SingleChart({
             domain={domain}
             ticks={nd?.ticks}
             allowDataOverflow
-            tick={{ fontSize: 11, fill: '#555' }}
+            tick={{ fontSize: 11, fill: '#5a5a5a' }}
             tickLine={false}
             axisLine={false}
             width={42}
@@ -382,7 +382,7 @@ export default function TrendCharts({
     data.some((d) => d.rhr != null) && {
       key: 'rhr',
       label: '① 안정시 심박수 (bpm)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: [
         { value: 60, label: '정상 하한 60', color: GRAY },
@@ -393,7 +393,7 @@ export default function TrendCharts({
     data.some((d) => d.bmi != null) && {
       key: 'bmi',
       label: '② BMI',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       bounds: [10, 50],
       refLine: [
@@ -407,7 +407,7 @@ export default function TrendCharts({
     data.some((d) => d.bodyFat != null) && {
       key: 'bodyFat',
       label: '② 체지방률 (%)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '%',
       refLine: sex === 'M'
         ? [
@@ -423,7 +423,7 @@ export default function TrendCharts({
     data.some((d) => d.fms != null) && {
       key: 'fms',
       label: '④ FMS 총점 (/21)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       bounds: [0, 21],
       refLine: [{ value: 14, label: '부상위험 14', color: '#9a9a9a' }],
@@ -432,7 +432,7 @@ export default function TrendCharts({
     data.some((d) => d.vo2max != null) && {
       key: 'vo2max',
       label: '⑤ VO₂max (mL/kg/min)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: [
         { value: vo2Row[1], label: `평균 하한 ${vo2Row[1]}`, color: GRAY },
@@ -443,7 +443,7 @@ export default function TrendCharts({
     data.some((d) => d.grip != null) && {
       key: 'grip',
       label: '⑥ 악력 평균 (kg)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: [
         { value: Math.round(gripRow[1] / 2), label: `평균 하한 ${Math.round(gripRow[1] / 2)}`, color: GRAY },
@@ -454,7 +454,7 @@ export default function TrendCharts({
     data.some((d) => d.bench != null) && {
       key: 'bench',
       label: '⑥ 벤치프레스 1RM (kg)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: weight
         ? [
@@ -467,7 +467,7 @@ export default function TrendCharts({
     data.some((d) => d.squat != null) && {
       key: 'squat',
       label: '⑥ 스쿼트 1RM (kg)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: weight
         ? [
@@ -480,7 +480,7 @@ export default function TrendCharts({
     data.some((d) => d.pushup != null) && {
       key: 'pushup',
       label: '⑦ 푸시업 (회)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: [
         { value: puRow[1], label: `평균 하한 ${puRow[1]}`, color: GRAY },
@@ -491,7 +491,7 @@ export default function TrendCharts({
     data.some((d) => d.plank != null) && {
       key: 'plank',
       label: '⑦ 플랭크 (초)',
-      color: '#111',
+      color: '#2c2c2c',
       unit: '',
       refLine: [{ value: sex === 'M' ? 72 : 40, label: `McGill 기준 ${sex === 'M' ? 72 : 40}`, color: GRAY }],
       dir: 'up' as const,
@@ -516,7 +516,7 @@ export default function TrendCharts({
       }}
     >
       <h3 className="font-bold text-slate-100 mb-4 flex items-center gap-2">
-        <span style={{ color: '#555' }}>📈</span> 측정 항목별 변화 추이
+        <span style={{ color: '#5a5a5a' }}>📈</span> 측정 항목별 변화 추이
         <span className="text-xs font-normal text-slate-500 ml-1">
           ({assessments.length}회 측정)
         </span>

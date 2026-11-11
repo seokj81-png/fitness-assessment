@@ -41,7 +41,7 @@ export default function NormsTable({
             <span
               data-mine=""
               className="inline-block px-1.5 rounded font-semibold"
-              style={{ background: '#111', color: '#fff' }}
+              style={{ background: '#2c2c2c', color: '#fff' }}
             >
               반전 칸
             </span>{' '}
@@ -73,28 +73,28 @@ export default function NormsTable({
               const myIdx = mine != null ? gradeIndex(mine, range) : null;
               const cellStyle = (idx: number, base: CSSProperties): CSSProperties =>
                 myIdx === idx
-                  ? { background: '#111', color: '#fff', fontWeight: 700, borderRadius: 6 }
+                  ? { background: '#2c2c2c', color: '#fff', fontWeight: 700, borderRadius: 6 }
                   : base;
               // data-mine: 인쇄 시 배경 미출력 설정에서도 반전 칸이 보이도록 globals.css @media print에서 처리
               const mineAttr = (idx: number) => (myIdx === idx ? { 'data-mine': '' } : {});
               return (
                 <tr key={t.key} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                  <td className="py-1.5 pr-3 font-semibold" style={{ color: '#111' }}>
+                  <td className="py-1.5 pr-3 font-semibold" style={{ color: '#2c2c2c' }}>
                     <GradeTableButton test={t.key} value={mine ?? null} age={age} sex={sex}>
                       {t.name}
                     </GradeTableButton>{' '}
                     <span className="text-[10px] font-normal" style={{ color: '#9a9a9a' }}>({t.unit})</span>
                     {mine != null && (
-                      <span className="mine-label block text-xs font-bold" style={{ color: '#111' }}>
+                      <span className="mine-label block text-xs font-bold" style={{ color: '#2c2c2c' }}>
                         ▸ 본인 {fMine(mine, t.digits)}
                       </span>
                     )}
                   </td>
-                  <td {...mineAttr(0)} className="py-1.5 pr-2 tabular-nums px-1" style={cellStyle(0, { color: '#555' })}>≤{f(a, t.digits)}</td>
-                  <td {...mineAttr(1)} className="py-1.5 pr-2 tabular-nums px-1" style={cellStyle(1, { color: '#555' })}>~{f(b, t.digits)}</td>
+                  <td {...mineAttr(0)} className="py-1.5 pr-2 tabular-nums px-1" style={cellStyle(0, { color: '#5a5a5a' })}>≤{f(a, t.digits)}</td>
+                  <td {...mineAttr(1)} className="py-1.5 pr-2 tabular-nums px-1" style={cellStyle(1, { color: '#5a5a5a' })}>~{f(b, t.digits)}</td>
                   <td {...mineAttr(2)} className="py-1.5 pr-2 tabular-nums px-1" style={cellStyle(2, { color: '#333' })}>~{f(c, t.digits)}</td>
-                  <td {...mineAttr(3)} className="py-1.5 pr-2 tabular-nums font-semibold px-1" style={cellStyle(3, { color: '#111' })}>~{f(d, t.digits)}</td>
-                  <td {...mineAttr(4)} className="py-1.5 tabular-nums font-bold px-1" style={cellStyle(4, { color: '#111' })}>&gt;{f(d, t.digits)}</td>
+                  <td {...mineAttr(3)} className="py-1.5 pr-2 tabular-nums font-semibold px-1" style={cellStyle(3, { color: '#2c2c2c' })}>~{f(d, t.digits)}</td>
+                  <td {...mineAttr(4)} className="py-1.5 tabular-nums font-bold px-1" style={cellStyle(4, { color: '#2c2c2c' })}>&gt;{f(d, t.digits)}</td>
                 </tr>
               );
             })}

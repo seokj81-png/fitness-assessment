@@ -35,8 +35,8 @@ export default function FontSizeToggle() {
 
   return (
     <div
-      className="flex items-center rounded-md overflow-hidden no-print flex-shrink-0"
-      style={{ border: '1px solid rgba(255,255,255,0.3)' }}
+      className="flex items-center rounded-full overflow-hidden no-print flex-shrink-0"
+      style={{ border: '1px solid var(--line-strong)', background: 'var(--card)' }}
       aria-label="글자 크기 조절"
     >
       {SIZES.map((s) => (
@@ -49,8 +49,8 @@ export default function FontSizeToggle() {
             fontSize: s.px,
             lineHeight: '34px',
             height: 36,
-            background: size === s.key ? '#fff' : 'transparent',
-            color: size === s.key ? '#111' : '#fff',
+            background: size === s.key ? 'var(--ink)' : 'transparent',
+            color: size === s.key ? '#fff' : 'var(--text-2)',
             fontWeight: 700,
           }}
         >

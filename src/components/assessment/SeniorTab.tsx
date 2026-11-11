@@ -47,11 +47,11 @@ function Step({ no, title, children }: { no: string; title: string; children: Re
       <div className="flex items-center gap-2 mb-2">
         <span
           className="inline-flex items-center justify-center rounded-full text-xs font-bold"
-          style={{ background: '#111', color: '#fff', width: 22, height: 22 }}
+          style={{ background: '#2c2c2c', color: '#fff', width: 22, height: 22 }}
         >
           {no}
         </span>
-        <span className="font-bold text-sm" style={{ color: '#111' }}>
+        <span className="font-bold text-sm" style={{ color: '#2c2c2c' }}>
           {title}
         </span>
       </div>
@@ -162,7 +162,7 @@ export default function SeniorTab({
               </p>
             </div>
             <div className="space-y-2">
-              <div className="text-xs font-semibold" style={{ color: '#555' }}>
+              <div className="text-xs font-semibold" style={{ color: '#5a5a5a' }}>
                 SARC-F — 회원에게 그대로 읽어 주세요 (4점 이상이면 기준값 밖)
               </div>
               {SARCF_QUESTIONS.map((q, i) => (
@@ -183,7 +183,7 @@ export default function SeniorTab({
                             onChange({ sarcF: arr });
                           }}
                           className="px-2.5 py-1.5 text-xs rounded border"
-                          style={on ? { background: '#111', color: '#fff', borderColor: '#111' } : { background: '#fff', color: '#333', borderColor: '#cfcfcf' }}
+                          style={on ? { background: '#2c2c2c', color: '#fff', borderColor: '#2c2c2c' } : { background: '#fff', color: '#333', borderColor: '#cfcfcf' }}
                         >
                           {v}점 · {o}
                         </button>
@@ -218,7 +218,7 @@ export default function SeniorTab({
                     type="button"
                     onClick={() => onChange({ gaitDist: d })}
                     className="flex-1 py-2 text-sm rounded border"
-                    style={(s.gaitDist || 4) === d ? { background: '#111', color: '#fff', borderColor: '#111' } : { background: '#fff', color: '#333', borderColor: '#cfcfcf' }}
+                    style={(s.gaitDist || 4) === d ? { background: '#2c2c2c', color: '#fff', borderColor: '#2c2c2c' } : { background: '#fff', color: '#333', borderColor: '#cfcfcf' }}
                   >
                     {d}m
                   </button>
@@ -228,7 +228,7 @@ export default function SeniorTab({
             <NumIn label="보행 시간 (초)" value={s.gaitTime} onChange={(v) => onChange({ gaitTime: v })} step="0.01" />
             <div>
               <NumIn label="5회 의자 일어서기 (초)" value={s.chair5} onChange={(v) => onChange({ chair5: v, chair5Fail: v != null ? false : s.chair5Fail })} step="0.01" />
-              <label className="flex items-center gap-1.5 text-xs mt-1" style={{ color: '#555' }}>
+              <label className="flex items-center gap-1.5 text-xs mt-1" style={{ color: '#5a5a5a' }}>
                 <input type="checkbox" checked={!!s.chair5Fail} onChange={(e) => onChange({ chair5Fail: e.target.checked, chair5: e.target.checked ? undefined : s.chair5 })} />
                 팔 없이 못 일어남
               </label>
@@ -240,7 +240,7 @@ export default function SeniorTab({
             5회 의자: 팔을 가슴에 X자, 다섯 번째 일어선 순간 정지, 기준 12초 이상. TUG: 3m 표시를 돌아와 앉기까지, 기준 12초 이상(한국 지침).
           </p>
           <div className="mt-3">
-            <div className="text-xs font-semibold mb-1" style={{ color: '#555' }}>
+            <div className="text-xs font-semibold mb-1" style={{ color: '#5a5a5a' }}>
               SPPB 균형 — 각 자세를 버틴 시간(초, 최대 10). 앞 자세를 10초 못 버티면 거기서 멈추고 뒤는 비워 둡니다
             </div>
             <div className="grid grid-cols-3 gap-3 max-w-xl">
@@ -251,7 +251,7 @@ export default function SeniorTab({
             <p className="text-[11px] mt-1 leading-snug" style={{ color: '#8a8a8a' }}>
               SPPB 총점(0~12) = 균형 + 보행(4m 환산) + 5회 의자 점수. 9점 이하면 신체 수행 낮음.
               {res.sppb.total != null && (
-                <b style={{ color: '#111' }}>
+                <b style={{ color: '#2c2c2c' }}>
                   {' '}
                   현재 {res.sppb.total}점 (균형 {res.sppb.balance} · 보행 {res.sppb.gait} · 의자 {res.sppb.chair})
                 </b>

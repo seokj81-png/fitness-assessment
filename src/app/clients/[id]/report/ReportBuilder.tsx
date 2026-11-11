@@ -77,8 +77,8 @@ interface ClientInfo {
 }
 
 // 팔레트 — 앱 전체와 동일한 블랙&화이트 모노크롬 (개선/악화 기능색만 예외)
-const NAVY = '#111111'; // 헤더 밴드·표 헤더·강조 (변수명은 호환 유지)
-const NAVY_SOFT = '#4a4a4a';
+const NAVY = '#2c2c2c'; // 헤더 밴드·표 헤더·강조 (변수명은 호환 유지)
+const NAVY_SOFT = '#5a5a5a';
 const PAPER = '#ffffff';
 const WARM = '#f5f5f5'; // 섹션 배경 (라이트 그레이)
 const INK = '#2b2b2b';

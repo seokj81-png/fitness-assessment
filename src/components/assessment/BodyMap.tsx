@@ -294,7 +294,7 @@ export default function BodyMap({
   return (
     // 인쇄: 제목과 두 패널이 페이지 경계에서 떨어지지 않게 한 덩어리로
     <div className="mt-4" style={{ breakInside: 'avoid' }}>
-      <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
+      <div className="text-sm font-semibold mb-2" style={{ color: '#2c2c2c' }}>
         교정 부위 한눈에 보기 <span className="text-xs font-normal" style={{ color: '#8a8a8a' }}>— 회원 설명용</span>
       </div>
       <div className="grid md:grid-cols-2 gap-3">

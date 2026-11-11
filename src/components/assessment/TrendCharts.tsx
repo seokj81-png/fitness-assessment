@@ -86,7 +86,7 @@ const FMS_RADAR_TESTS = [
   { id: 'rs',   label: 'Rotary Stability', bilateral: true },
 ];
 
-const RADAR_COLORS = ['#111', '#555', '#999', '#333', '#6e6e6e'];
+const RADAR_COLORS = ['#2c2c2c', '#5a5a5a', '#999', '#333', '#6e6e6e'];
 const RADAR_DASHES: (string | undefined)[] = [undefined, '6 3', '2 3', '8 3 2 3', '12 3'];
 
 type LineConfig = { key: string; label: string; color: string; dash?: string };
@@ -95,38 +95,38 @@ type ChartConfig = { title: string; lines: LineConfig[]; lower?: number; upper?:
 
 const LINE_CHARTS: ChartConfig[] = [
   // 단위·크기가 다른 지표를 한 축에 그리면 범위가 넓어져 변화가 묻힌다 → 지표별로 나눔
-  { title: 'BMI', lines: [{ key: 'bmi', label: 'BMI', color: '#111' }], lower: 0 },
-  { title: '체지방률 (%)', lines: [{ key: 'bf', label: '체지방률 (%)', color: '#111' }], lower: 0, upper: 100 },
-  { title: '심폐 지구력 — VO₂max (ml/kg/min)', lines: [{ key: 'vo2max', label: 'VO₂max', color: '#111' }], lower: 0 },
-  { title: '안정 심박수 (bpm)', lines: [{ key: 'rhr', label: '안정 심박수', color: '#111' }], lower: 0 },
-  { title: '수축기 혈압 (mmHg)', lines: [{ key: 'sbp', label: '수축기 (SBP)', color: '#111' }], lower: 0 },
-  { title: '이완기 혈압 (mmHg)', lines: [{ key: 'dbp', label: '이완기 (DBP)', color: '#111' }], lower: 0 },
+  { title: 'BMI', lines: [{ key: 'bmi', label: 'BMI', color: '#2c2c2c' }], lower: 0 },
+  { title: '체지방률 (%)', lines: [{ key: 'bf', label: '체지방률 (%)', color: '#2c2c2c' }], lower: 0, upper: 100 },
+  { title: '심폐 지구력 — VO₂max (ml/kg/min)', lines: [{ key: 'vo2max', label: 'VO₂max', color: '#2c2c2c' }], lower: 0 },
+  { title: '안정 심박수 (bpm)', lines: [{ key: 'rhr', label: '안정 심박수', color: '#2c2c2c' }], lower: 0 },
+  { title: '수축기 혈압 (mmHg)', lines: [{ key: 'sbp', label: '수축기 (SBP)', color: '#2c2c2c' }], lower: 0 },
+  { title: '이완기 혈압 (mmHg)', lines: [{ key: 'dbp', label: '이완기 (DBP)', color: '#2c2c2c' }], lower: 0 },
   // 종목마다 무게 크기가 달라(벤치 40 vs 데드 100) 한 축이면 변화가 묻힘 → 측정한 종목만 따로 그림
-  { title: '벤치프레스 1RM (kg)', lines: [{ key: 'bp1rm', label: '벤치프레스', color: '#111' }], lower: 0 },
-  { title: '스쿼트 1RM (kg)', lines: [{ key: 'sq1rm', label: '스쿼트', color: '#111' }], lower: 0 },
-  { title: '데드리프트 1RM (kg)', lines: [{ key: 'dl1rm', label: '데드리프트', color: '#111' }], lower: 0 },
-  { title: '오버헤드프레스 1RM (kg)', lines: [{ key: 'ohp1rm', label: 'OHP', color: '#111' }], lower: 0 },
-  { title: '레그프레스 1RM (kg)', lines: [{ key: 'lp1rm', label: '레그프레스', color: '#111' }], lower: 0 },
+  { title: '벤치프레스 1RM (kg)', lines: [{ key: 'bp1rm', label: '벤치프레스', color: '#2c2c2c' }], lower: 0 },
+  { title: '스쿼트 1RM (kg)', lines: [{ key: 'sq1rm', label: '스쿼트', color: '#2c2c2c' }], lower: 0 },
+  { title: '데드리프트 1RM (kg)', lines: [{ key: 'dl1rm', label: '데드리프트', color: '#2c2c2c' }], lower: 0 },
+  { title: '오버헤드프레스 1RM (kg)', lines: [{ key: 'ohp1rm', label: 'OHP', color: '#2c2c2c' }], lower: 0 },
+  { title: '레그프레스 1RM (kg)', lines: [{ key: 'lp1rm', label: '레그프레스', color: '#2c2c2c' }], lower: 0 },
   {
     title: '악력 (kg)',
     lines: [
-      { key: 'gripR', label: '우측', color: '#111' },
-      { key: 'gripL', label: '좌측', color: '#555', dash: '6 3' },
+      { key: 'gripR', label: '우측', color: '#2c2c2c' },
+      { key: 'gripL', label: '좌측', color: '#5a5a5a', dash: '6 3' },
     ],
   },
   {
     title: '근지구력 (회)',
     lines: [
-      { key: 'pushupReps',  label: '푸시업 (회)',  color: '#111' },
-      { key: 'curlupReps',  label: '컬업 (회)',    color: '#555', dash: '6 3' },
+      { key: 'pushupReps',  label: '푸시업 (회)',  color: '#2c2c2c' },
+      { key: 'curlupReps',  label: '컬업 (회)',    color: '#5a5a5a', dash: '6 3' },
     ],
     lower: 0,
   },
-  { title: '플랭크 (초)', lines: [{ key: 'plankFront', label: '플랭크 (초)', color: '#111' }], lower: 0 },
+  { title: '플랭크 (초)', lines: [{ key: 'plankFront', label: '플랭크 (초)', color: '#2c2c2c' }], lower: 0 },
   {
     title: 'FMS 총점',
     lines: [
-      { key: 'fmsTotal', label: 'FMS 총점 (/21)', color: '#111' },
+      { key: 'fmsTotal', label: 'FMS 총점 (/21)', color: '#2c2c2c' },
     ],
     lower: 0,
     upper: 21,
@@ -146,17 +146,17 @@ function SingleLineChart({ config, data }: { config: ChartConfig; data: ChartPoi
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e9e9e9" />
-          <XAxis dataKey="date" stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#555' }} />
+          <XAxis dataKey="date" stroke="#8a8a8a" tick={{ fontSize: 11, fill: '#5a5a5a' }} />
           <YAxis
             stroke="#8a8a8a"
-            tick={{ fontSize: 11, fill: '#555' }}
+            tick={{ fontSize: 11, fill: '#5a5a5a' }}
             domain={nd ? nd.domain : ['auto', 'auto']}
             ticks={nd?.ticks}
             allowDataOverflow
             tickFormatter={(v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1))}
           />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
-          {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
+          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#2c2c2c' }} />
+          {config.lines.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#5a5a5a' }} />}
           {config.lines.map((l) => (
             <Line isAnimationActive={false}
               key={l.key}
@@ -203,7 +203,7 @@ function FmsRadarChart({ assessments }: { assessments: AssessmentRow[] }) {
         <ResponsiveContainer width="100%" height={320}>
           <RadarChart data={radarData} margin={{ top: 10, right: 30, left: 30, bottom: 10 }}>
             <PolarGrid stroke="#e9e9e9" />
-            <PolarAngleAxis dataKey="test" tick={{ fontSize: 11, fill: '#555' }} />
+            <PolarAngleAxis dataKey="test" tick={{ fontSize: 11, fill: '#5a5a5a' }} />
             <PolarRadiusAxis angle={90} domain={[0, 3]} tickCount={4} tick={{ fontSize: 10, fill: '#8a8a8a' }} stroke="#8a8a8a" />
             {recent.map((a, i) => (
               <Radar
@@ -217,8 +217,8 @@ function FmsRadarChart({ assessments }: { assessments: AssessmentRow[] }) {
                 strokeWidth={2}
               />
             ))}
-            {recent.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#555' }} />}
-            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#111' }} />
+            {recent.length > 1 && <Legend wrapperStyle={{ fontSize: 11, color: '#5a5a5a' }} />}
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #d6d6d6', backgroundColor: '#fff', color: '#2c2c2c' }} />
           </RadarChart>
         </ResponsiveContainer>
       </div>

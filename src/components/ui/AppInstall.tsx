@@ -48,7 +48,7 @@ export default function AppInstall() {
       type="button"
       onClick={install}
       title="이 시스템을 앱처럼 설치합니다 (홈 화면·앱 목록에 아이콘 추가)"
-      className="px-3.5 py-2 rounded-md border border-white/30 hover:border-white text-white"
+      className="btn-secondary"
     >
       📲 앱 설치
     </button>

@@ -64,6 +64,8 @@ import type { Sex } from '@/lib/types';
 import DeleteAssessmentButton from './DeleteAssessmentButton';
 import PrintButton from './PrintButton';
 import ShareButton from './ShareButton';
+import CamAngleSummary from '@/components/rom/CamAngleSummary';
+import { camGroupsIn } from '@/lib/pose-angles';
 
 export const dynamic = 'force-dynamic';
 
@@ -427,7 +429,7 @@ export default async function AssessmentViewPage({
       )}
 
       {/* Hero summary */}
-      <div className="hero-summary text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#111' }} data-print-section="회원 요약">
+      <div className="hero-summary text-white p-5 rounded-xl mb-5 print:rounded-none" style={{ background: '#2c2c2c' }} data-print-section="회원 요약">
         <h3 className="font-bold mb-3">회원님 요약</h3>
         {/* 측정 흐름 순서: 기본정보 → ①생체지표 → ②신체조성 → ③자세 → ④움직임 → ⑤심폐 → ⑥근력 → ⑦근지구력 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -564,8 +566,8 @@ export default async function AssessmentViewPage({
           className="p-3 rounded"
           style={
             parq.passed
-              ? { background: '#111', color: '#fff' }
-              : { background: '#fff', border: '1.5px solid #111', color: '#111' }
+              ? { background: '#2c2c2c', color: '#fff' }
+              : { background: '#fff', border: '1.5px solid #2c2c2c', color: '#2c2c2c' }
           }
         >
           <div className="font-semibold">
@@ -656,7 +658,7 @@ export default async function AssessmentViewPage({
                   >
                     {POSTURE_ITEM_LABELS[k] || k}
                     {sides.length > 0 && (
-                      <b style={{ color: '#111' }}> ({sides.join('·')})</b>
+                      <b style={{ color: '#2c2c2c' }}> ({sides.join('·')})</b>
                     )}
                   </span>
                 );
@@ -668,7 +670,7 @@ export default async function AssessmentViewPage({
                   <div
                     key={s.name}
                     className="border-l-4 pl-3 py-1"
-                    style={{ borderLeftColor: '#111' }}
+                    style={{ borderLeftColor: '#2c2c2c' }}
                   >
                     <div className="font-semibold text-slate-100">
                       의심: {s.name}{' '}
@@ -694,12 +696,12 @@ export default async function AssessmentViewPage({
         {/* 동적 움직임 보상 — 정적 자세 이상이 없어도 OHSA 보상이 있으면 표시 (인체도 근거) */}
         {(a.ohsaFlags || []).length > 0 && (
           <div className="mt-4">
-            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
+            <div className="text-sm font-semibold mb-2" style={{ color: '#2c2c2c' }}>
               동적 움직임 보상 — 교정 대상 근육 (NASM CES)
             </div>
             <div className="space-y-3">
               {matchedComps.map((c) => (
-                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
+                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#2c2c2c' }}>
                   <div className="font-semibold text-sm text-slate-100">{c.label}</div>
                   <div className="text-xs mt-1" style={{ color: '#b42318' }}>
                     <b>과활성(이완):</b> {c.overactive}
@@ -746,7 +748,7 @@ export default async function AssessmentViewPage({
         {/* 질적 평가 — 체형 스케치 & 메모 */}
         {a.postureDrawing && (
           <div className="mt-4 sketch-print" style={{ breakInside: 'avoid' }}>
-            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>체형 스케치 (질적 평가)</div>
+            <div className="text-sm font-semibold mb-2" style={{ color: '#2c2c2c' }}>체형 스케치 (질적 평가)</div>
             {/* 스케치가 컨테이너 높이를 결정 — 구버전(그림 영역만)·신버전(하단 여백 포함) 모두
                 배경 그림과 상단 정렬로 정확히 겹침 */}
             <div
@@ -762,16 +764,29 @@ export default async function AssessmentViewPage({
         )}
         {a.postureMemo && (
           <div className="mt-3 text-sm p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #e3e3e3', color: '#333', whiteSpace: 'pre-wrap' }}>
-            <b style={{ color: '#111' }}>질적 평가 메모</b>
+            <b style={{ color: '#2c2c2c' }}>질적 평가 메모</b>
             <br />
             {a.postureMemo}
+          </div>
+        )}
+
+        {/* 카메라로 잰 각도 (참고값) */}
+        {camGroupsIn(a.rom).length > 0 && (
+          <div className="mt-4">
+            <div className="text-sm font-semibold mb-2" style={{ color: '#2c2c2c' }}>
+              카메라 측정 각도{' '}
+              <span className="text-xs font-normal" style={{ color: '#8a8a8a' }}>
+                참고값 — 카메라 한 대로 잰 값이라 각도계와 다를 수 있습니다. 좌우는 회원 본인 기준.
+              </span>
+            </div>
+            <CamAngleSummary rom={a.rom} />
           </div>
         )}
 
         {/* 자세 사진 */}
         {(a.posturePhotos || []).length > 0 && (
           <div className="mt-4">
-            <div className="text-sm font-semibold mb-2" style={{ color: '#111' }}>
+            <div className="text-sm font-semibold mb-2" style={{ color: '#2c2c2c' }}>
               자세 사진 ({(a.posturePhotos || []).length}장)
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -813,7 +828,7 @@ export default async function AssessmentViewPage({
               >
                 {breath.overall === 'green' ? '🟢' : breath.overall === 'yellow' ? '🟡' : '🔴'} {breath.label}
               </div>
-              <div className="text-xs mt-1" style={{ color: '#555' }}>{breath.message}</div>
+              <div className="text-xs mt-1" style={{ color: '#5a5a5a' }}>{breath.message}</div>
             </div>
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -896,8 +911,8 @@ export default async function AssessmentViewPage({
                     className="flex justify-between items-center px-3 py-1.5 rounded"
                     style={
                       e.key === bestVo2?.key
-                        ? { background: '#111', color: '#fff', fontWeight: 600 }
-                        : { background: '#f2f2f2', color: '#555' }
+                        ? { background: '#2c2c2c', color: '#fff', fontWeight: 600 }
+                        : { background: '#f2f2f2', color: '#5a5a5a' }
                     }
                   >
                     <span>{e.key === bestVo2?.key ? '★ ' : ''}{e.label}</span>
@@ -1118,7 +1133,7 @@ export default async function AssessmentViewPage({
                   unit="초"
                 />
                 {plank.warnings.length > 0 && (
-                  <div className="md:col-span-2 text-sm p-2 rounded space-y-1" style={{ background: '#fff', border: '1.5px solid #111', color: '#111' }}>
+                  <div className="md:col-span-2 text-sm p-2 rounded space-y-1" style={{ background: '#fff', border: '1.5px solid #2c2c2c', color: '#2c2c2c' }}>
                     {plank.warnings.map((w) => (
                       <div key={w}>• {w}</div>
                     ))}
@@ -1207,16 +1222,16 @@ export default async function AssessmentViewPage({
         ) : (
           <ol className="space-y-3">
             {recs.map((r, i) => (
-              <li key={i} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
+              <li key={i} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#2c2c2c' }}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <strong>{r.title}</strong>
                   <span
                     className="text-[10px] px-2 py-0.5 rounded font-bold"
                     style={
                       r.priority === 'critical'
-                        ? { background: '#111', color: '#fff' }
+                        ? { background: '#2c2c2c', color: '#fff' }
                         : r.priority === 'high'
-                        ? { background: '#555', color: '#fff' }
+                        ? { background: '#5a5a5a', color: '#fff' }
                         : r.priority === 'medium'
                         ? { background: '#9a9a9a', color: '#fff' }
                         : { background: '#e2e2e2', color: '#444' }
@@ -1229,11 +1244,11 @@ export default async function AssessmentViewPage({
                     style={{
                       background:
                         r.source === 'ACSM'
-                          ? '#111'
+                          ? '#2c2c2c'
                           : r.source === 'NSCA'
                           ? '#333'
                           : r.source === 'NASM'
-                          ? '#555'
+                          ? '#5a5a5a'
                           : '#6e6e6e',
                     }}
                   >
@@ -1279,7 +1294,7 @@ function DeltaRow({
       {/* 값·변화량을 각각 nowrap으로 — 좁은 화면에선 변화량만 다음 줄로 (글자 단위 깨짐 방지) */}
       <span
         className="text-sm tabular-nums font-semibold inline-flex flex-wrap justify-end gap-x-1"
-        style={{ color: '#111' }}
+        style={{ color: '#2c2c2c' }}
       >
         <span className="whitespace-nowrap">
           {fmt(d.prev)} → {fmt(d.cur)}{d.unit}
@@ -1371,7 +1386,7 @@ function ResultRow({
       </div>
     );
   return (
-    <div className="p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #111' }}>
+    <div className="p-3 rounded" style={{ background: '#f2f2f2', border: '1px solid #2c2c2c' }}>
       <div className="text-xs text-slate-400">{label}</div>
       <div className="text-xl font-bold text-slate-100">
         {displayValue ||
@@ -1404,7 +1419,7 @@ function MetricBig({
       className="rounded p-3"
       style={
         warn
-          ? { background: '#fff', border: '1.5px solid #111' }
+          ? { background: '#fff', border: '1.5px solid #2c2c2c' }
           : { background: '#f5f5f5', border: '1px solid #e3e3e3' }
       }
     >

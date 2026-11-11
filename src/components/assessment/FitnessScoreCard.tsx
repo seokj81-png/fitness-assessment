@@ -19,7 +19,7 @@ function clsScore(cls?: string): number {
 
 function clsColor(cls?: string): string {
   const m: Record<string, string> = {
-    excellent: '#111111',
+    excellent: '#2c2c2c',
     good: '#555555',
     average: '#8a8a8a',
     below: '#9a9a9a',
@@ -47,7 +47,7 @@ function flagScore(n: number): number {
 }
 
 function OverallCircle({ score }: { score: number }) {
-  const color = score >= 80 ? '#111111' : score >= 65 ? '#333333' : score >= 50 ? '#555555' : score >= 35 ? '#8a8a8a' : '#9a9a9a';
+  const color = score >= 80 ? '#2c2c2c' : score >= 65 ? '#333333' : score >= 50 ? '#555555' : score >= 35 ? '#8a8a8a' : '#9a9a9a';
   const label = score >= 80 ? 'Excellent' : score >= 65 ? 'Good' : score >= 50 ? 'Average' : score >= 35 ? 'Below Avg' : 'Poor';
   const r = 44;
   const circ = 2 * Math.PI * r;
@@ -68,7 +68,7 @@ function OverallCircle({ score }: { score: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black leading-none" style={{ color: '#111' }}>{score}</span>
+          <span className="text-3xl font-black leading-none" style={{ color: '#2c2c2c' }}>{score}</span>
         </div>
       </div>
       <span className="mt-1 text-xs font-bold" style={{ color }}>{label}</span>
@@ -98,14 +98,14 @@ function MiniRadar({ title, items, note }: { title: string; items: MiniItem[]; n
           <PolarGrid stroke="#e9e9e9" />
           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: '#555555' }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 8, fill: '#c4c4c4' }} />
-          <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.14} strokeWidth={2} isAnimationActive={false} />
+          <Radar dataKey="score" stroke="#2c2c2c" fill="#2c2c2c" fillOpacity={0.14} strokeWidth={2} isAnimationActive={false} />
         </RadarChart>
       </ResponsiveContainer>
       <div className="mt-1 space-y-0.5">
         {items.map((i) => (
           <div key={i.subject} className="flex items-center justify-between text-[11px]">
             <span className="text-slate-400">{i.subject}</span>
-            <span className="font-semibold tabular-nums" style={{ color: i.display ? '#111' : '#c4c4c4' }}>
+            <span className="font-semibold tabular-nums" style={{ color: i.display ? '#2c2c2c' : '#c4c4c4' }}>
               {i.display ?? '미측정'}
             </span>
           </div>
@@ -267,7 +267,7 @@ export default function FitnessScoreCard({ computed, state }: { computed: any; s
               <PolarGrid stroke="#e9e9e9" />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#555555' }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={3} tick={{ fontSize: 9, fill: '#8a8a8a' }} />
-              <Radar dataKey="score" stroke="#111111" fill="#111111" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
+              <Radar dataKey="score" stroke="#2c2c2c" fill="#2c2c2c" fillOpacity={0.15} strokeWidth={2} isAnimationActive={false} />
             </RadarChart>
           </ResponsiveContainer>
           <p className="text-[10px] text-center" style={{ color: '#9a9a9a' }}>

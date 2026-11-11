@@ -80,8 +80,8 @@ export default function ClientDirectory({ rows }: { rows: ClientRow[] }) {
                   className="px-3 py-1.5 rounded-full text-sm font-semibold transition"
                   style={
                     on
-                      ? { background: '#111', color: '#fff', border: '1px solid #111' }
-                      : { background: '#fff', color: '#555', border: '1px solid #d6d6d6' }
+                      ? { background: '#2c2c2c', color: '#fff', border: '1px solid #2c2c2c' }
+                      : { background: '#fff', color: '#5a5a5a', border: '1px solid #d6d6d6' }
                   }
                 >
                   {b}
@@ -129,7 +129,7 @@ export default function ClientDirectory({ rows }: { rows: ClientRow[] }) {
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {c.branch && (
-                  <span className="text-[11px] px-2 py-0.5 rounded font-semibold" style={{ background: '#111', color: '#fff' }}>
+                  <span className="text-[11px] px-2 py-0.5 rounded font-semibold" style={{ background: '#2c2c2c', color: '#fff' }}>
                     {c.branch}
                   </span>
                 )}

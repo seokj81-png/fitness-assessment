@@ -9,17 +9,23 @@
    !important로 모노크롬 라이트 값으로 강제한다.
    ══════════════════════════════════════════════════════ */
 
+/* 색·모양 값은 파프짐 OS(pafgym-os-web)와 맞춘다 (2026-11-11 대표 지시):
+   ink #2c2c2c · ink-soft #5a5a5a · ink-faint #8a8a8a · line #e2e2e2 · line-strong #c8c8c8 ·
+   paper #fff · paper-soft #f6f6f6 · paper-dim #ededed · 모서리 9/12/16px · 알약 버튼 · Pretendard */
 :root {
-  --bg:       #f6f6f6; /* 페이지 배경 */
-  --bg2:      #efefef; /* 서브 배경 */
-  --card:     #ffffff; /* 카드 */
-  --border:   #e3e3e3;
-  --ink:      #111111; /* 주 텍스트·주 액션 */
-  --text:     #111111;
-  --text-2:   #555555;
-  --text-3:   #8a8a8a;
+  --bg:       #f6f6f6; /* 페이지 배경 (OS paper-soft) */
+  --bg2:      #ededed; /* 서브 배경 (OS paper-dim) */
+  --card:     #ffffff; /* 카드 (OS paper) */
+  --border:   #e2e2e2; /* OS line */
+  --line-strong: #c8c8c8;
+  --ink:      #2c2c2c; /* 주 텍스트·주 액션 (OS ink) */
+  --text:     #2c2c2c;
+  --text-2:   #5a5a5a; /* OS ink-soft */
+  --text-3:   #8a8a8a; /* OS ink-faint */
   --input-bg: #ffffff;
-  --input-bd: #d6d6d6;
+  --input-bd: #e2e2e2;
+  --warn:     #c62828;
+  --shadow-card: 0 1px 2px rgba(44, 44, 44, 0.04), 0 4px 16px rgba(44, 44, 44, 0.05);
 }
 
 html { scroll-behavior: smooth; }
@@ -31,7 +37,7 @@ html { scroll-padding-top: 160px; scroll-padding-bottom: 110px; }
 html, body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   /* 한국어 단어 단위 줄바꿈 — 좁은 화면·글자 확대에서도 어절이 깨지지 않게.
      overflow-wrap은 한 단어가 칸보다 길 때만 강제 분리(오버플로 방지 폴백) */
@@ -43,29 +49,30 @@ html, body {
   .card {
     background: var(--card);
     border: 1px solid var(--border);
-    @apply rounded-xl p-5 md:p-6 mb-5;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    @apply p-5 md:p-6 mb-5;
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
   }
   .btn-primary {
     background: var(--ink);
-    @apply text-white px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    @apply inline-block text-white px-4 py-2.5 rounded-full text-sm font-semibold transition;
     white-space: nowrap; /* 버튼 라벨은 글자 단위로 쪼개지 않음 — 좁으면 버튼째 줄바꿈 */
   }
-  .btn-primary:hover { background: #000; }
+  .btn-primary:hover { background: #111; }
   .btn-primary:disabled { background: #9a9a9a; }
   .btn-secondary {
     background: #ffffff;
     color: var(--ink);
-    border: 1px solid #cfcfcf;
-    @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    border: 1px solid var(--line-strong);
+    @apply inline-block px-4 py-2.5 rounded-full text-sm font-semibold transition;
     white-space: nowrap;
   }
-  .btn-secondary:hover { background: #f0f0f0; border-color: #9a9a9a; }
+  .btn-secondary:hover { background: #f6f6f6; border-color: var(--ink); }
   .btn-danger {
     background: #ffffff;
     color: var(--ink);
-    border: 1px solid #cfcfcf;
-    @apply px-4 py-2.5 rounded-md text-sm font-semibold transition;
+    border: 1px solid var(--line-strong);
+    @apply inline-block px-4 py-2.5 rounded-full text-sm font-semibold transition;
     white-space: nowrap;
   }
   .btn-danger:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
@@ -74,7 +81,8 @@ html, body {
     border: 1px solid var(--input-bd);
     color: var(--text);
     /* 16px = iOS 자동 줌 방지 + 플로어 가독성 */
-    @apply w-full px-3 py-2.5 rounded-md text-base focus:outline-none;
+    @apply w-full px-3 py-2.5 text-base focus:outline-none;
+    border-radius: 9px;
     min-height: 44px; /* 터치 타겟 */
   }
   .input:focus {
@@ -87,11 +95,11 @@ html, body {
   }
 
   /* 등급 필: 잉크 농도 스케일 — 진할수록 좋음 */
-  .pill-excellent { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #111; color: #fff; }
-  .pill-good      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #4a4a4a; color: #fff; }
+  .pill-excellent { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: var(--ink); color: #fff; }
+  .pill-good      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #5a5a5a; color: #fff; }
   .pill-average   { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #9a9a9a; color: #fff; }
   .pill-below     { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #e2e2e2; color: #444; }
-  .pill-poor      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #fff; color: #111; border: 1.5px solid #111; }
+  .pill-poor      { @apply inline-block px-2 py-0.5 rounded text-xs font-semibold; background: #fff; color: var(--ink); border: 1.5px solid var(--ink); }
 
   /* 가이드라인 태그 (ACSM/NSCA/NASM/FMS): 모노크롬 아웃라인 */
   .guideline-tag {
@@ -137,11 +145,11 @@ html, body {
 /* 그라데이션(헤더·점수카드) → 블랙 */
 .bg-gradient-to-r, .bg-gradient-to-br, .bg-gradient-to-b {
   background-image: none !important;
-  background-color: #101010 !important;
+  background-color: var(--ink) !important;
 }
 
 /* 텍스트: 라이트 텍스트(다크용) → 잉크 */
-.text-slate-100, .text-slate-200 { color: #111 !important; }
+.text-slate-100, .text-slate-200 { color: var(--ink) !important; }
 .text-slate-300  { color: #333 !important; }
 .text-slate-400  { color: #6e6e6e !important; }
 .text-slate-500,
@@ -153,15 +161,15 @@ html, body {
 .text-slate-800,
 .text-gray-800   { color: #222 !important; }
 .text-slate-900,
-.text-gray-900   { color: #111 !important; }
+.text-gray-900   { color: var(--ink) !important; }
 
 /* 컬러 텍스트 → 회색조 (의미는 배지·라벨 텍스트가 전달) */
 .text-blue-300, .text-blue-400, .text-blue-600, .text-blue-800,
 .text-cyan-300, .text-violet-300 { color: #444 !important; }
-.text-emerald-300, .text-emerald-400, .text-green-300, .text-green-900 { color: #111 !important; }
+.text-emerald-300, .text-emerald-400, .text-green-300, .text-green-900 { color: var(--ink) !important; }
 .text-amber-400, .text-amber-800, .text-orange-300, .text-orange-700,
 .text-yellow-300 { color: #444 !important; }
-.text-red-300, .text-red-400, .text-red-900 { color: #111 !important; }
+.text-red-300, .text-red-400, .text-red-900 { color: var(--ink) !important; }
 
 /* 보더 */
 .border-slate-600, .border-slate-700, .border-slate-800,
@@ -186,6 +194,7 @@ textarea {
   background: var(--input-bg) !important;
   color: var(--text) !important;
   border-color: var(--input-bd) !important;
+  border-radius: 9px;
   font-size: 16px; /* iOS 자동 줌 방지 */
 }
 input[type="number"]:focus,
@@ -198,7 +207,7 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 /* 체크박스도 모노크롬 */
-input[type="checkbox"], input[type="radio"] { accent-color: #111; width: 18px; height: 18px; }
+input[type="checkbox"], input[type="radio"] { accent-color: #2c2c2c; width: 18px; height: 18px; }
 
 /* 탭 버튼 */
 button.tab-active {
@@ -277,12 +286,12 @@ hr, .divide-slate-200 > * + * {
 
 /* 결과 기반 운동 가이드 박스 */
 .guide-box {
-  background: #f2f2f2;
-  border: 1px solid #e3e3e3;
-  border-radius: 10px;
+  background: #f6f6f6;
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 12px 14px;
   margin-top: 14px;
 }
-.guide-box .guide-title { font-weight: 700; font-size: 13px; color: #111; margin-bottom: 6px; }
+.guide-box .guide-title { font-weight: 700; font-size: 13px; color: var(--ink); margin-bottom: 6px; }
 .guide-box ul { list-style: disc; padding-left: 18px; }
 .guide-box li { font-size: 13px; color: #444; margin: 3px 0; }

@@ -32,7 +32,7 @@ export function RangeBar({ r, unit }: { r: SftResult; unit: string }) {
         />
         <div
           className="absolute -top-1 h-5 w-5 rounded-full"
-          style={{ left: `calc(${pos(r.value)}% - 10px)`, background: r.risk ? '#b42318' : '#111', border: '2px solid #fff', boxShadow: '0 0 0 1px #111' }}
+          style={{ left: `calc(${pos(r.value)}% - 10px)`, background: r.risk ? '#b42318' : '#2c2c2c', border: '2px solid #fff', boxShadow: '0 0 0 1px #2c2c2c' }}
         />
       </div>
       <div className="flex justify-between text-[11px] mt-1" style={{ color: '#8a8a8a' }}>
@@ -56,7 +56,7 @@ export function SftResultCard({ r, age }: { r: SftResult; age: number }) {
           <div className="text-xs" style={{ color: '#6e6e6e' }}>
             {item.label} · {item.what}
           </div>
-          <div className="text-xl font-bold" style={{ color: '#111' }}>
+          <div className="text-xl font-bold" style={{ color: '#2c2c2c' }}>
             {f1(r.value)} {item.unit}
           </div>
         </div>
@@ -107,7 +107,7 @@ function CheckRows({ title, rows }: { title: string; rows: SarcoCheck[] }) {
   const shown = rows.filter((r) => r.low !== null);
   return (
     <div>
-      <div className="text-xs font-bold mb-1" style={{ color: '#111' }}>
+      <div className="text-xs font-bold mb-1" style={{ color: '#2c2c2c' }}>
         {title}
       </div>
       {shown.length === 0 ? (
@@ -121,7 +121,7 @@ function CheckRows({ title, rows }: { title: string; rows: SarcoCheck[] }) {
               <span style={{ color: '#444' }}>
                 {r.label} <span style={{ color: '#9a9a9a' }}>(기준 {r.cut})</span>
               </span>
-              <span className="whitespace-nowrap font-semibold tabular-nums" style={{ color: r.low ? '#b42318' : '#111' }}>
+              <span className="whitespace-nowrap font-semibold tabular-nums" style={{ color: r.low ? '#b42318' : '#2c2c2c' }}>
                 {r.value} {r.low ? '· 기준 밖' : '✓'}
               </span>
             </li>
@@ -133,10 +133,10 @@ function CheckRows({ title, rows }: { title: string; rows: SarcoCheck[] }) {
 }
 
 const TONE: Record<SarcoResult['tone'], { border: string; chip: string; chipText: string }> = {
-  none: { border: '1px dashed #c4c4c4', chip: '#f2f2f2', chipText: '#555' },
-  ok: { border: '1px solid #d6d6d6', chip: '#f2f2f2', chipText: '#111' },
-  watch: { border: '1.5px solid #8a8a8a', chip: '#e9e9e9', chipText: '#111' },
-  warn: { border: '2px solid #111', chip: '#111', chipText: '#fff' },
+  none: { border: '1px dashed #c4c4c4', chip: '#f2f2f2', chipText: '#5a5a5a' },
+  ok: { border: '1px solid #d6d6d6', chip: '#f2f2f2', chipText: '#2c2c2c' },
+  watch: { border: '1.5px solid #8a8a8a', chip: '#e9e9e9', chipText: '#2c2c2c' },
+  warn: { border: '2px solid #2c2c2c', chip: '#2c2c2c', chipText: '#fff' },
   alert: { border: '2px solid #b42318', chip: '#b42318', chipText: '#fff' },
 };
 
@@ -148,7 +148,7 @@ export function SarcoBox({ res }: { res: SarcoResult }) {
         <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: t.chip, color: t.chipText }}>
           근육 건강
         </span>
-        <span className="text-lg font-bold" style={{ color: res.tone === 'alert' ? '#b42318' : '#111' }}>
+        <span className="text-lg font-bold" style={{ color: res.tone === 'alert' ? '#b42318' : '#2c2c2c' }}>
           {res.title}
         </span>
       </div>
@@ -204,7 +204,7 @@ export default function SeniorResults({
     <div className="space-y-4">
       {hasSft && (
         <div>
-          <div className="text-sm font-bold mb-2" style={{ color: '#111' }}>
+          <div className="text-sm font-bold mb-2" style={{ color: '#2c2c2c' }}>
             시니어 체력 (Senior Fitness Test)
           </div>
           <SftResultList senior={senior} age={age} sex={sex} />

@@ -122,7 +122,7 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
           {/* 첫 측정 대비 요약 */}
           {sorted.length >= 2 && (
             <div className="mb-3 p-3 rounded-lg" style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}>
-              <div className="text-xs font-bold mb-1.5" style={{ color: '#111' }}>
+              <div className="text-xs font-bold mb-1.5" style={{ color: '#2c2c2c' }}>
                 📌 첫 측정 대비 변화{' '}
                 <span className="font-medium" style={{ color: '#8a8a8a' }}>
                   {new Date(sorted[0].date).toLocaleDateString('ko-KR')} →{' '}
@@ -170,7 +170,7 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                 const nd = niceDomain(data.map((x) => x.v), { lower: 0 });
                 return (
                   <div key={m.key} className="rounded-lg p-3" style={{ background: '#fafafa', border: '1px solid #e3e3e3' }}>
-                    <div className="text-xs font-semibold mb-1" style={{ color: '#111' }}>{m.label} ({m.unit})</div>
+                    <div className="text-xs font-semibold mb-1" style={{ color: '#2c2c2c' }}>{m.label} ({m.unit})</div>
                     <ResponsiveContainer width="100%" height={140}>
                       <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
                         <CartesianGrid stroke="#e9e9e9" strokeDasharray="3 3" />
@@ -180,7 +180,7 @@ export default function InbodyLog({ clientId, initial }: { clientId: string; ini
                           contentStyle={{ background: '#fff', border: '1px solid #d6d6d6', borderRadius: 8, fontSize: 12 }}
                           formatter={(v) => [`${v} ${m.unit}`, m.label]}
                         />
-                        <Line type="monotone" dataKey="v" stroke="#111" strokeWidth={2} dot={{ r: 3, fill: '#111' }} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="v" stroke="#2c2c2c" strokeWidth={2} dot={{ r: 3, fill: '#2c2c2c' }} isAnimationActive={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

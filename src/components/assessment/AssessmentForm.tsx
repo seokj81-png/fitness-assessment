@@ -61,6 +61,8 @@ import NormsTable from './NormsTable';
 import { GradeWhoProvider } from './GradeTable';
 import type { NormTestKey } from '@/lib/norm-tests';
 import SeniorTab from './SeniorTab';
+import CameraAngleCard from '@/components/rom/CameraAngleCard';
+import type { CamApply } from '@/components/rom/RomCamera';
 
 interface ClientInfo {
   id: string;
@@ -414,7 +416,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     <div>
       {/* ── 상단 고정 헤더 (제목 + 탭) ── */}
       <div
-        className="sticky top-[65px] md:top-[73px] z-30 mb-5 no-print rounded-2xl overflow-hidden"
+        className="sticky top-[68px] sm:top-[72px] z-30 mb-5 no-print rounded-2xl overflow-hidden"
         style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(14px)',
@@ -431,7 +433,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
                 ← {backLabel}
               </a>
             )}
-            <h2 className="text-xl font-bold leading-tight" style={{ color: '#111' }}>{pageTitle}</h2>
+            <h2 className="text-xl font-bold leading-tight" style={{ color: '#2c2c2c' }}>{pageTitle}</h2>
             {pageSubtitle && <p className="text-xs mt-0.5" style={{ color: '#8a8a8a' }}>{pageSubtitle}</p>}
           </div>
         )}
@@ -444,7 +446,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
               className={`whitespace-nowrap px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 tab === t.id ? 'text-white' : 'hover:bg-black/5'
               }`}
-              style={tab === t.id ? { background: '#111' } : { color: '#777' }}
+              style={tab === t.id ? { background: '#2c2c2c' } : { color: '#777' }}
             >
               {t.label}
             </button>
@@ -972,8 +974,8 @@ function CardioTab({
                   className="flex justify-between items-center px-3 py-1.5 rounded"
                   style={
                     e.key === computed.bestVo2?.key
-                      ? { background: '#111', color: '#fff', fontWeight: 600 }
-                      : { background: '#f2f2f2', color: '#555' }
+                      ? { background: '#2c2c2c', color: '#fff', fontWeight: 600 }
+                      : { background: '#f2f2f2', color: '#5a5a5a' }
                   }
                 >
                   <span>{e.key === computed.bestVo2?.key ? '★ ' : ''}{e.label}</span>
@@ -1223,6 +1225,19 @@ function EnduranceTab({
   );
 }
 
+// 카메라로 잰 각도를 평가(rom)에 넣고, 화면 캡처는 자세 사진 칸(최대 4장)에 붙인다
+function useCamAngles(state: FormState, update: TabProps['update']) {
+  const photoRoom = Math.max(0, 4 - (state.posturePhotos ?? []).length);
+  const drop = (rom: Record<string, number> | undefined, prefixes: string[]) =>
+    Object.fromEntries(Object.entries(rom ?? {}).filter(([k]) => !prefixes.some((p) => k.startsWith(p))));
+  const onApply = (r: CamApply) => {
+    update('rom', (prev) => ({ ...drop(prev, r.prefixes), ...r.rom }));
+    if (r.photos.length) update('posturePhotos', (prev) => [...(prev ?? []), ...r.photos].slice(0, 4));
+  };
+  const onClear = (prefixes: string[]) => update('rom', (prev) => drop(prev, prefixes));
+  return { photoRoom, onApply, onClear };
+}
+
 function PostureTab({
   tier,
   state,
@@ -1266,10 +1281,13 @@ function PostureTab({
     update('postureFlags', Array.from(flags));
   };
 
+  const cam = useCamAngles(state, update);
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">정적 자세 평가 (NASM)</h2>
       <AdvToggle tier={tier} />
+      <CameraAngleCard mode="posture" rom={state.rom} photoRoom={cam.photoRoom} onApply={cam.onApply} onClear={cam.onClear} />
       <div className="card">
         <h3 className="font-bold mb-2">
           NASM 정적 자세 평가 — 체형 스케치 & 메모 <span className="guideline-tag tag-nasm">NASM</span>
@@ -1315,7 +1333,7 @@ function PostureTab({
                     })
                   }
                   className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full text-xs font-bold"
-                  style={{ background: '#111', color: '#fff', border: '2px solid #fff' }}
+                  style={{ background: '#2c2c2c', color: '#fff', border: '2px solid #fff' }}
                   title="삭제"
                 >
                   ✕
@@ -1325,7 +1343,7 @@ function PostureTab({
             {(state.posturePhotos ?? []).length < 4 && (
               <label
                 className="flex flex-col items-center justify-center rounded-lg cursor-pointer text-xs font-semibold"
-                style={{ width: 96, height: 128, border: '1.5px dashed #9a9a9a', color: '#555', background: '#fafafa' }}
+                style={{ width: 96, height: 128, border: '1.5px dashed #9a9a9a', color: '#5a5a5a', background: '#fafafa' }}
               >
                 📷
                 <span className="mt-1">촬영·추가</span>
@@ -1436,7 +1454,7 @@ function PostureTab({
                                       className="px-1.5 py-0.5 rounded text-[11px] font-semibold transition"
                                       style={
                                         has(`${key}:${side}`)
-                                          ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                                          ? { background: '#2c2c2c', color: '#fff', border: '1px solid #2c2c2c' }
                                           : { background: '#fff', color: '#9a9a9a', border: '1px solid #d6d6d6' }
                                       }
                                       title={side === 'L' ? '좌측' : '우측'}
@@ -1573,7 +1591,7 @@ function PostureTab({
                         className="px-2.5 py-1.5 rounded text-xs font-semibold transition"
                         style={
                           cur === val
-                            ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                            ? { background: '#2c2c2c', color: '#fff', border: '1px solid #2c2c2c' }
                             : { background: '#fff', color: '#777', border: '1px solid #d6d6d6' }
                         }
                       >
@@ -1617,7 +1635,7 @@ function PostureTab({
                 {br.overall === 'green' ? '🟢' : br.overall === 'yellow' ? '🟡' : '🔴'} {br.label}
               </div>
               <div className="text-xs mt-1" style={{ color: c.tx }}>{br.message}</div>
-              <div className="text-[11px] mt-1.5" style={{ color: '#555' }}>
+              <div className="text-[11px] mt-1.5" style={{ color: '#5a5a5a' }}>
                 {br.frc && `FRC: ${br.frc.toUpperCase()}`}{br.tlc && ` · TLC: ${br.tlc.toUpperCase()}`}{br.q && ` · 설문: ${br.q.toUpperCase()}`}
               </div>
             </div>
@@ -1650,7 +1668,7 @@ function PostureTab({
           <div className="mt-2">
             <ResultBox result={computed.balance.cls} unit="초 (약한 쪽 기준)" norm="balance" />
             {computed.balance.asymPct != null && computed.balance.asymPct > 0 && (
-              <p className="text-xs mt-1.5" style={{ color: '#555' }}>
+              <p className="text-xs mt-1.5" style={{ color: '#5a5a5a' }}>
                 좌우 차이 {computed.balance.asymPct}%
                 {computed.balance.weakSide && ` (약한 쪽: ${computed.balance.weakSide === 'L' ? '좌' : '우'})`}
               </p>
@@ -1693,6 +1711,7 @@ function MovementTab({
     update('ohsaFlags', Array.from(flags));
   };
   const ohsaHas = (key: string) => (state.ohsaFlags || []).includes(key);
+  const cam = useCamAngles(state, update);
 
   return (
     <div>
@@ -1829,6 +1848,8 @@ function MovementTab({
         </div>
       </div>
 
+      <CameraAngleCard mode="squat" rom={state.rom} photoRoom={cam.photoRoom} onApply={cam.onApply} onClear={cam.onClear} />
+
       <div className="card" style={{ display: tier.vis('mov.sls') ? undefined : 'none' }}>
         <h3 className="font-bold mb-3">
           Single-Leg Squat · Push · Pull <span className="guideline-tag tag-nasm">NASM</span>
@@ -1886,7 +1907,7 @@ function MovementTab({
             </p>
             <div className="space-y-3">
               {checked.map((c) => (
-                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#111' }}>
+                <div key={c.key} className="border-l-4 pl-3 py-1" style={{ borderLeftColor: '#2c2c2c' }}>
                   <div className="font-semibold text-sm text-slate-100">{c.label}</div>
                   <div className="text-xs mt-1" style={{ color: '#b42318' }}>
                     <b>과활성:</b> {c.overactive}
@@ -2112,7 +2133,7 @@ function AdvToggle({ tier }: { tier: TierProps }) {
         onClick={tier.toggle}
         aria-expanded={true}
         className="w-full mb-4 py-2.5 px-4 rounded-lg text-sm font-semibold text-left transition"
-        style={{ border: '1.5px solid #d6d6d6', color: '#555', background: '#fafafa' }}
+        style={{ border: '1.5px solid #d6d6d6', color: '#5a5a5a', background: '#fafafa' }}
       >
         <span aria-hidden="true">▲</span> 심화 검사 접기
       </button>
@@ -2126,18 +2147,18 @@ function AdvToggle({ tier }: { tier: TierProps }) {
       onClick={tier.toggle}
       aria-expanded={false}
       className="w-full mb-4 py-3 px-4 rounded-xl text-left transition flex flex-wrap items-center gap-x-2 gap-y-1.5 active:scale-[0.99]"
-      style={{ border: '1.5px solid #111', background: '#fff', boxShadow: '0 1px 5px rgba(0,0,0,0.10)' }}
+      style={{ border: '1.5px solid #2c2c2c', background: '#fff', boxShadow: '0 1px 5px rgba(0,0,0,0.10)' }}
     >
       <span
         className="inline-flex items-center justify-center rounded-full text-xs font-bold shrink-0"
-        style={{ background: '#111', color: '#fff', minWidth: 26, height: 26, padding: '0 7px' }}
+        style={{ background: '#2c2c2c', color: '#fff', minWidth: 26, height: 26, padding: '0 7px' }}
       >
         +{tier.hiddenNames.length}
       </span>
-      <span className="text-sm font-bold shrink-0" style={{ color: '#111' }}>
+      <span className="text-sm font-bold shrink-0" style={{ color: '#2c2c2c' }}>
         심화 검사 펼치기
       </span>
-      <span className="ml-auto text-sm font-bold shrink-0" style={{ color: '#111' }} aria-hidden="true">
+      <span className="ml-auto text-sm font-bold shrink-0" style={{ color: '#2c2c2c' }} aria-hidden="true">
         ▼
       </span>
       <span className="basis-full flex flex-wrap gap-1.5">
@@ -2186,7 +2207,7 @@ function TocTab({ goal, goTab }: { goal?: string | null; goTab: (t: Tab) => void
             className="card text-left transition hover:shadow-md"
             style={{ marginBottom: 0, minHeight: 118 }}
           >
-            <div className="text-lg font-black" style={{ color: '#111' }}>{it.no}</div>
+            <div className="text-lg font-black" style={{ color: '#2c2c2c' }}>{it.no}</div>
             <div className="font-bold mt-0.5">{it.title}</div>
             <div className="text-xs text-slate-500 mt-1 leading-snug">{it.desc}</div>
           </button>

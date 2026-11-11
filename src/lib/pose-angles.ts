@@ -104,3 +104,144 @@ export function smoothAngles(prev: Angles, next: Angles, alpha = 0.4): Angles {
   }
   return out;
 }
+
+// ─────────────────────────────────────────────────────────────
+// 평가에 저장하는 카메라 측정값 — Assessment.rom(JSON: Record<string, number>)에 아래 키로 넣는다.
+//   ohs_*  옆모습 오버헤드 스쿼트, 가장 깊이 앉은 순간
+//   pf_*   서 있는 자세, 정면(또는 뒷모습)
+//   ps_*   서 있는 자세, 옆모습
+// 부호: lr = 양수면 오른쪽이 높음 / inout = 양수면 안쪽 / fwd = 양수면 앞쪽 (회원 본인 기준 좌우)
+// ─────────────────────────────────────────────────────────────
+export type CamGroup = 'squat' | 'front' | 'side';
+export type CamKey =
+  | 'ohs_knee' | 'ohs_hip' | 'ohs_ankle' | 'ohs_trunk' | 'ohs_shoulder'
+  | 'pf_shoulder' | 'pf_pelvis' | 'pf_head' | 'pf_kneeL' | 'pf_kneeR'
+  | 'ps_head' | 'ps_trunk' | 'ps_knee';
+export type CamVals = Partial<Record<CamKey, number | null>>;
+
+export interface CamMetric {
+  key: CamKey;
+  group: CamGroup;
+  name: string;
+  short: string;
+  how: string;
+  signed?: 'lr' | 'inout' | 'fwd';
+}
+
+export const CAM_GROUP_NAME: Record<CamGroup, string> = {
+  squat: '오버헤드 스쿼트 (옆모습 · 가장 깊이 앉은 순간)',
+  front: '서 있는 자세 — 정면',
+  side: '서 있는 자세 — 옆모습',
+};
+export const CAM_GROUP_PREFIX: Record<CamGroup, string> = { squat: 'ohs_', front: 'pf_', side: 'ps_' };
+
+export const CAM_METRICS: CamMetric[] = [
+  { key: 'ohs_knee', group: 'squat', name: ANGLE_INFO.knee.name, short: '무릎', how: ANGLE_INFO.knee.how },
+  { key: 'ohs_hip', group: 'squat', name: ANGLE_INFO.hip.name, short: '엉덩이', how: ANGLE_INFO.hip.how },
+  { key: 'ohs_ankle', group: 'squat', name: ANGLE_INFO.ankle.name, short: '발목', how: ANGLE_INFO.ankle.how },
+  { key: 'ohs_trunk', group: 'squat', name: ANGLE_INFO.trunk.name, short: '상체', how: ANGLE_INFO.trunk.how },
+  { key: 'ohs_shoulder', group: 'squat', name: ANGLE_INFO.shoulder.name, short: '어깨', how: ANGLE_INFO.shoulder.how },
+  { key: 'pf_head', group: 'front', name: '머리 기울기', short: '머리', how: '양쪽 귀를 이은 선이 수평에서 기운 각도', signed: 'lr' },
+  { key: 'pf_shoulder', group: 'front', name: '어깨 기울기', short: '어깨', how: '양쪽 어깨를 이은 선이 수평에서 기운 각도', signed: 'lr' },
+  { key: 'pf_pelvis', group: 'front', name: '골반 기울기', short: '골반', how: '양쪽 엉덩이 관절을 이은 선이 수평에서 기운 각도', signed: 'lr' },
+  { key: 'pf_kneeL', group: 'front', name: '왼쪽 무릎 정렬', short: '왼무릎', how: '엉덩이·무릎·발목이 일직선에서 벗어난 각도 (안쪽 = X자 방향)', signed: 'inout' },
+  { key: 'pf_kneeR', group: 'front', name: '오른쪽 무릎 정렬', short: '오른무릎', how: '엉덩이·무릎·발목이 일직선에서 벗어난 각도 (안쪽 = X자 방향)', signed: 'inout' },
+  { key: 'ps_head', group: 'side', name: '머리 앞뒤 위치', short: '머리', how: '어깨→귀 선이 수직에서 기운 각도 (앞쪽 = 머리가 어깨보다 앞)', signed: 'fwd' },
+  { key: 'ps_trunk', group: 'side', name: '몸통 기울기', short: '몸통', how: '엉덩이→어깨 선이 수직에서 기운 각도', signed: 'fwd' },
+  { key: 'ps_knee', group: 'side', name: '무릎 굽힘', short: '무릎', how: '곧게 편 상태 0° — 엉덩이·무릎·발목 세 점으로 계산' },
+];
+
+export const camMetricsOf = (g: CamGroup) => CAM_METRICS.filter((m) => m.group === g);
+
+const SIGN_WORD: Record<NonNullable<CamMetric['signed']>, [string, string]> = {
+  lr: ['오른쪽 높음', '왼쪽 높음'],
+  inout: ['안쪽', '바깥쪽'],
+  fwd: ['앞쪽', '뒤쪽'],
+};
+
+// 화면 표시용: "3° 오른쪽 높음" · "12°" · "—"
+export function formatCam(m: CamMetric, v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const r = Math.round(Math.abs(v));
+  if (!m.signed) return `${Math.round(v)}°`;
+  if (r === 0) return '0°';
+  return `${r}° ${SIGN_WORD[m.signed][v > 0 ? 0 : 1]}`;
+}
+
+// 좌·우 두 점을 이은 선의 기울기. 양수 = 오른쪽이 높음 (화면 좌표는 y가 아래로 커진다)
+function tiltLR(l: Pt, r: Pt): number {
+  const dx = Math.abs(l.x - r.x);
+  if (dx === 0) return 0;
+  return Math.atan2(l.y - r.y, dx) * DEG;
+}
+
+// 정면 무릎 정렬: 엉덩이–발목 직선에서 무릎이 벗어난 각도. 양수 = 몸 가운데(안쪽)로
+function kneeFrontal(hip: Pt, knee: Pt, ankle: Pt, midX: number): number | null {
+  const span = ankle.y - hip.y;
+  if (span <= 0) return null;
+  const xLine = hip.x + (ankle.x - hip.x) * ((knee.y - hip.y) / span);
+  const dev = 180 - angleAt(hip, knee, ankle);
+  const inward = (knee.x - xLine) * (midX - xLine) > 0;
+  return inward ? dev : -dev;
+}
+
+const EAR = { L: 7, R: 8 } as const;
+
+export function computePostureFront(px: Pt[], minVis = 0.5): CamVals {
+  const g = (i: number) => (vis(px[i]) >= minVis ? px[i] : null);
+  const eL = g(EAR.L), eR = g(EAR.R);
+  const sL = g(LM.shoulder.L), sR = g(LM.shoulder.R);
+  const hL = g(LM.hip.L), hR = g(LM.hip.R);
+  const kL = g(LM.knee.L), kR = g(LM.knee.R);
+  const aL = g(LM.ankle.L), aR = g(LM.ankle.R);
+  const midX = hL && hR ? (hL.x + hR.x) / 2 : null;
+  return {
+    pf_head: eL && eR ? tiltLR(eL, eR) : null,
+    pf_shoulder: sL && sR ? tiltLR(sL, sR) : null,
+    pf_pelvis: hL && hR ? tiltLR(hL, hR) : null,
+    pf_kneeL: midX != null && hL && kL && aL ? kneeFrontal(hL, kL, aL, midX) : null,
+    pf_kneeR: midX != null && hR && kR && aR ? kneeFrontal(hR, kR, aR, midX) : null,
+  };
+}
+
+// 옆모습에서 몸이 바라보는 쪽: +1 = 화면 오른쪽, -1 = 화면 왼쪽
+export function facingDir(px: Pt[], side: Side): number {
+  const heel = px[LM.heel[side]], toe = px[LM.toe[side]];
+  if (vis(heel) >= 0.5 && vis(toe) >= 0.5 && toe.x !== heel.x) return Math.sign(toe.x - heel.x);
+  const nose = px[0], ear = px[EAR[side]];
+  if (nose && ear && nose.x !== ear.x) return Math.sign(nose.x - ear.x);
+  return 1;
+}
+
+export function computePostureSide(px: Pt[], side: Side, minVis = 0.5): CamVals {
+  const g = (i: number) => (vis(px[i]) >= minVis ? px[i] : null);
+  const ear = g(EAR[side]), sh = g(LM.shoulder[side]), hp = g(LM.hip[side]), kn = g(LM.knee[side]), an = g(LM.ankle[side]);
+  const f = facingDir(px, side);
+  const signed = (from: Pt, to: Pt) => {
+    const t = tiltFromVertical(from, to);
+    return (to.x - from.x) * f >= 0 ? t : -t;
+  };
+  return {
+    ps_head: ear && sh ? signed(sh, ear) : null,
+    ps_trunk: sh && hp ? signed(hp, sh) : null,
+    ps_knee: hp && kn && an ? 180 - angleAt(hp, kn, an) : null,
+  };
+}
+
+export const EAR_LM = EAR;
+
+// 떨림 줄이기(키가 정해지지 않은 값 묶음용)
+export function smoothVals(prev: CamVals, next: CamVals, alpha = 0.4): CamVals {
+  const out: CamVals = {};
+  for (const k of Object.keys(next) as CamKey[]) {
+    const p = prev[k], n = next[k];
+    out[k] = n == null ? null : p == null ? n : p + alpha * (n - p);
+  }
+  return out;
+}
+
+// 저장된 rom(JSON)에서 카메라 측정값이 있는 묶음만 골라낸다
+export function camGroupsIn(rom: Record<string, number> | null | undefined): CamGroup[] {
+  if (!rom) return [];
+  return (['front', 'side', 'squat'] as CamGroup[]).filter((g) => camMetricsOf(g).some((m) => typeof rom[m.key] === 'number'));
+}

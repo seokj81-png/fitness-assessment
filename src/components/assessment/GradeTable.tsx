@@ -50,7 +50,7 @@ export function GradeTableButton({
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
           className="text-left font-semibold print:no-underline"
-          style={{ color: '#111', textDecoration: 'underline dotted', textUnderlineOffset: 3 }}
+          style={{ color: '#2c2c2c', textDecoration: 'underline dotted', textUnderlineOffset: 3 }}
           title="눌러서 연령대별 등급표 보기"
         >
           {children}
@@ -60,8 +60,8 @@ export function GradeTableButton({
           type="button"
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
-          className="print:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold"
-          style={{ background: '#fff', color: '#111', border: '1px solid #bdbdbd' }}
+          className="print:hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+          style={{ background: '#fff', color: '#2c2c2c', border: '1px solid #c8c8c8' }}
         >
           등급표 <span aria-hidden>›</span>
         </button>
@@ -118,7 +118,7 @@ function GradeTableModal({
         aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
         className="w-full sm:w-[min(560px,calc(100%-32px))] max-h-[88vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 sm:p-5"
-        style={{ background: '#fff', color: '#111' }}
+        style={{ background: '#fff', color: '#2c2c2c' }}
       >
         <div className="flex items-start justify-between gap-3 mb-1">
           <h3 id={titleId} className="text-lg font-bold leading-snug">
@@ -132,7 +132,7 @@ function GradeTableModal({
             onClick={onClose}
             aria-label="닫기"
             className="shrink-0 w-8 h-8 rounded-full text-lg leading-none"
-            style={{ background: '#f2f2f2', color: '#111' }}
+            style={{ background: '#f2f2f2', color: '#2c2c2c' }}
           >
             ×
           </button>
@@ -157,7 +157,7 @@ function GradeTableModal({
               onClick={() => setViewSex(s)}
               aria-pressed={viewSex === s}
               className="px-4 py-1 rounded-md text-sm font-semibold"
-              style={viewSex === s ? { background: '#111', color: '#fff' } : { background: 'transparent', color: '#555' }}
+              style={viewSex === s ? { background: '#2c2c2c', color: '#fff' } : { background: 'transparent', color: '#5a5a5a' }}
             >
               {s === 'M' ? '남성' : '여성'}
               {s === sex ? ' (회원)' : ''}
@@ -199,8 +199,8 @@ function GradeTableModal({
                           className="py-2 px-0.5 sm:px-1 tabular-nums whitespace-nowrap"
                           style={
                             mine
-                              ? { background: '#111', color: '#fff', fontWeight: 700, borderRadius: 6 }
-                              : { color: i >= 3 ? '#111' : '#555', fontWeight: i >= 3 ? 600 : 400 }
+                              ? { background: '#2c2c2c', color: '#fff', fontWeight: 700, borderRadius: 6 }
+                              : { color: i >= 3 ? '#2c2c2c' : '#5a5a5a', fontWeight: i >= 3 ? 600 : 400 }
                           }
                         >
                           {txt}
@@ -225,8 +225,8 @@ function GradeTableModal({
         <button
           type="button"
           onClick={onClose}
-          className="sm:hidden mt-4 w-full py-2.5 rounded-lg text-sm font-semibold"
-          style={{ background: '#111', color: '#fff' }}
+          className="sm:hidden mt-4 w-full py-2.5 rounded-full text-sm font-semibold"
+          style={{ background: '#2c2c2c', color: '#fff' }}
         >
           닫기
         </button>

@@ -38,7 +38,7 @@ export default function PrintSectionPicker() {
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between text-sm font-bold"
-        style={{ color: '#111' }}
+        style={{ color: '#2c2c2c' }}
       >
         <span>🖨️ 인쇄 항목 선택 <span style={{ color: '#8a8a8a', fontWeight: 500 }}>— 체크된 항목만 인쇄됩니다 ({sections.length - excluded.size}/{sections.length})</span></span>
         <span>{open ? '▲' : '▼'}</span>
@@ -55,7 +55,7 @@ export default function PrintSectionPicker() {
                   className="px-3 py-2 rounded-md text-sm font-semibold transition"
                   style={
                     on
-                      ? { background: '#111', color: '#fff', border: '1px solid #111' }
+                      ? { background: '#2c2c2c', color: '#fff', border: '1px solid #2c2c2c' }
                       : { background: '#fff', color: '#8a8a8a', border: '1px solid #d6d6d6', textDecoration: 'line-through' }
                   }
                 >

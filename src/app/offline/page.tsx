@@ -22,7 +22,7 @@ export default function OfflinePage() {
         📡
       </div>
       <h2 style={{ fontSize: 20, fontWeight: 700, margin: '14px 0 8px' }}>인터넷이 연결되어 있지 않아요</h2>
-      <p style={{ color: '#555', lineHeight: 1.6, margin: '0 0 20px' }}>
+      <p style={{ color: '#5a5a5a', lineHeight: 1.6, margin: '0 0 20px' }}>
         회원 정보와 평가 기록은 인터넷이 있어야 불러올 수 있어요.
         <br />
         와이파이나 데이터를 켠 뒤 다시 시도해 주세요.
@@ -33,7 +33,7 @@ export default function OfflinePage() {
         style={{
           display: 'inline-block',
           padding: '10px 20px',
-          background: '#111',
+          background: '#2c2c2c',
           color: '#fff',
           borderRadius: 8,
           fontWeight: 700,

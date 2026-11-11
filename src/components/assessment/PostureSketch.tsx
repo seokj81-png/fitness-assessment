@@ -10,7 +10,7 @@ const IMAGE_H = 646;
 /** 통증·특이사항 표시 여백을 아래에 추가한 전체 캔버스 높이 */
 const CANVAS_H = 820;
 const MAX_UNDO = 20;
-const INK_COLOR = '#111';
+const INK_COLOR = '#2c2c2c';
 const ZOOM_STEPS = [1, 1.5, 2, 3];
 
 type Tool = 'pen' | 'thick' | 'eraser' | 'pan';
@@ -242,8 +242,8 @@ export default function PostureSketch({ value, onChange }: Props) {
   };
 
   const buttonStyle = (active: boolean, disabled = false): CSSProperties => ({
-    background: active ? '#111' : '#fff',
-    color: active ? '#fff' : '#111',
+    background: active ? '#2c2c2c' : '#fff',
+    color: active ? '#fff' : '#2c2c2c',
     border: '1px solid #cfcfcf',
     minWidth: 40,
     minHeight: 40,
@@ -297,7 +297,7 @@ export default function PostureSketch({ value, onChange }: Props) {
           >
             🔍−
           </button>
-          <span className="text-xs tabular-nums" style={{ color: '#555', minWidth: 34, textAlign: 'center' }}>
+          <span className="text-xs tabular-nums" style={{ color: '#5a5a5a', minWidth: 34, textAlign: 'center' }}>
             {zoom.toFixed(1)}×
           </span>
           <button
