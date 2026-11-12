@@ -41,13 +41,13 @@ export const NORM_TESTS: NormTest[] = [
   { key: 'dl', name: '데드리프트', table: DL_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
   { key: 'ohp', name: '오버헤드프레스', table: OHP_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
   { key: 'pc', name: '파워클린', table: PC_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
-  { key: 'lp', name: '레그프레스', table: LP_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
+  { key: 'lp', name: '레그프레스', table: LP_RATIO_NORMS, unit: '체중비', digits: 2, source: '쿠퍼 연구소', how: '체중비 = 1RM ÷ 체중' },
   { key: 'pushup', name: '푸시업', table: PUSHUP_NORMS, unit: '회', digits: 0, source: 'ACSM·NSCA', how: '남성은 정자세, 여성은 무릎 대고 하는 푸시업 기준입니다.' },
-  { key: 'ymcaBp', name: 'YMCA 벤치', table: YMCA_BP_NORMS, unit: '회', digits: 0, source: 'NSCA 4판', how: '남 36.3kg · 여 15.9kg 바벨, 메트로놈 60 bpm(분당 30회)에 맞춰 반복한 횟수' },
+  { key: 'ymcaBp', name: 'YMCA 벤치', table: YMCA_BP_NORMS, unit: '회', digits: 0, source: 'YMCA', how: '남 36.3kg · 여 15.9kg 바벨, 메트로놈 60 bpm(분당 30회)에 맞춰 반복한 횟수' },
   { key: 'curlup', name: '컬업', table: CURLUP_NORMS, unit: '회', digits: 0, source: 'NSCA 4판' },
   { key: 'squatEnd', name: '스쿼트 지구력', table: SQUAT_END_NORMS, unit: '회', digits: 0, source: '현장 검사 규준' },
   { key: 'pullup', name: '풀업', table: PULLUP_NORMS, unit: '회', digits: 0, source: '현장 검사 규준' },
-  { key: 'balance', name: '외발서기 (눈뜨고)', table: BALANCE_NORMS, unit: '초', digits: 0, source: '국내 참고치', how: '좌우 중 약한 쪽 기록으로 판정합니다.' },
+  { key: 'balance', name: '외발서기 (눈뜨고)', table: BALANCE_NORMS, unit: '초', digits: 0, source: '60대 이상은 일본 문부과학성 신체력 테스트, 그 외는 참고 기준', how: '좌우 중 약한 쪽 기록으로 판정합니다.' },
 ];
 
 export const NORM_TEST_MAP = Object.fromEntries(NORM_TESTS.map((t) => [t.key, t])) as Record<NormTestKey, NormTest>;
