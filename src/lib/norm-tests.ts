@@ -34,9 +34,9 @@ export interface NormTest {
 }
 
 export const NORM_TESTS: NormTest[] = [
-  { key: 'vo2max', name: 'VO₂max', table: VO2MAX_NORMS, unit: 'ml/kg/min', digits: 0, source: 'ACSM 11판', how: '심폐 검사 중 가장 좋은 기록으로 판정합니다.' },
+  { key: 'vo2max', name: 'VO₂max', table: VO2MAX_NORMS, unit: 'ml/kg/min', digits: 1, source: 'ACSM 11판', how: '심폐 검사 중 가장 좋은 기록으로 판정합니다.' },
   { key: 'grip', name: '악력 합산', table: GRIP_NORMS, unit: 'kg', digits: 0, source: 'ACSM 11판', how: '좌우 최고값을 더한 값(좌+우)으로 판정합니다.' },
-  { key: 'bp', name: '벤치프레스', table: BP_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중. 예: 1RM 60kg · 체중 75kg → 0.80' },
+  { key: 'bp', name: '벤치프레스', table: BP_RATIO_NORMS, unit: '체중비', digits: 2, source: '쿠퍼 연구소', how: '체중비 = 1RM ÷ 체중. 예: 1RM 60kg · 체중 75kg → 0.80' },
   { key: 'sq', name: '스쿼트', table: SQ_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
   { key: 'dl', name: '데드리프트', table: DL_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
   { key: 'ohp', name: '오버헤드프레스', table: OHP_RATIO_NORMS, unit: '체중비', digits: 2, source: 'NSCA 4판', how: '체중비 = 1RM ÷ 체중' },
