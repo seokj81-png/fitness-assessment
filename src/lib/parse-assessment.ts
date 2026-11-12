@@ -1,5 +1,6 @@
 import type { AssessmentInput } from './types';
 import type { SeniorInput } from './senior';
+import type { Est1rmItem } from './est1rm';
 
 type DbAssessment = {
   id: string;
@@ -30,7 +31,7 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 export function parseAssessment(
   a: DbAssessment
 ): AssessmentInput & { id: string; date: string } {
-  const { parq, postureFlags, fms, fmsComments, ohsaFlags, rom, breathQ, posturePhotos, senior, date, ...rest } = a as DbAssessment & { fmsComments: string | null; breathQ: string | null; posturePhotos: string | null; senior: string | null };
+  const { parq, postureFlags, fms, fmsComments, ohsaFlags, rom, breathQ, posturePhotos, senior, est1rmList, date, ...rest } = a as DbAssessment & { fmsComments: string | null; breathQ: string | null; posturePhotos: string | null; senior: string | null; est1rmList: string | null };
   return {
     ...(rest as unknown as AssessmentInput),
     id: a.id,
@@ -45,5 +46,6 @@ export function parseAssessment(
     breathQ: breathQ ? safeParse<number[]>(breathQ, []) : undefined,
     posturePhotos: posturePhotos ? safeParse<string[]>(posturePhotos, []) : undefined,
     senior: senior ? safeParse<SeniorInput>(senior, {}) : undefined,
+    est1rmList: est1rmList ? safeParse<Est1rmItem[]>(est1rmList, []) : undefined,
   };
 }

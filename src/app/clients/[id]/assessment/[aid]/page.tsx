@@ -66,6 +66,7 @@ import PrintButton from './PrintButton';
 import ShareButton from './ShareButton';
 import CamAngleSummary from '@/components/rom/CamAngleSummary';
 import { camGroupsIn } from '@/lib/pose-angles';
+import { estClass, estLabel, estValue, readEstList } from '@/lib/est1rm';
 
 export const dynamic = 'force-dynamic';
 
@@ -168,10 +169,11 @@ export default async function AssessmentViewPage({
     a.gripR != null && a.gripL != null
       ? classifyGrip(sumGrip, age, sex)
       : null;
-  const est1rm =
-    a.est1rmW && a.est1rmReps
-      ? estimate1RM_avg(a.est1rmW, a.est1rmReps)
-      : null;
+// 다중반복 1RM 추정 — 종목별 (옛 기록은 종목 이름 없는 한 줄)
+  const estRows = readEstList(a.est1rmList, a.est1rmW, a.est1rmReps)
+    .map((it) => ({ it, v: estValue(it), cls: estClass(it, w, age, sex) }))
+    .filter((r): r is { it: typeof r.it; v: number; cls: typeof r.cls } => r.v != null);
+  const est1rm = estRows.length ? estRows[0].v : null;
 
   // ===== Endurance =====
   const pushupClass =
@@ -231,6 +233,7 @@ export default async function AssessmentViewPage({
     bpRatioClass?.classification, sqRatioClass?.classification, dlRatioClass?.classification,
     ohpRatioClass?.classification, pcRatioClass?.classification, lpRatioClass?.classification,
     gripClass?.classification,
+    ...estRows.map((r) => r.cls?.result.classification),
   ]);
   const stGuide = stWorst ? strengthGuide(stWorst) : null;
   const enWorst = worstClassification([
@@ -328,6 +331,13 @@ export default async function AssessmentViewPage({
       'kg', 'up'
     );
     addDelta('벤치프레스 1RM', p.bp1rm ?? null, a.bp1rm ?? null, 'kg', 'up');
+    // 다중반복 1RM 추정 — 같은 종목 이름끼리 비교
+    const prevEst = readEstList(p.est1rmList, p.est1rmW, p.est1rmReps);
+    for (const r of estRows) {
+      const pe = prevEst.find((x) => (x.ex ?? '').trim() === (r.it.ex ?? '').trim());
+      const pv = pe ? estValue(pe) : null;
+      addDelta(`${estLabel(r.it)} 추정 1RM`, round1(pv), round1(r.v), 'kg', 'up');
+    }
     addDelta('스쿼트 1RM', p.sq1rm ?? null, a.sq1rm ?? null, 'kg', 'up');
     addDelta('데드리프트 1RM', p.dl1rm ?? null, a.dl1rm ?? null, 'kg', 'up');
     addDelta('오버헤드프레스 1RM', p.ohp1rm ?? null, a.ohp1rm ?? null, 'kg', 'up');
@@ -1065,12 +1075,21 @@ export default async function AssessmentViewPage({
                 ? <ResultRow label="레그프레스 1RM" result={lpRatioClass} grade={{ test: 'lp', age, sex }} displayValue={`${a.lp1rm} kg`} subLabel={w ? `× 체중비 ${(a.lp1rm / w).toFixed(2)}` : undefined} />
                 : <Fact label="레그프레스 1RM" value={`${a.lp1rm} kg`} />
             )}
-            {est1rm !== null && (
-              <Fact
-                label={`추정 1RM (${a.est1rmW}kg × ${a.est1rmReps}회)`}
-                value={`${est1rm.toFixed(1)} kg (Epley·Brzycki·Lombardi 평균)`}
-              />
-            )}
+            {estRows.map((r, i) => {
+              const label = `${estLabel(r.it)} 추정 1RM (${r.it.w}kg × ${r.it.reps}회)${r.it.memo ? ` · ${r.it.memo}` : ''}`;
+              return r.cls ? (
+                <ResultRow
+                  key={`est-${i}`}
+                  label={label}
+                  result={r.cls.result}
+                  grade={{ test: r.cls.key, age, sex }}
+                  displayValue={`${r.v.toFixed(1)} kg`}
+                  subLabel={`× 체중비 ${r.cls.ratio.toFixed(2)} · 추정값`}
+                />
+              ) : (
+                <Fact key={`est-${i}`} label={label} value={`${r.v.toFixed(1)} kg (Epley·Brzycki·Lombardi 평균)`} />
+              );
+            })}
             {gripClass && (
               <ResultRow
                 label={`악력 합산 (R ${a.gripR ?? '-'} + L ${a.gripL ?? '-'})`}

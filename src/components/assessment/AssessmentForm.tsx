@@ -62,6 +62,8 @@ import { GradeWhoProvider } from './GradeTable';
 import type { NormTestKey } from '@/lib/norm-tests';
 import SeniorTab from './SeniorTab';
 import CameraAngleCard from '@/components/rom/CameraAngleCard';
+import Est1rmCard from './Est1rmCard';
+import { cleanEstList, estValue, readEstList } from '@/lib/est1rm';
 import type { CamApply } from '@/components/rom/RomCamera';
 
 interface ClientInfo {
@@ -200,6 +202,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     fmsComments: (existing as any)?.fmsComments ?? {},
     ohsaFlags: existing?.ohsaFlags ?? [],
     rom: existing?.rom ?? {},
+    est1rmList: readEstList(existing?.est1rmList, existing?.est1rmW, existing?.est1rmReps),
     senior: existing?.senior ?? {},
   }));
 
@@ -249,7 +252,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       'height','weight','bmi','waist','hip','sf1','sf2','sf3','bodyFatSf',
       'biaBf','biaSmm','biaFm','biaFfm','biaBmr','biaTbw',
       'rockportTime','rockportHr','run15Time','run5minDist','cooperDist','stepHr','vo2max',
-      'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps',
+      'bp1rm','sq1rm','dl1rm','ohp1rm','pc1rm','lp1rm','gripR','gripL','est1rmW','est1rmReps','est1rmList',
       'pushupReps','ymcaBpReps','curlupReps','squatReps','pullupReps','plankFront','plankR','plankL','sorensen',
       'postureFlags','postureMemo','postureDrawing','posturePhotos','balanceR','balanceL','breathFrc','breathTlc','breathHiLo','breathQ','fms','clearSh','clearExt','clearFlex','ohsaFlags','rom','fmsComments',
       'senior','notes',
@@ -260,6 +263,12 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
       if (ALLOWED.has(k)) payload[k] = v === undefined ? null : v;
     }
     payload.fmsComments = JSON.stringify(state.fmsComments ?? {});
+    // 다중반복 1RM 추정: 빈 줄을 빼고 저장. 옛 칸(est1rmW·est1rmReps)에는 값이 있는 첫 종목을 넣어 둔다
+    const estList = cleanEstList(state.est1rmList);
+    const estFirst = estList.find((it) => estValue(it) != null);
+    payload.est1rmList = estList;
+    payload.est1rmW = estFirst?.w ?? null;
+    payload.est1rmReps = estFirst?.reps ?? null;
     // Attach computed vo2max for quick display
     if (computed.vo2max) payload.vo2max = computed.vo2max.value;
     if (computed.bmiClass) payload.bmi = computed.bmiClass.value;
@@ -1072,28 +1081,12 @@ function StrengthTab({
         )}
       </div>
 
-      <div className="card" style={{ display: tier.vis('str.est') ? undefined : 'none' }}>
-        <h3 className="font-bold mb-2">
-          다중반복 1RM 추정 <span className="guideline-tag tag-nsca">NSCA</span>
-        </h3>
-        <p className="text-xs text-slate-500 mb-3">
-          10RM 이하의 무게로 실패까지 수행 (초급·고위험군에 적합) — <b>벤치프레스·스쿼트 등 실시한 종목 기준</b>의
-          1RM 추정치입니다. 어떤 종목으로 측정했는지 특이사항 메모에 남겨 주세요.
-        </p>
-        <div className="grid md:grid-cols-2 gap-4 mb-3">
-          <Num label="중량 (kg)" value={state.est1rmW} onChange={(v) => update('est1rmW', v)} step="0.5" />
-          <Num label="반복수 (≤10)" value={state.est1rmReps} onChange={(v) => update('est1rmReps', v)} />
-        </div>
-        {computed.est1rm && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="text-2xl font-bold">≈ {computed.est1rm.toFixed(1)} kg</div>
-            <div className="text-xs text-slate-600 mt-1">
-              Epley {estimate1RM_epley(state.est1rmW!, state.est1rmReps!).toFixed(1)} /{' '}
-              Brzycki {estimate1RM_brzycki(state.est1rmW!, state.est1rmReps!)?.toFixed(1) || '-'} /{' '}
-              Lombardi {estimate1RM_lombardi(state.est1rmW!, state.est1rmReps!).toFixed(1)}
-            </div>
-          </div>
-        )}
+      <div style={{ display: tier.vis('str.est') ? undefined : 'none' }}>
+        <Est1rmCard
+          list={state.est1rmList ?? []}
+          onChange={(next) => update('est1rmList', next)}
+          weight={weight}
+        />
       </div>
 
       <div className="card">

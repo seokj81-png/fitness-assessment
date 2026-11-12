@@ -20,6 +20,9 @@ export function GradeWhoProvider({ age, sex, children }: { age: number; sex: Sex
   return <WhoContext.Provider value={{ age, sex }}>{children}</WhoContext.Provider>;
 }
 
+// 폼 안의 다른 카드가 회원 나이·성별을 쓸 때
+export const useGradeWho = () => useContext(WhoContext);
+
 const ageLabel = (g: number) => (g === 20 ? '20대 이하' : g === 60 ? '60대 이상' : `${g}대`);
 
 export function GradeTableButton({

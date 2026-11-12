@@ -99,6 +99,8 @@ model Assessment {
   gripL      Float?
   est1rmW    Float?
   est1rmReps Int?
+  // 다중반복 1RM 추정 — 종목별 최대 4개 (JSON: {ex, w, reps, memo}[], src/lib/est1rm.ts). 첫 종목은 위 est1rmW·est1rmReps에도 넣는다
+  est1rmList String?
 
   // Endurance
   pushupReps   Int?

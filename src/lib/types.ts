@@ -72,6 +72,7 @@ export interface AssessmentInput {
   gripL?: number;
   est1rmW?: number;
   est1rmReps?: number;
+  est1rmList?: import('./est1rm').Est1rmItem[]; // 다중반복 1RM 추정 — 종목별 최대 4개
 
   pushupReps?: number;
   ymcaBpReps?: number;

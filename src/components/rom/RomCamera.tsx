@@ -68,6 +68,25 @@ const GUIDE_POSTURE: Record<ViewState, string> = {
   ok: '옆모습으로 인식했습니다. 편하게 선 자세에서 「지금 자세 기록」을 눌러 주세요.',
 };
 
+// 인식 모델(약 9MB)은 한 번 받으면 이 기기에 저장해 둔다 — 구글 저장소는 1시간만 캐시해서 매번 다시 받게 된다
+const MODEL_CACHE = 'pafgym-pose-model-v1';
+async function loadModelBytes(): Promise<Uint8Array | null> {
+  try {
+    if (typeof caches === 'undefined') return null;
+    const cache = await caches.open(MODEL_CACHE);
+    let res = await cache.match(MODEL_URL);
+    if (!res) {
+      const net = await fetch(MODEL_URL);
+      if (!net.ok) return null;
+      await cache.put(MODEL_URL, net.clone()).catch(() => {});
+      res = net;
+    }
+    return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 // 화면 캡처를 사진 칸에 넣을 크기로 줄인다 (자세 사진과 같은 기준: 긴 쪽 900px, JPEG 0.72)
 function shrink(src: HTMLCanvasElement | null): string | null {
   if (!src || !src.width || !src.height) return null;
@@ -139,13 +158,12 @@ export default function RomCamera({
 
   const ensureLandmarker = useCallback(() => {
     if (plPromiseRef.current) return plPromiseRef.current;
-    setLoading('자세 인식 준비 중… (처음 한 번만 몇 초 걸립니다)');
     const p = (async () => {
-      const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision');
+      const [{ FilesetResolver, PoseLandmarker }, bytes] = await Promise.all([import('@mediapipe/tasks-vision'), loadModelBytes()]);
       const fileset = await FilesetResolver.forVisionTasks(WASM_BASE);
       const make = (delegate: 'GPU' | 'CPU') =>
         PoseLandmarker.createFromOptions(fileset, {
-          baseOptions: { modelAssetPath: MODEL_URL, delegate },
+          baseOptions: bytes ? { modelAssetBuffer: bytes, delegate } : { modelAssetPath: MODEL_URL, delegate },
           runningMode: 'VIDEO',
           numPoses: 1,
         });
@@ -201,7 +219,7 @@ export default function RomCamera({
     rafRef.current = requestAnimationFrame(tick);
     const canvas = canvasRef.current;
     const pl = plRef.current;
-    if (!canvas || !pl) return;
+    if (!canvas) return;
     const img = imgRef.current;
     const v = videoRef.current;
     const src: HTMLImageElement | HTMLVideoElement | null = img ?? v;
@@ -227,6 +245,7 @@ export default function RomCamera({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.drawImage(src, 0, 0, W, H);
+    if (!pl) return; // 인식 준비가 끝나기 전에는 카메라 화면만 보여 준다
 
     let lm: Pt[] | undefined;
     try {
@@ -311,17 +330,25 @@ export default function RomCamera({
       stopSource();
       resetMeasure();
       try {
-        const pl = await ensureLandmarker();
-        if (runId !== runIdRef.current) return;
-        plRef.current = pl;
+        // 카메라(파일)를 먼저 열어 화면부터 보여 주고, 자세 인식 준비는 그동안 같이 진행한다
+        const plP = ensureLandmarker();
+        plP.catch(() => {});
         setLoading(kind === 'camera' ? '카메라 여는 중…' : '불러오는 중…');
         await attach();
         if (runId !== runIdRef.current) return;
         cancelAnimationFrame(rafRef.current);
         setSource(kind);
         setPaused(false);
-        setLoading(null);
         rafRef.current = requestAnimationFrame(tick);
+        if (!plRef.current) {
+          setLoading('자세 인식 준비 중… 처음 한 번은 인식 파일(약 13MB)을 받느라 조금 걸립니다.');
+          const pl = await plP;
+          if (runId !== runIdRef.current) return;
+          plRef.current = pl;
+          lastTsRef.current = 0;
+          fpsRef.current = 0;
+        }
+        setLoading(null);
       } catch (e) {
         if (runId !== runIdRef.current) return;
         stopSource();
@@ -397,6 +424,11 @@ export default function RomCamera({
     const src = q.get('src');
     if (src) void startUrl(src, /\.(jpe?g|png|webp)(\?|$)/i.test(src), /^https?:/.test(src));
   }, [startUrl, modeProp]);
+
+  // 화면이 뜨면 바로 인식 준비를 시작해 둔다 (카메라 버튼을 누르기 전에 미리)
+  useEffect(() => {
+    ensureLandmarker().catch(() => {});
+  }, [ensureLandmarker]);
 
   useEffect(
     () => () => {
@@ -554,7 +586,13 @@ export default function RomCamera({
           <>
             {mode === 'squat' ? (
               phase !== 'measuring' ? (
-                <button type="button" className={btn} style={dark} onClick={startMeasure}>
+                <button
+                  type="button"
+                  className={btn}
+                  style={loading ? { background: '#9a9a9a', color: '#fff' } : dark}
+                  onClick={startMeasure}
+                  disabled={!!loading}
+                >
                   {phase === 'done' ? '다시 측정' : '측정 시작'}
                 </button>
               ) : (
@@ -636,13 +674,13 @@ export default function RomCamera({
               </span>
             )}
           </div>
-          {running && (
+          {running && !loading && (
             <p className="text-sm mt-2 font-semibold" role="status" style={{ color: guideOk ? '#2c2c2c' : '#c62828' }}>
               {guide}
               {mode === 'squat' && view === 'ok' && side ? ` (${side === 'L' ? '왼쪽' : '오른쪽'} 옆모습)` : ''}
             </p>
           )}
-          {running && source !== 'image' && fps > 0 && (
+          {running && !loading && source !== 'image' && fps > 0 && (
             <p className="text-xs mt-1" style={{ color: fps < 8 ? '#c62828' : '#6e6e6e' }}>
               인식 속도 초당 {fps < 10 ? fps.toFixed(1) : Math.round(fps)}장
               {fps < 8 && mode === 'squat' ? ' — 이 기기에서는 느립니다. 천천히 움직이고, 가장 깊이 앉은 자세에서 1~2초 멈춰 주세요.' : ''}
