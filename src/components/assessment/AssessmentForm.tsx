@@ -115,6 +115,13 @@ type FormState = Partial<AssessmentInput> & {
   fmsComments?: Record<string, string>;
 };
 
+// 오늘 날짜(이 기기 시간 기준) — toISOString은 세계 표준시라 한국 오전 9시 전에는 어제 날짜가 나온다
+function localToday() {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 export default function AssessmentForm({ client, existing, pageTitle, pageSubtitle, backHref, backLabel }: Props) {
   const router = useRouter();
   const sex = client.sex as Sex;
@@ -186,7 +193,7 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
     date:
       (existing?.date &&
         new Date(existing.date as string).toISOString().slice(0, 10)) ||
-      new Date().toISOString().slice(0, 10),
+      localToday(),
     parq: existing?.parq ?? new Array(7).fill(false),
     postureFlags: existing?.postureFlags ?? [],
     fms: existing?.fms ?? {},
@@ -434,7 +441,24 @@ export default function AssessmentForm({ client, existing, pageTitle, pageSubtit
               </a>
             )}
             <h2 className="text-xl font-bold leading-tight" style={{ color: '#2c2c2c' }}>{pageTitle}</h2>
-            {pageSubtitle && <p className="text-xs mt-0.5" style={{ color: '#8a8a8a' }}>{pageSubtitle}</p>}
+            {/* 측정일 — 어느 탭에서든 보이고 바꿀 수 있게 맨 위에 둔다 (예전에 잰 기록을 지난 날짜로 넣을 때) */}
+            <label className="mt-1.5 flex items-center flex-wrap gap-x-2 gap-y-1 text-xs" style={{ color: '#5a5a5a' }}>
+              <span className="font-semibold">측정일</span>
+              <input
+                type="date"
+                value={state.date || ''}
+                max="2099-12-31"
+                onChange={(e) => update('date', e.target.value)}
+                aria-label="측정일"
+                className="px-2 py-1 border"
+                style={{ minHeight: 34 }}
+              />
+              {state.date && state.date !== localToday() ? (
+                <span style={{ color: '#c62828' }}>오늘 날짜가 아닙니다 — 이 날짜로 저장됩니다</span>
+              ) : (
+                <span style={{ color: '#8a8a8a' }}>지난 날짜로 바꾸면 예전에 잰 기록으로 저장됩니다</span>
+              )}
+            </label>
           </div>
         )}
         {/* 탭 네비게이션 — 가로 스크롤, 터치 타겟 확대 */}
