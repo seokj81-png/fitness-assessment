@@ -1055,7 +1055,7 @@ function StrengthTab({
 
       <div className="card" style={{ display: tier.vis('str.rm1') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
-          1RM 직접 측정 <span className="guideline-tag tag-nsca">NSCA</span>
+          1RM 직접 측정 <span className="guideline-tag tag-nsca">NSCA 측정법</span>
         </h3>
         <div className="grid md:grid-cols-3 gap-4">
           {([
@@ -1146,7 +1146,7 @@ function EnduranceTab({
 
       <div className="card" style={{ display: tier.vis('end.ymca') ? undefined : 'none' }}>
         <h3 className="font-bold mb-2">
-          YMCA Bench Press 근지구력 <span className="guideline-tag tag-nsca">NSCA</span>
+          YMCA Bench Press 근지구력 <span className="guideline-tag tag-acsm">YMCA</span>
         </h3>
         <p className="text-xs text-slate-500 mb-3">
           남 36.3 kg / 여 15.9 kg · 메트로놈 60 bpm (30 rep/min)

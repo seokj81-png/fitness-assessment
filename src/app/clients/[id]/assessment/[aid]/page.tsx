@@ -1129,7 +1129,7 @@ export default async function AssessmentViewPage({
             )}
             {ymcaBpClass && (
               <ResultRow
-                label="YMCA 벤치프레스 (35/20 lb)"
+                label="YMCA 벤치프레스 (남 36.3kg · 여 15.9kg)"
                 result={ymcaBpClass}
                 unit="회"
                 grade={{ test: 'ymcaBp', age, sex }}
